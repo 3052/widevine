@@ -1,13 +1,14 @@
 package widevine
 
 import (
-   "2a.pages.dev/rosso/http"
    "2a.pages.dev/rosso/protobuf"
+   "bytes"
    "crypto/rsa"
    "crypto/x509"
    "encoding/hex"
    "encoding/pem"
    "io"
+   "net/http"
 )
 
 func (m Module) Post(post Poster) (Containers, error) {
@@ -19,15 +20,16 @@ func (m Module) Post(post Poster) (Containers, error) {
    if err != nil {
       return nil, err
    }
-   req, err := http.Post_Parse(post.Request_URL())
+   req, err := http.NewRequest(
+      "POST", post.Request_URL(), bytes.NewReader(body),
+   )
    if err != nil {
       return nil, err
    }
-   req.Body_Bytes(body)
    if head := post.Request_Header(); head != nil {
       req.Header = head
    }
-   res, err := http.Default_Client.Do(req)
+   res, err := new(http.Transport).RoundTrip(req)
    if err != nil {
       return nil, err
    }
