@@ -1,7 +1,6 @@
 package widevine
 
 import (
-   "2a.pages.dev/rosso/protobuf"
    "bytes"
    "crypto/rsa"
    "crypto/x509"
@@ -9,6 +8,7 @@ import (
    "encoding/pem"
    "io"
    "net/http"
+   "protobuf.pages.dev"
 )
 
 func (m Module) Post(post Poster) (Containers, error) {

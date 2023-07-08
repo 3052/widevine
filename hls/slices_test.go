@@ -1,7 +1,6 @@
 package hls
 
 import (
-   "2a.pages.dev/rosso/slices"
    "bytes"
    "fmt"
    "os"
@@ -19,19 +18,10 @@ func Test_Stream(t *testing.T) {
       if err != nil {
          t.Fatal(err)
       }
-      slices.Sort(master.Stream, func(a, b Stream) bool {
-         return b.Bandwidth < a.Bandwidth
-      })
-      target := slices.Index(master.Stream, func(a Stream) bool {
-         return a.Bandwidth <= 9_000_000
-      })
       fmt.Println(name)
       for i, value := range master.Stream {
          if i >= 1 {
             fmt.Println()
-         }
-         if i == target {
-            fmt.Print("!")
          }
          fmt.Println(value)
       }
@@ -94,14 +84,8 @@ func Test_Media(t *testing.T) {
       if err != nil {
          t.Fatal(err)
       }
-      target := slices.Index(master.Media, func(m Media) bool {
-         return m.Name == "English"
-      })
       fmt.Println(name)
-      for i, media := range master.Media {
-         if i == target {
-            fmt.Print("!")
-         }
+      for _, media := range master.Media {
          fmt.Println(media)
       }
       fmt.Println()
