@@ -1,13 +1,13 @@
 package widevine
 
 import (
+   "154.pages.dev/encoding/protobuf"
    "crypto"
    "crypto/aes"
    "crypto/cipher"
    "crypto/rsa"
    "crypto/sha1"
    "github.com/chmike/cmac-go"
-   "protobuf.pages.dev"
 )
 
 func (m Module) signed_request() ([]byte, error) {
