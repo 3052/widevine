@@ -57,6 +57,7 @@ type no_operation struct{}
 func (no_operation) Read(buf []byte) (int, error) {
    return len(buf), nil
 }
+
 // some videos require key_id and content_id, so entire PSSH is needed
 func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
    block, _ := pem.Decode(private_key)
