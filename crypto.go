@@ -10,35 +10,13 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (m Module) signed_request() ([]byte, error) {
-   hash := sha1.Sum(m.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      m.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   signed_request := protobuf.Message{
-      2: protobuf.Bytes(m.license_request),
-      3: protobuf.Bytes(signature),
-   }
-   return signed_request.Marshal(), nil
-}
-
 func (m Module) signed_response(response []byte) (Containers, error) {
    // key
    signed_response, err := protobuf.Unmarshal(response)
    if err != nil {
       return nil, err
    }
-   raw_key, err := signed_response.Get_Bytes(4)
-   if err != nil {
-      return nil, err
-   }
+   _, raw_key := signed_response.Bytes(4)
    session_key, err := rsa.DecryptOAEP(
       sha1.New(), nil, m.private_key, raw_key, nil,
    )
@@ -62,25 +40,40 @@ func (m Module) signed_response(response []byte) (Containers, error) {
    if err != nil {
       return nil, err
    }
-   var keys Containers
-   // .Msg.Key
-   for _, message := range signed_response.Get(2).Get_Messages(3) {
-      var key Container
-      iv, err := message.Get_Bytes(2)
-      if err != nil {
-         return nil, err
+   var cons Containers
+   _, msg := signed_response.Message(2)
+   for {
+      i, key := msg.Message(3)
+      if i == -1 {
+         return cons, nil
       }
-      key.Key, err = message.Get_Bytes(3)
-      if err != nil {
-         return nil, err
-      }
-      key.Type, err = message.Get_Varint(4)
-      if err != nil {
-         return nil, err
-      }
-      cipher.NewCBCDecrypter(key_cipher, iv).CryptBlocks(key.Key, key.Key)
-      key.Key = unpad(key.Key)
-      keys = append(keys, key)
+      var con Container
+      _, iv := key.Bytes(2)
+      _, con.Key = key.Bytes(3)
+      _, con.Type = key.Uvarint(4)
+      cipher.NewCBCDecrypter(key_cipher, iv).CryptBlocks(con.Key, con.Key)
+      con.Key = unpad(con.Key)
+      cons = append(cons, con)
+      msg = msg[i+1:]
    }
-   return keys, nil
 }
+
+func (m Module) signed_request() ([]byte, error) {
+   hash := sha1.Sum(m.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      m.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   signed_request := protobuf.Message{
+      protobuf.Number(2).Bytes(m.license_request),
+      protobuf.Number(3).Bytes(signature),
+   }
+   return signed_request.Append(nil), nil
+}
+
