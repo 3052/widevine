@@ -12,11 +12,14 @@ import (
 
 func (m Module) signed_response(response []byte) (Containers, error) {
    // key
-   signed_response, err := protobuf.Unmarshal(response)
+   signed_response, err := protobuf.Consume(response)
    if err != nil {
       return nil, err
    }
-   _, raw_key := signed_response.Bytes(4)
+   raw_key, err := signed_response.Bytes(4)
+   if err != nil {
+      return nil, err
+   }
    session_key, err := rsa.DecryptOAEP(
       sha1.New(), nil, m.private_key, raw_key, nil,
    )
@@ -40,22 +43,34 @@ func (m Module) signed_response(response []byte) (Containers, error) {
    if err != nil {
       return nil, err
    }
+   msg, err := signed_response.Message(2)
+   if err != nil {
+      return nil, err
+   }
    var cons Containers
-   _, msg := signed_response.Message(2)
-   for {
-      i, key := msg.Message(3)
-      if i == -1 {
-         return cons, nil
-      }
+   err = msg.Messages(3, func(key protobuf.Message) error {
       var con Container
-      _, iv := key.Bytes(2)
-      _, con.Key = key.Bytes(3)
-      _, con.Type = key.Uvarint(4)
+      iv, err := key.Bytes(2)
+      if err != nil {
+         return err
+      }
+      con.Key, err = key.Bytes(3)
+      if err != nil {
+         return err
+      }
+      con.Type, err = key.Varint(4)
+      if err != nil {
+         return err
+      }
       cipher.NewCBCDecrypter(key_cipher, iv).CryptBlocks(con.Key, con.Key)
       con.Key = unpad(con.Key)
       cons = append(cons, con)
-      msg = msg[i+1:]
+      return nil
+   })
+   if err != nil {
+      return nil, err
    }
+   return cons, nil
 }
 
 func (m Module) signed_request() ([]byte, error) {
