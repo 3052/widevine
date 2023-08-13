@@ -22,14 +22,14 @@ func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
    if err != nil {
       return nil, err
    }
-   mod.license_request = protobuf.Message{
-      protobuf.Number(1).Bytes(client_ID),
-      protobuf.Number(2).Prefix( // ContentId
-         protobuf.Number(1).Prefix( // CencId
-            protobuf.Number(1).Bytes(pssh[32:]),
-         ),
-      ),
-   }.Append(nil)
+   var m protobuf.Message
+   m.Add_Bytes(1, client_ID)
+   m.Add(2, func(m *protobuf.Message) { // ContentId
+      m.Add(1, func(m *protobuf.Message) { // CencId
+         m.Add_Bytes(1, pssh[32:])
+      })
+   })
+   mod.license_request = m.Append(nil)
    return &mod, nil
 }
 

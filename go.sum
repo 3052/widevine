@@ -1,5 +1,5 @@
-154.pages.dev/encoding v1.10.9 h1:MWsl+Cyf7WGfVOvCqZVKZ9UdSyI0lDnK7uvsDmD6YUA=
-154.pages.dev/encoding v1.10.9/go.mod h1:i8SA+AZ55cBajnAC7bE10eSxcLH2YBD9Nzmc7QgJ0ok=
+154.pages.dev/encoding v1.11.1 h1:ocNNyGiTve/RpUOJL8/e1gimIYMqzB/NI3QhR8iOWcc=
+154.pages.dev/encoding v1.11.1/go.mod h1:i8SA+AZ55cBajnAC7bE10eSxcLH2YBD9Nzmc7QgJ0ok=
 154.pages.dev/strconv v1.0.3 h1:fOsAvXWaUVE7Wdurq81CKsFpN2eoZi/7Bdijz6ALPo8=
 154.pages.dev/strconv v1.0.3/go.mod h1:HPQpZS7s8hlNlF5X2DNlT3qft3mN4rluNJW+GjbTf9I=
 github.com/chmike/cmac-go v1.1.0 h1:aF73ZAEx9N2WdQc93DOJ2fMsBDAGqUtuenjMJMb3kEI=
