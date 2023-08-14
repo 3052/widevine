@@ -43,11 +43,6 @@ func unpad(buf []byte) []byte {
    return buf
 }
 
-type Container struct {
-   Key []byte
-   Type uint64
-}
-
 func (c Container) String() string {
    return hex.EncodeToString(c.Key)
 }
