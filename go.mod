@@ -3,7 +3,7 @@ module 154.pages.dev/widevine
 go 1.20
 
 require (
-	154.pages.dev/encoding v1.11.2
+	154.pages.dev/encoding v1.11.4
 	github.com/chmike/cmac-go v1.1.0
 )
 
