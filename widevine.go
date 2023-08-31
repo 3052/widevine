@@ -80,7 +80,7 @@ func (m Module) Post(post Poster) (Containers, error) {
    if head := post.Request_Header(); head != nil {
       req.Header = head
    }
-   res, err := new(http.Transport).RoundTrip(req)
+   res, err := http.DefaultClient.Do(req)
    if err != nil {
       return nil, err
    }
