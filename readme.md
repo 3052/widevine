@@ -10,11 +10,6 @@ First Widevine commit was May 21 2022:
 
 https://github.com/gucio321/mech/commit/9d3dff51
 
-## L1
-
-- Amazon needs AndroidCDM L1 for 720P/1080P/4K
-- Disney+ needs Android L1 for 1080P+
-
 ## What is a CDM?
 
 The way it works, is you need a key to decrypt the media. To get that key, you
