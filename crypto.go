@@ -10,6 +10,33 @@ import (
    "github.com/chmike/cmac-go"
 )
 
+type Container struct {
+   // bytes Iv = 2;
+   IV []byte
+   // bytes Key = 3;
+   Key []byte
+   // KeyType Type = 4;
+   Type uint64
+}
+
+func (m Module) signed_request() ([]byte, error) {
+   hash := sha1.Sum(m.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      m.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   var signed_request protobuf.Message
+   signed_request.Add_Bytes(2, m.license_request)
+   signed_request.Add_Bytes(3, signature)
+   return signed_request.Append(nil), nil
+}
+
 func (m Module) signed_response(response []byte) (Containers, error) {
    // key
    signed_response, err := protobuf.Consume(response)
@@ -70,31 +97,4 @@ func (m Module) signed_response(response []byte) (Containers, error) {
       return nil, err
    }
    return cons, nil
-}
-
-type Container struct {
-   // bytes Iv = 2;
-   IV []byte
-   // bytes Key = 3;
-   Key []byte
-   // KeyType Type = 4;
-   Type uint64
-}
-
-func (m Module) signed_request() ([]byte, error) {
-   hash := sha1.Sum(m.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      m.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   var signed_request protobuf.Message
-   signed_request.Add_Bytes(2, m.license_request)
-   signed_request.Add_Bytes(3, signature)
-   return signed_request.Append(nil), nil
 }
