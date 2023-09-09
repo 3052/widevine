@@ -62,6 +62,7 @@ type Module struct {
    license_request []byte
    private_key *rsa.PrivateKey
 }
+
 func (m Module) Post(post Poster) (Containers, error) {
    signed_request, err := m.signed_request()
    if err != nil {
