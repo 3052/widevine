@@ -10,6 +10,7 @@ import (
    "crypto/sha1"
    "crypto/x509"
    "encoding/pem"
+   "errors"
    "github.com/chmike/cmac-go"
    "io"
    "net/http"
@@ -136,12 +137,26 @@ type Module struct {
    private_key     *rsa.PrivateKey
 }
 
+type Poster interface {
+   Request_URL() string
+   Request_Header() http.Header
+   Request_Body([]byte) ([]byte, error)
+   Response_Body([]byte) ([]byte, error)
+}
+
+type no_operation struct{}
+
+func (no_operation) Read(buf []byte) (int, error) {
+   return len(buf), nil
+}
 func (m Module) Post(post Poster) (Containers, error) {
-   signed_request, err := m.signed_request()
-   if err != nil {
-      return nil, err
-   }
-   body, err := post.Request_Body(signed_request)
+   body, err := func() ([]byte, error) {
+      b, err := m.signed_request()
+      if err != nil {
+         return nil, err
+      }
+      return post.Request_Body(b)
+   }()
    if err != nil {
       return nil, err
    }
@@ -159,26 +174,18 @@ func (m Module) Post(post Poster) (Containers, error) {
       return nil, err
    }
    defer res.Body.Close()
-   body, err = io.ReadAll(res.Body)
-   if err != nil {
-      return nil, err
+   if res.StatusCode != http.StatusOK {
+      return nil, errors.New(res.Status)
    }
-   body, err = post.Response_Body(body)
+   body, err = func() ([]byte, error) {
+      b, err := io.ReadAll(res.Body)
+      if err != nil {
+         return nil, err
+      }
+      return post.Response_Body(b)
+   }()
    if err != nil {
       return nil, err
    }
    return m.signed_response(body)
-}
-
-type Poster interface {
-   Request_URL() string
-   Request_Header() http.Header
-   Request_Body([]byte) ([]byte, error)
-   Response_Body([]byte) ([]byte, error)
-}
-
-type no_operation struct{}
-
-func (no_operation) Read(buf []byte) (int, error) {
-   return len(buf), nil
 }

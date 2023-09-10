@@ -1,6 +1,6 @@
 module 154.pages.dev/widevine
 
-go 1.20
+go 1.21.0
 
 require (
 	154.pages.dev/encoding v1.12.1

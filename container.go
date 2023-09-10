@@ -1,6 +1,49 @@
 package widevine
 
-import "fmt"
+import (
+   "154.pages.dev/encoding/protobuf"
+   "fmt"
+)
+
+var _ = protobuf.Message{
+   protobuf.Field{Number: 6, Type: 2, Value: protobuf.Prefix{
+      protobuf.Field{Number: 1, Type: 0, Value: protobuf.Varint(0)},
+      protobuf.Field{Number: 2, Type: 0, Value: protobuf.Varint(42)},
+   }},
+   protobuf.Field{Number: 12, Type: 2, Value: protobuf.Bytes("SD")},
+}
+
+var _ = protobuf.Message{
+   protobuf.Field{Number: 6, Type: 2, Value: protobuf.Prefix{
+      protobuf.Field{Number: 1, Type: 0, Value: protobuf.Varint(1)},
+      protobuf.Field{Number: 2, Type: 0, Value: protobuf.Varint(3)},
+   }},
+   protobuf.Field{Number: 12, Type: 2, Value: protobuf.Bytes("UHD1")},
+}
+
+var _ = protobuf.Message{
+   protobuf.Field{Number: 6, Type: 2, Value: protobuf.Prefix{
+      protobuf.Field{Number: 1, Type: 0, Value: protobuf.Varint(0)},
+      protobuf.Field{Number: 2, Type: 0, Value: protobuf.Varint(42)},
+   }},
+   protobuf.Field{Number: 12, Type: 2, Value: protobuf.Bytes("AUDIO")},
+}
+
+var _ = protobuf.Message{
+   protobuf.Field{Number: 6, Type: 2, Value: protobuf.Prefix{
+      protobuf.Field{Number: 1, Type: 0, Value: protobuf.Varint(1)},
+      protobuf.Field{Number: 2, Type: 0, Value: protobuf.Varint(3)},
+   }},
+   protobuf.Field{Number: 12, Type: 2, Value: protobuf.Bytes("HD")},
+}
+
+var _ = protobuf.Message{
+   protobuf.Field{Number: 6, Type: 2, Value: protobuf.Prefix{
+      protobuf.Field{Number: 1, Type: 0, Value: protobuf.Varint(0)},
+      protobuf.Field{Number: 2, Type: 0, Value: protobuf.Varint(3)},
+   }},
+   protobuf.Field{Number: 12, Type: 2, Value: protobuf.Bytes("HD")},
+}
 
 type Container struct {
    // bytes Id = 1;
