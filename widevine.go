@@ -4,82 +4,91 @@ import (
    "154.pages.dev/encoding/protobuf"
    "bytes"
    "crypto"
-   "crypto/aes"
-   "crypto/cipher"
    "crypto/rsa"
    "crypto/sha1"
    "crypto/x509"
    "encoding/pem"
    "errors"
-   "github.com/chmike/cmac-go"
+   "fmt"
    "io"
    "net/http"
 )
 
-func (m Module) signed_response(response []byte) (Containers, error) {
-   // key
-   signed_response, err := protobuf.Consume(response)
-   if err != nil {
-      return nil, err
+type Module struct {
+   key_ID []byte
+   license_request []byte
+   private_key *rsa.PrivateKey
+}
+
+type Container struct {
+   // optional bytes id = 1;
+   ID []byte
+   // optional bytes iv = 2;
+   IV []byte
+   // optional bytes key = 3;
+   Key []byte
+   // optional KeyType type = 4;
+   Type uint64
+   // optional string track_label = 12;
+   Label string
+}
+
+func (c Container) String() string {
+   var b []byte
+   b = fmt.Appendf(b, "ID: %x", c.ID)
+   b = fmt.Appendf(b, "\nkey: %x", c.Key)
+   if c.Label != "" {
+      b = append(b, "\nlabel: "...)
+      b = append(b, c.Label...)
    }
-   raw_key, err := signed_response.Bytes(4)
-   if err != nil {
-      return nil, err
-   }
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, m.private_key, raw_key, nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   // message
-   var enc_key []byte
-   enc_key = append(enc_key, 1)
-   enc_key = append(enc_key, "ENCRYPTION"...)
-   enc_key = append(enc_key, 0)
-   enc_key = append(enc_key, m.license_request...)
-   enc_key = append(enc_key, 0, 0, 0, 0x80)
-   // CMAC
-   key_CMAC, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   key_CMAC.Write(enc_key)
-   key_cipher, err := aes.NewCipher(key_CMAC.Sum(nil))
-   if err != nil {
-      return nil, err
-   }
-   msg, err := signed_response.Message(2)
-   if err != nil {
-      return nil, err
-   }
-   var cons Containers
-   msg.Messages(3, func(key protobuf.Message) {
-      var c Container
-      c.ID, err = key.Bytes(1)
-      if err != nil {
-         return
+   return string(b)
+}
+
+type Containers []Container
+
+func (c Containers) Content() *Container {
+   for _, container := range c {
+      if container.Type == 2 {
+         return &container
       }
-      c.IV, err = key.Bytes(2)
+   }
+   return nil
+}
+
+// key_id or content_id could be used, so entire PSSH is needed
+func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
+   pssh = pssh[32:]
+   var mod Module
+   // key_ID
+   {
+      m, err := protobuf.Consume(pssh) // WidevinePsshData
       if err != nil {
-         return
+         return nil, err
       }
-      c.Key, err = key.Bytes(3)
+      mod.key_ID, err = m.Bytes(2) // key_ids
       if err != nil {
-         return
+         return nil, err
       }
-      c.Type, err = key.Varint(4)
-      if err != nil {
-         return
-      }
-      cipher.NewCBCDecrypter(key_cipher, c.IV).CryptBlocks(c.Key, c.Key)
-      c.Key = unpad(c.Key)
-      cons = append(cons, c)
-   })
+   }
+   // license_request
+   {
+      var m protobuf.Message // LicenseRequest
+      m.Add_Bytes(1, client_ID) // client_id
+      m.Add(2, func(m *protobuf.Message) { // content_id
+         m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+            m.Add_Bytes(1, pssh) // pssh_data
+         })
+      })
+      mod.license_request = m.Append(nil)
+   }
+   // private_key
+   block, _ := pem.Decode(private_key)
+   var err error
+   mod.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
    if err != nil {
       return nil, err
    }
-   return cons, nil
+   return &mod, nil
 }
 
 func (m Module) signed_request() ([]byte, error) {
@@ -100,28 +109,6 @@ func (m Module) signed_request() ([]byte, error) {
    return signed_request.Append(nil), nil
 }
 
-// some videos require key_id and content_id, so entire PSSH is needed
-func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
-   block, _ := pem.Decode(private_key)
-   var (
-      err error
-      mod Module
-   )
-   mod.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return nil, err
-   }
-   var m protobuf.Message
-   m.Add_Bytes(1, client_ID)
-   m.Add(2, func(m *protobuf.Message) { // ContentId
-      m.Add(1, func(m *protobuf.Message) { // CencId
-         m.Add_Bytes(1, pssh[32:])
-      })
-   })
-   mod.license_request = m.Append(nil)
-   return &mod, nil
-}
-
 func unpad(buf []byte) []byte {
    if len(buf) >= 1 {
       pad := buf[len(buf)-1]
@@ -130,11 +117,6 @@ func unpad(buf []byte) []byte {
       }
    }
    return buf
-}
-
-type Module struct {
-   license_request []byte
-   private_key     *rsa.PrivateKey
 }
 
 type Poster interface {
@@ -149,6 +131,7 @@ type no_operation struct{}
 func (no_operation) Read(buf []byte) (int, error) {
    return len(buf), nil
 }
+
 func (m Module) Post(post Poster) (Containers, error) {
    body, err := func() ([]byte, error) {
       b, err := m.signed_request()
