@@ -22,7 +22,7 @@ level view of whats going on.
 
 ## Where did proto file come from?
 
-https://github.com/TDenisM/widevinedump/tree/main/pywidevine/cdm/formats
+<https://github.com/rlaphoenix/pywidevine/blob/master/pywidevine/license_protocol.proto>
 
 ## Where to download L3 CDM?
 
