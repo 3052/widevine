@@ -1,0 +1,133 @@
+{
+  "id": {
+    "requestId": "5w0XXr9+WP2e2VmOv0ZEmg==",
+    "sessionId": "5w0XXr9+WP2e2VmOv0ZEmg==",
+    "purchaseId": "",
+    "type": "STREAMING",
+    "version": 0,
+    "originalRentalDurationSeconds": "86400",
+    "originalPlaybackDurationSeconds": "86400",
+    "originalStartTimeSeconds": "1694460213"
+  },
+  "policy": {
+    "canPlay": true,
+    "canPersist": true,
+    "rentalDurationSeconds": "86400",
+    "playbackDurationSeconds": "86400",
+    "licenseDurationSeconds": "86400"
+  },
+  "key": [
+    {
+      "iv": "TErnI0owd7YAwn6Ae8HBQQ==",
+      "key": "/wsYtgIGHaK8Ol3XxIUwFFaoERTiafCFDQS/Po+e79lQXaX9/Z78pItDnlFctQQuUfQJ8JNyX3mFvOfhAI+1xRJL/Ztodwa11d0VBMHXHsI=",
+      "type": "SIGNING"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwMw==",
+      "iv": "xb0bF3WB8NmPijM+vRB/mg==",
+      "key": "RsrScfMyAN8C6MAUvKor2c2bvdhHPZSToNME4hgkAsw=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "HD"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwMg==",
+      "iv": "gXIyfWvB+PaISmA4A87X2g==",
+      "key": "X2VDSpVNhzUhiAFk4eHv/zjbmUwoiGuhkwnMqzFo14I=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "HD"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwMA==",
+      "iv": "g6J3aLX0RYIei+cgcsD35Q==",
+      "key": "Bjb1+R6OLx0lO5d1DU0L0zRjlD/MNZIZ1QMDl16gZco=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "AUDIO"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwNw==",
+      "iv": "EhN5vgYCgFZYCh9IFgmfQA==",
+      "key": "ntnB39E5HBKQMWKHOPxk7kOS47ohnc1zS5PJ9IH0ds8=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "HD"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwMQ==",
+      "iv": "z21hzFk/Foy575RgfZUURg==",
+      "key": "hVvVHTYRBvixaOgg2qskZYMlO00m6bgjVaqCT0p5LtQ=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "SD"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwNA==",
+      "iv": "Dw55YUqkOCZFf8BJB0KqBw==",
+      "key": "Eyw05u8LZT5SnrsLuqfHj2kolYETNwjWamO9KjFKcaU=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "SD"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwNQ==",
+      "iv": "pMf5qIt/airI2GFxDG4aHQ==",
+      "key": "MBr9FctzVc08zfcxkLoUKqLjvyRH0wql4QuX31nCdy0=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "SD"
+    },
+    {
+      "id": "MDAwMDAwMDAwMDAwMDAwNg==",
+      "iv": "jwla070BVhUEy1Cq7DYfMg==",
+      "key": "bpg4E3A41VOaMZUWosTBmSE42MqGEoIPAfHglIqHVs4=",
+      "type": "CONTENT",
+      "level": "SW_SECURE_CRYPTO",
+      "requiredProtection": {},
+      "requestedProtection": {},
+      "keyControl": {
+        "keyControlBlock": "a2MxNgABUYDaVVJBgAAACA=="
+      },
+      "trackLabel": "SD"
+    }
+  ],
+  "licenseStartTime": "1694460213",
+  "protectionScheme": 0,
+  "platformVerificationStatus": "PLATFORM_SOFTWARE_VERIFIED"
+}

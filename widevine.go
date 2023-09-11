@@ -9,7 +9,6 @@ import (
    "crypto/x509"
    "encoding/pem"
    "errors"
-   "fmt"
    "io"
    "net/http"
 )
@@ -55,45 +54,10 @@ func (m _Module) _Post(post _Poster) ([]byte, error) {
    return m.signed_response(body)
 }
 
-type _Container struct {
-   // optional bytes id = 1;
-   _ID []byte
-   // optional bytes iv = 2;
-   _IV []byte
-   // optional bytes key = 3;
-   _Key []byte
-   // optional KeyType type = 4;
-   _Type uint64
-   // optional string track_label = 12;
-   _Label string
-}
-
 type _Module struct {
    key_ID          []byte
    license_request []byte
    private_key     *rsa.PrivateKey
-}
-
-func (c _Container) _String() string {
-   var b []byte
-   b = fmt.Appendf(b, "ID: %x", c._ID)
-   b = fmt.Appendf(b, "\nkey: %x", c._Key)
-   if c._Label != "" {
-      b = append(b, "\nlabel: "...)
-      b = append(b, c._Label...)
-   }
-   return string(b)
-}
-
-type _Containers []_Container
-
-func (c _Containers) _Content() *_Container {
-   for _, container := range c {
-      if container._Type == 2 {
-         return &container
-      }
-   }
-   return nil
 }
 
 // key_id or content_id could be used, so entire PSSH is needed
