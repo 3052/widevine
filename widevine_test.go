@@ -8,26 +8,6 @@ import (
    "testing"
 )
 
-type test_post base64.Encoding
-
-func (test_post) Request_URL() string {
-   return "https://integration.widevine.com/_/license_request"
-}
-
-func (test_post) Request_Header() http.Header { return nil }
-
-func (t test_post) Request_Body(src []byte) ([]byte, error) {
-   buf := make([]byte, t.EncodedLen(len(src)))
-   t.Encode(buf, src)
-   return buf, nil
-}
-
-func (t test_post) Response_Body(s []byte) ([]byte, error) {
-   dbuf := make([]byte, t.DecodedLen(len(s)))
-   n, err := t.Decode(dbuf, s)
-   return dbuf[:n], err
-}
-
 func Test_Post(t *testing.T) {
    home, err := os.UserHomeDir()
    if err != nil {
@@ -49,7 +29,7 @@ func Test_Post(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   key, err := mod.Post(test_post(base64.StdEncoding))
+   key, err := mod._Post(test_post{base64.StdEncoding})
    if err != nil {
       t.Fatal(err)
    }
@@ -69,4 +49,26 @@ var test_container = _Container{
 
 func Test_Container(t *testing.T) {
    fmt.Println(test_container)
+}
+
+type test_post struct {
+   e *base64.Encoding
+}
+
+func (test_post) _Request_URL() string {
+   return "https://integration.widevine.com/_/license_request"
+}
+
+func (test_post) _Request_Header() http.Header { return nil }
+
+func (t test_post) _Request_Body(src []byte) ([]byte, error) {
+   buf := make([]byte, t.e.EncodedLen(len(src)))
+   t.e.Encode(buf, src)
+   return buf, nil
+}
+
+func (t test_post) _Response_Body(s []byte) ([]byte, error) {
+   dbuf := make([]byte, t.e.DecodedLen(len(s)))
+   n, err := t.e.Decode(dbuf, s)
+   return dbuf[:n], err
 }
