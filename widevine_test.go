@@ -19,11 +19,11 @@ func (roku) _Request_Header() http.Header {
 	return nil
 }
 
-func (roku) _Request_Body(b []byte) ([]byte, error) {
+func (roku) Encode_Request(b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (roku) _Response_Body(b []byte) ([]byte, error) {
+func (roku) Decode_Response(b []byte) ([]byte, error) {
 	return b, nil
 }
 
