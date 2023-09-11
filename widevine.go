@@ -14,24 +14,24 @@ import (
 	"net/http"
 )
 
-func (m Module) _Post(post Poster) ([]byte, error) {
+func (m _Module) _Post(post _Poster) ([]byte, error) {
 	body, err := func() ([]byte, error) {
 		b, err := m.signed_request()
 		if err != nil {
 			return nil, err
 		}
-		return post.Request_Body(b)
+		return post._Request_Body(b)
 	}()
 	if err != nil {
 		return nil, err
 	}
 	req, err := http.NewRequest(
-		"POST", post.Request_URL(), bytes.NewReader(body),
+		"POST", post._Request_URL(), bytes.NewReader(body),
 	)
 	if err != nil {
 		return nil, err
 	}
-	if head := post.Request_Header(); head != nil {
+	if head := post._Request_Header(); head != nil {
 		req.Header = head
 	}
 	res, err := http.DefaultClient.Do(req)
@@ -47,7 +47,7 @@ func (m Module) _Post(post Poster) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		return post.Response_Body(b)
+		return post._Response_Body(b)
 	}()
 	if err != nil {
 		return nil, err
@@ -55,41 +55,41 @@ func (m Module) _Post(post Poster) ([]byte, error) {
 	return m.signed_response(body)
 }
 
-type Container struct {
+type _Container struct {
 	// optional bytes id = 1;
 	_ID []byte
 	// optional bytes iv = 2;
 	_IV []byte
 	// optional bytes key = 3;
-	Key []byte
+	_Key []byte
 	// optional KeyType type = 4;
-	Type uint64
+	_Type uint64
 	// optional string track_label = 12;
-	Label string
+	_Label string
 }
 
-type Module struct {
+type _Module struct {
 	key_ID          []byte
 	license_request []byte
 	private_key     *rsa.PrivateKey
 }
 
-func (c Container) String() string {
+func (c _Container) _String() string {
 	var b []byte
 	b = fmt.Appendf(b, "ID: %x", c._ID)
-	b = fmt.Appendf(b, "\nkey: %x", c.Key)
-	if c.Label != "" {
+	b = fmt.Appendf(b, "\nkey: %x", c._Key)
+	if c._Label != "" {
 		b = append(b, "\nlabel: "...)
-		b = append(b, c.Label...)
+		b = append(b, c._Label...)
 	}
 	return string(b)
 }
 
-type Containers []Container
+type _Containers []_Container
 
-func (c Containers) Content() *Container {
+func (c _Containers) _Content() *_Container {
 	for _, container := range c {
-		if container.Type == 2 {
+		if container._Type == 2 {
 			return &container
 		}
 	}
@@ -97,9 +97,9 @@ func (c Containers) Content() *Container {
 }
 
 // key_id or content_id could be used, so entire PSSH is needed
-func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
+func _New_Module(private_key, client_ID, pssh []byte) (*_Module, error) {
 	pssh = pssh[32:]
-	var mod Module
+	var mod _Module
 	// key_ID
 	{
 		m, err := protobuf.Consume(pssh) // WidevinePsshData
@@ -129,7 +129,7 @@ func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
 	return &mod, nil
 }
 
-func (m Module) signed_request() ([]byte, error) {
+func (m _Module) signed_request() ([]byte, error) {
 	hash := sha1.Sum(m.license_request)
 	signature, err := rsa.SignPSS(
 		no_operation{},
@@ -157,11 +157,11 @@ func unpad(buf []byte) []byte {
 	return buf
 }
 
-type Poster interface {
-	Request_URL() string
-	Request_Header() http.Header
-	Request_Body([]byte) ([]byte, error)
-	Response_Body([]byte) ([]byte, error)
+type _Poster interface {
+	_Request_URL() string
+	_Request_Header() http.Header
+	_Request_Body([]byte) ([]byte, error)
+	_Response_Body([]byte) ([]byte, error)
 }
 
 type no_operation struct{}
