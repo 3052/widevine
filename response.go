@@ -2,6 +2,7 @@ package widevine
 
 import (
    "154.pages.dev/encoding/protobuf"
+   "bytes"
    "crypto/aes"
    "crypto/cipher"
    "crypto/rsa"
@@ -10,7 +11,7 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (m Module) signed_response(response []byte) (Containers, error) {
+func (m Module) signed_response(response []byte) ([]byte, error) {
    signed_message, err := protobuf.Consume(response) // message SignedMessage
    if err != nil {
       return nil, err
@@ -46,21 +47,27 @@ func (m Module) signed_response(response []byte) (Containers, error) {
    if !ok {
       return nil, errors.New("license")
    }
-   var cons Containers
    for _, f := range license {
       if f.Number == 3 { // KeyContainer key
          if key, ok := f.Message(); ok {
-            var c Container
-            c.ID, _ = key.Bytes(1) // bytes id
-            c.IV, _ = key.Bytes(2) // bytes iv
-            c.Key, _ = key.Bytes(3) // bytes key
-            c.Type, _ = key.Varint(4) // KeyType type
-            c.Label, _ = key.String(12) // string track_label
-            cipher.NewCBCDecrypter(block, c.IV).CryptBlocks(c.Key, c.Key)
-            c.Key = unpad(c.Key)
-            cons = append(cons, c)
+            id, ok := key.Bytes(1) // bytes id
+            if !ok {
+               return nil, errors.New("ID")
+            }
+            iv, ok := key.Bytes(2) // bytes iv
+            if !ok {
+               return nil, errors.New("IV")
+            }
+            key, ok := key.Bytes(3) // bytes key
+            if !ok {
+               return nil, errors.New("key")
+            }
+            cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
+            if bytes.Equal(id, m.key_ID) {
+               return unpad(key), nil
+            }
          }
       }
    }
-   return cons, nil
+   return nil, errors.New("key ID not found")
 }
