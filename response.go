@@ -64,6 +64,7 @@ func (m _Module) signed_response(response []byte) ([]byte, error) {
             }
             cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
             if bytes.Equal(id, m.key_ID) {
+               // return session_key, IV, key
                return unpad(key), nil
             }
          }

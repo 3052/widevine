@@ -10,6 +10,10 @@ import (
    "testing"
 )
 
+func (test_post) _Request_URL() string {
+   return "https://integration.widevine.com/_/license_response"
+}
+
 func (t test_post) _Response_Body(s []byte) ([]byte, error) {
    _, s, _ = bytes.Cut(s, []byte{'\n'})
    var v struct {
@@ -24,10 +28,6 @@ func (t test_post) _Response_Body(s []byte) ([]byte, error) {
       return nil, err
    }
    return v.Client_ID.Token.Public_Key, nil
-}
-
-func (test_post) _Request_URL() string {
-   return "https://integration.widevine.com/_/license_response"
 }
 
 func (t test_post) _Request_Body(src []byte) ([]byte, error) {
