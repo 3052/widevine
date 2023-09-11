@@ -13,7 +13,7 @@ import (
 	"net/http"
 )
 
-func (m Module) _Post(post _Poster) ([]byte, error) {
+func (m Module) Post(post _Poster) ([]byte, error) {
 	body, err := func() ([]byte, error) {
 		b, err := m.signed_request()
 		if err != nil {

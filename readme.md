@@ -24,6 +24,15 @@ level view of whats going on.
 
 <https://github.com/rlaphoenix/pywidevine/blob/master/pywidevine/license_protocol.proto>
 
+other interesting files:
+
+~~~
+WidevineModularDRMSecurityIntegrationGuideforCENC.pdf
+Widevine_DRM_Architecture_Overview.pdf
+~~~
+
+https://github.com/github/dmca/blob/master/2020/11/2020-11-09-Google.md
+
 ## Where to download L3 CDM?
 
 I cant host those here for legal reasons, but you should be able to download
