@@ -6,72 +6,61 @@ import (
    "crypto/cipher"
    "crypto/rsa"
    "crypto/sha1"
+   "errors"
    "github.com/chmike/cmac-go"
 )
 
 func (m Module) signed_response(response []byte) (Containers, error) {
-   // key
-   signed_response, err := protobuf.Consume(response)
+   signed_message, err := protobuf.Consume(response) // message SignedMessage
    if err != nil {
       return nil, err
    }
-   raw_key, err := signed_response.Bytes(4)
+   session_key, err := func() ([]byte, error) {
+      v, ok := signed_message.Bytes(4) // bytes session_key
+      if !ok {
+         return nil, errors.New("session_key")
+      }
+      return rsa.DecryptOAEP(sha1.New(), nil, m.private_key, v, nil)
+   }()
    if err != nil {
       return nil, err
    }
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, m.private_key, raw_key, nil,
-   )
+   block, err := func() (cipher.Block, error) {
+      var b []byte
+      b = append(b, 1)
+      b = append(b, "ENCRYPTION"...)
+      b = append(b, 0)
+      b = append(b, m.license_request...)
+      b = append(b, 0, 0, 0, 0x80)
+      h, err := cmac.New(aes.NewCipher, session_key)
+      if err != nil {
+         return nil, err
+      }
+      h.Write(b)
+      return aes.NewCipher(h.Sum(nil))
+   }()
    if err != nil {
       return nil, err
    }
-   // message
-   var enc_key []byte
-   enc_key = append(enc_key, 1)
-   enc_key = append(enc_key, "ENCRYPTION"...)
-   enc_key = append(enc_key, 0)
-   enc_key = append(enc_key, m.license_request...)
-   enc_key = append(enc_key, 0, 0, 0, 0x80)
-   // CMAC
-   key_CMAC, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   key_CMAC.Write(enc_key)
-   key_cipher, err := aes.NewCipher(key_CMAC.Sum(nil))
-   if err != nil {
-      return nil, err
-   }
-   msg, err := signed_response.Message(2)
-   if err != nil {
-      return nil, err
+   license, ok := signed_message.Message(2) // License
+   if !ok {
+      return nil, errors.New("license")
    }
    var cons Containers
-   msg.Messages(3, func(key protobuf.Message) {
-      var c Container
-      c.ID, err = key.Bytes(1)
-      if err != nil {
-         return
+   for _, f := range license {
+      if f.Number == 3 { // KeyContainer key
+         if key, ok := f.Message(); ok {
+            var c Container
+            c.ID, _ = key.Bytes(1) // bytes id
+            c.IV, _ = key.Bytes(2) // bytes iv
+            c.Key, _ = key.Bytes(3) // bytes key
+            c.Type, _ = key.Varint(4) // KeyType type
+            c.Label, _ = key.String(12) // string track_label
+            cipher.NewCBCDecrypter(block, c.IV).CryptBlocks(c.Key, c.Key)
+            c.Key = unpad(c.Key)
+            cons = append(cons, c)
+         }
       }
-      c.IV, err = key.Bytes(2)
-      if err != nil {
-         return
-      }
-      c.Key, err = key.Bytes(3)
-      if err != nil {
-         return
-      }
-      c.Type, err = key.Varint(4)
-      if err != nil {
-         return
-      }
-      c.Label, _ = key.String(12) // optional
-      cipher.NewCBCDecrypter(key_cipher, c.IV).CryptBlocks(c.Key, c.Key)
-      c.Key = unpad(c.Key)
-      cons = append(cons, c)
-   })
-   if err != nil {
-      return nil, err
    }
    return cons, nil
 }

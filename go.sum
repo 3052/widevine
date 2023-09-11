@@ -1,5 +1,5 @@
-154.pages.dev/encoding v1.12.1 h1:vs1KKH24NWBuJ+dI8BMlHmETVDmJ4N/uVL2ZZR809IY=
-154.pages.dev/encoding v1.12.1/go.mod h1:eb4VBnDAfkwQo2hQB9v52r0ZJv2SelK04SjKwG/lR/k=
+154.pages.dev/encoding v1.12.3 h1:U2jr3srYS5obJhpKA8gHaJNEAO7KquP7mb3yXhlpIl4=
+154.pages.dev/encoding v1.12.3/go.mod h1:eb4VBnDAfkwQo2hQB9v52r0ZJv2SelK04SjKwG/lR/k=
 github.com/chmike/cmac-go v1.1.0 h1:aF73ZAEx9N2WdQc93DOJ2fMsBDAGqUtuenjMJMb3kEI=
 github.com/chmike/cmac-go v1.1.0/go.mod h1:wcIN7NRqWSKGuORzd4dReBkoBDE9ZBqfyTVxyDxGeUw=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=

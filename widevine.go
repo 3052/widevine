@@ -14,47 +14,6 @@ import (
    "net/http"
 )
 
-type Module struct {
-   key_ID []byte
-   license_request []byte
-   private_key *rsa.PrivateKey
-}
-
-type Container struct {
-   // optional bytes id = 1;
-   ID []byte
-   // optional bytes iv = 2;
-   IV []byte
-   // optional bytes key = 3;
-   Key []byte
-   // optional KeyType type = 4;
-   Type uint64
-   // optional string track_label = 12;
-   Label string
-}
-
-func (c Container) String() string {
-   var b []byte
-   b = fmt.Appendf(b, "ID: %x", c.ID)
-   b = fmt.Appendf(b, "\nkey: %x", c.Key)
-   if c.Label != "" {
-      b = append(b, "\nlabel: "...)
-      b = append(b, c.Label...)
-   }
-   return string(b)
-}
-
-type Containers []Container
-
-func (c Containers) Content() *Container {
-   for _, container := range c {
-      if container.Type == 2 {
-         return &container
-      }
-   }
-   return nil
-}
-
 // key_id or content_id could be used, so entire PSSH is needed
 func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
    pssh = pssh[32:]
@@ -65,10 +24,7 @@ func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
       if err != nil {
          return nil, err
       }
-      mod.key_ID, err = m.Bytes(2) // key_ids
-      if err != nil {
-         return nil, err
-      }
+      mod.key_ID, _ = m.Bytes(2) // key_ids
    }
    // license_request
    {
@@ -172,3 +128,44 @@ func (m Module) Post(post Poster) (Containers, error) {
    }
    return m.signed_response(body)
 }
+type Container struct {
+   // optional bytes id = 1;
+   ID []byte
+   // optional bytes iv = 2;
+   IV []byte
+   // optional bytes key = 3;
+   Key []byte
+   // optional KeyType type = 4;
+   Type uint64
+   // optional string track_label = 12;
+   Label string
+}
+
+type Module struct {
+   key_ID []byte
+   license_request []byte
+   private_key *rsa.PrivateKey
+}
+
+func (c Container) String() string {
+   var b []byte
+   b = fmt.Appendf(b, "ID: %x", c.ID)
+   b = fmt.Appendf(b, "\nkey: %x", c.Key)
+   if c.Label != "" {
+      b = append(b, "\nlabel: "...)
+      b = append(b, c.Label...)
+   }
+   return string(b)
+}
+
+type Containers []Container
+
+func (c Containers) Content() *Container {
+   for _, container := range c {
+      if container.Type == 2 {
+         return &container
+      }
+   }
+   return nil
+}
+
