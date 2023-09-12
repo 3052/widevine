@@ -50,10 +50,7 @@ func (m Module) signed_response(response []byte) ([]byte, error) {
    for _, f := range license {
       if f.Number == 3 { // KeyContainer key
          if key, ok := f.Message(); ok {
-            id, ok := key.Bytes(1) // bytes id
-            if !ok {
-               return nil, errors.New("ID")
-            }
+            id, _ := key.Bytes(1) // optional bytes id
             iv, ok := key.Bytes(2) // bytes iv
             if !ok {
                return nil, errors.New("IV")
