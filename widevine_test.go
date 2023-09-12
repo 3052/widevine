@@ -46,11 +46,11 @@ func Test_Post(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mod, err := _New_Module(private_key, client_ID, pssh)
+	mod, err := New_Module(private_key, client_ID, pssh)
 	if err != nil {
 		t.Fatal(err)
 	}
-	key, err := mod.Post(roku{})
+	key, err := mod.Key(roku{})
 	if err != nil {
 		t.Fatal(err)
 	}
