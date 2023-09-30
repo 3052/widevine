@@ -12,12 +12,12 @@ import (
 )
 
 func (m Module) signed_response(response []byte) ([]byte, error) {
-   signed_message, err := protobuf.Consume(response) // message SignedMessage
+   mes, err := protobuf.Consume(response) // message SignedMessage
    if err != nil {
       return nil, err
    }
    session_key, err := func() ([]byte, error) {
-      v, ok := signed_message.Bytes(4) // bytes session_key
+      v, ok := mes.Bytes(4) // bytes session_key
       if !ok {
          return nil, errors.New("session_key")
       }
@@ -43,11 +43,11 @@ func (m Module) signed_response(response []byte) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   license, ok := signed_message.Message(2) // License
+   ok := mes.Message(2) // License
    if !ok {
-      return nil, errors.New("license")
+      return nil, errors.New("License")
    }
-   for _, f := range license {
+   for _, f := range mes {
       if f.Number == 3 { // KeyContainer key
          if key, ok := f.Message(); ok {
             id, _ := key.Bytes(1) // optional bytes id

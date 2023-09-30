@@ -3,7 +3,7 @@ module 154.pages.dev/widevine
 go 1.21.0
 
 require (
-	154.pages.dev/protobuf v1.0.0
+	154.pages.dev/protobuf v1.0.1
 	github.com/chmike/cmac-go v1.1.0
 )
 
