@@ -1,12 +1,34 @@
 package widevine
 
 import (
-   "encoding/base64"
    "fmt"
    "net/http"
    "os"
    "testing"
 )
+
+func (hulu) Request_Body(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+func (hulu) Response_Body(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+type hulu struct{}
+
+func (hulu) Request_Header() http.Header {
+   h := make(http.Header)
+   // is this needed?
+   h["User-Agent"] = []string{"Widevine CDM v1.0"}
+   return h
+}
+
+var post_pssh = []byte("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\b\x02\x12\"\n \n\x17\b\x80\n\x10\xd0\x05\"\x04H264*\x04HIGH2\x035.2\x12\x05FIRST\x1a\x0e\n\f\n\x05\n\x03AAC\x12\x03ONE\"\x1e\n\x17\n\bWIDEVINE\x12\aMODULAR\x1a\x02L3\x12\x03ONE*\f\n\x04DASH\x10\x01 \x01X\x032\x1b\n\x14\n\x04FMP4\x12\f\n\x04CENC\x12\x04CENC\x12\x03ONE@\x01P\xa6\x01")
+
+func (hulu) Request_URL() string {
+   return "https://hulu.playback.edge.bamgrid.com/widevine-hulu/v1/hulu/vod/obtain-license-legacy/196861183?deejay_device_id=166&nonce=252683275&signature=1699961759_2a1b1677b2f02befae6f92e883ced80ce092b21c"
+}
 
 func Test_Key(t *testing.T) {
    home, err := os.UserHomeDir()
@@ -21,38 +43,13 @@ func Test_Key(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   pssh, err := base64.StdEncoding.DecodeString(post_pssh)
+   mod, err := New_Module(private_key, client_ID, post_pssh)
    if err != nil {
       t.Fatal(err)
    }
-   mod, err := New_Module(private_key, client_ID, pssh)
-   if err != nil {
-      t.Fatal(err)
-   }
-   key, err := mod.Key(roku{})
+   key, err := mod.Key(hulu{})
    if err != nil {
       t.Fatal(err)
    }
    fmt.Printf("%x\n", key)
 }
-
-// therokuchannel.roku.com/watch/597a64a4a25c5bf6af4a8c7053049a6f
-const post_pssh = "AAAAQ3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAACMIARIQKDOa149zRSDaJObgVz05LhoKaW50ZXJ0cnVzdCIBKg=="
-
-func (roku) Request_URL() string {
-   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc1JBqB7yN6beKcKrPiuQx6GVItUyr0hi6UTjSOhGZ1XYznxtPUl_RbbEa4NbhkgveuSb8fQYpcwsCx4pWLInqLLdgLCQ40eZCMSGzu6O0KM9HrY2G-mfm3sHQLEUulP5Cd3a2TNFZdJV2Xv5_TnOIJpyU1jTuDs16uvOkRvsJ6luRagJR0y-J-EJmocwUH4WrRZ8lFrzMQ2u3-AGrN_vFtGgx390fhQp7tLH4ImInykc6MtASyTpO0XOD1BvIC6_aF5ghOux3OOTTj_XXadIDT74Fo6NbFZ8gXzwcSSNbT_830Kz4Sdqmpevk2lytcuF2E46N8_h6YvwoxYUDIASMwsuMtIk933LA==&traceId=ebbf34f819eec313fefc97112f6fcc6c&ExpressPlayToken=none"
-}
-
-func (roku) Request_Header() http.Header {
-   return nil
-}
-
-func (roku) Request_Body(b []byte) ([]byte, error) {
-   return b, nil
-}
-
-func (roku) Response_Body(b []byte) ([]byte, error) {
-   return b, nil
-}
-
-type roku struct{}

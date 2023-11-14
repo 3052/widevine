@@ -13,6 +13,79 @@ import (
    "net/http"
 )
 
+func (m Module) Key(post Poster) ([]byte, error) {
+   body, err := func() ([]byte, error) {
+      b, err := m.signed_request()
+      if err != nil {
+         return nil, err
+      }
+      return post.Request_Body(b)
+   }()
+   if err != nil {
+      return nil, err
+   }
+   req, err := http.NewRequest(
+      "POST", post.Request_URL(), bytes.NewReader(body),
+   )
+   if err != nil {
+      return nil, err
+   }
+   if head := post.Request_Header(); head != nil {
+      req.Header = head
+   }
+   res, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer res.Body.Close()
+   if res.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      res.Write(&b)
+      return nil, errors.New(b.String())
+   }
+   body, err = func() ([]byte, error) {
+      b, err := io.ReadAll(res.Body)
+      if err != nil {
+         return nil, err
+      }
+      return post.Response_Body(b)
+   }()
+   if err != nil {
+      return nil, err
+   }
+   return m.signed_response(body)
+}
+
+func (m Module) signed_request() ([]byte, error) {
+   hash := sha1.Sum(m.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      m.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   var signed_request protobuf.Message
+   signed_request.Add_Bytes(2, m.license_request)
+   signed_request.Add_Bytes(3, signature)
+   return signed_request.Append(nil), nil
+}
+
+type Poster interface {
+   Request_URL() string
+   Request_Header() http.Header
+   Request_Body([]byte) ([]byte, error)
+   Response_Body([]byte) ([]byte, error)
+}
+
+type no_operation struct{}
+
+func (no_operation) Read(buf []byte) (int, error) {
+   return len(buf), nil
+}
 func unpad(buf []byte) []byte {
    if len(buf) >= 1 {
       pad := buf[len(buf)-1]
@@ -60,76 +133,4 @@ func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
       return nil, err
    }
    return &mod, nil
-}
-
-func (m Module) Key(post Poster) ([]byte, error) {
-   body, err := func() ([]byte, error) {
-      b, err := m.signed_request()
-      if err != nil {
-         return nil, err
-      }
-      return post.Request_Body(b)
-   }()
-   if err != nil {
-      return nil, err
-   }
-   req, err := http.NewRequest(
-      "POST", post.Request_URL(), bytes.NewReader(body),
-   )
-   if err != nil {
-      return nil, err
-   }
-   if head := post.Request_Header(); head != nil {
-      req.Header = head
-   }
-   res, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
-      return nil, errors.New(res.Status)
-   }
-   body, err = func() ([]byte, error) {
-      b, err := io.ReadAll(res.Body)
-      if err != nil {
-         return nil, err
-      }
-      return post.Response_Body(b)
-   }()
-   if err != nil {
-      return nil, err
-   }
-   return m.signed_response(body)
-}
-
-func (m Module) signed_request() ([]byte, error) {
-   hash := sha1.Sum(m.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      m.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   var signed_request protobuf.Message
-   signed_request.Add_Bytes(2, m.license_request)
-   signed_request.Add_Bytes(3, signature)
-   return signed_request.Append(nil), nil
-}
-
-type Poster interface {
-   Request_URL() string
-   Request_Header() http.Header
-   Request_Body([]byte) ([]byte, error)
-   Response_Body([]byte) ([]byte, error)
-}
-
-type no_operation struct{}
-
-func (no_operation) Read(buf []byte) (int, error) {
-   return len(buf), nil
 }
