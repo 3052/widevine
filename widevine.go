@@ -13,6 +13,39 @@ import (
    "net/http"
 )
 
+// key_id or content_id could be used, so entire PSSH is needed
+func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
+   pssh = pssh[32:]
+   var mod Module
+   // key_ID
+   {
+      m, err := protobuf.Consume(pssh) // WidevinePsshData
+      if err != nil {
+         return nil, err
+      }
+      mod.key_ID, _ = m.Bytes(2) // key_ids
+   }
+   // license_request
+   {
+      var m protobuf.Message               // LicenseRequest
+      m.Add_Bytes(1, client_ID)            // client_id
+      m.Add(2, func(m *protobuf.Message) { // content_id
+         m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+            m.Add_Bytes(1, pssh) // pssh_data
+         })
+      })
+      mod.license_request = m.Append(nil)
+   }
+   // private_key
+   block, _ := pem.Decode(private_key)
+   var err error
+   mod.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return nil, err
+   }
+   return &mod, nil
+}
+
 func (m Module) Key(post Poster) ([]byte, error) {
    body, err := func() ([]byte, error) {
       b, err := m.signed_request()
@@ -100,37 +133,4 @@ type Module struct {
    key_ID          []byte
    license_request []byte
    private_key     *rsa.PrivateKey
-}
-
-// key_id or content_id could be used, so entire PSSH is needed
-func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
-   pssh = pssh[32:]
-   var mod Module
-   // key_ID
-   {
-      m, err := protobuf.Consume(pssh) // WidevinePsshData
-      if err != nil {
-         return nil, err
-      }
-      mod.key_ID, _ = m.Bytes(2) // key_ids
-   }
-   // license_request
-   {
-      var m protobuf.Message               // LicenseRequest
-      m.Add_Bytes(1, client_ID)            // client_id
-      m.Add(2, func(m *protobuf.Message) { // content_id
-         m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-            m.Add_Bytes(1, pssh) // pssh_data
-         })
-      })
-      mod.license_request = m.Append(nil)
-   }
-   // private_key
-   block, _ := pem.Decode(private_key)
-   var err error
-   mod.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return nil, err
-   }
-   return &mod, nil
 }
