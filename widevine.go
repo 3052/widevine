@@ -13,29 +13,16 @@ import (
    "net/http"
 )
 
-// key_id or content_id could be used, so entire PSSH is needed
-func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
-   pssh = pssh[32:]
+type Module struct {
+   key_ID          []byte
+   license_request []byte
+   private_key     *rsa.PrivateKey
+}
+
+// some sites use content_id, in which case you can provide PSSH instead of
+// key_ID
+func New_Module(private_key, client_ID, key_ID, pssh []byte) (*Module, error) {
    var mod Module
-   // key_ID
-   {
-      m, err := protobuf.Consume(pssh) // WidevinePsshData
-      if err != nil {
-         return nil, err
-      }
-      mod.key_ID, _ = m.Bytes(2) // key_ids
-   }
-   // license_request
-   {
-      var m protobuf.Message               // LicenseRequest
-      m.Add_Bytes(1, client_ID)            // client_id
-      m.Add(2, func(m *protobuf.Message) { // content_id
-         m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-            m.Add_Bytes(1, pssh) // pssh_data
-         })
-      })
-      mod.license_request = m.Append(nil)
-   }
    // private_key
    block, _ := pem.Decode(private_key)
    var err error
@@ -43,6 +30,41 @@ func New_Module(private_key, client_ID, pssh []byte) (*Module, error) {
    if err != nil {
       return nil, err
    }
+   // license_request
+   var req protobuf.Message // LicenseRequest
+   req.Add_Bytes(1, client_ID) // client_id
+   if len(pssh) >= 32 {
+      pssh = pssh[32:]
+      req.Add(2, func(m *protobuf.Message) { // content_id
+         m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+            m.Add_Bytes(1, pssh) // pssh_data
+         })
+      })
+      mod.key_ID, err = func() ([]byte, error) {
+         m, err := protobuf.Consume(pssh) // WidevinePsshData
+         if err != nil {
+            return nil, err
+         }
+         v, ok := m.Bytes(2)
+         if !ok {
+            return nil, errors.New("key_ids")
+         }
+         return v, nil
+      }()
+      if err != nil {
+         return nil, err
+      }
+   } else {
+      req.Add(2, func(m *protobuf.Message) { // content_id
+         m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+            m.Add(1, func(m *protobuf.Message) { // pssh_data
+               m.Add_Bytes(2, key_ID)
+            })
+         })
+      })
+      mod.key_ID = key_ID
+   }
+   mod.license_request = req.Append(nil)
    return &mod, nil
 }
 
@@ -127,10 +149,4 @@ func unpad(buf []byte) []byte {
       }
    }
    return buf
-}
-
-type Module struct {
-   key_ID          []byte
-   license_request []byte
-   private_key     *rsa.PrivateKey
 }
