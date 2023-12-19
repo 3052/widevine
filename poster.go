@@ -7,13 +7,6 @@ import (
    "net/http"
 )
 
-type Poster interface {
-   Request_URL() (string, error)
-   Request_Header() http.Header
-   Request_Body([]byte) ([]byte, error)
-   Response_Body([]byte) ([]byte, error)
-}
-
 func (m Module) Key(post Poster) ([]byte, error) {
    address, err := post.Request_URL()
    if err != nil {
@@ -57,4 +50,11 @@ func (m Module) Key(post Poster) ([]byte, error) {
       return nil, err
    }
    return m.signed_response(body)
+}
+
+type Poster interface {
+   Request_URL() (string, error)
+   Request_Header() http.Header
+   Request_Body([]byte) ([]byte, error)
+   Response_Body([]byte) ([]byte, error)
 }
