@@ -15,10 +15,6 @@ func (hulu) Request_Body(b []byte) ([]byte, error) {
    return b, nil
 }
 
-func (hulu) Request_Header() http.Header {
-   return nil
-}
-
 func (hulu) Response_Body(b []byte) ([]byte, error) {
    return b, nil
 }
@@ -31,14 +27,6 @@ func (roku) Request_Body(b []byte) ([]byte, error) {
 
 func (roku) Response_Body(b []byte) ([]byte, error) {
    return b, nil
-}
-
-func (roku) Request_Header() http.Header {
-   return nil
-}
-
-func (hulu) Request_URL() (string, error) {
-   return "https://hulu.playback.edge.bamgrid.com/widevine-hulu/v1/hulu/vod/obtain-license-legacy/196861183?deejay_device_id=166&nonce=252683275&signature=1701864514_f7e7ce0e7cefdaa486b3d768538e62f7a6df2fbd", nil
 }
 
 const hulu_KID = "21b82dc2ebb24d5aa9f8631f04726650"
@@ -71,10 +59,6 @@ func Test_Hulu(t *testing.T) {
    fmt.Printf("%x\n", key)
 }
 
-func (roku) Request_URL() (string, error) {
-   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0YCagoz4Kbd6db_aX6Qx6HBIlUkesl3aVFjHCnT5IEZmnxsvIl_UPYEq0KPx0p6rTObJ2ANZFv4Xx5pGLBzPaYcl3FFIwcZCMSLxubOEKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI1ZL8Sx8UQelPVazcd0hdp4tnCWnG&traceId=0aae4eb1ff9f9cf5946b878cf529d47a&ExpressPlayToken=none", nil
-}
-
 func Test_Roku(t *testing.T) {
    home, err := os.UserHomeDir()
    if err != nil {
@@ -101,4 +85,20 @@ func Test_Roku(t *testing.T) {
       t.Fatal(err)
    }
    fmt.Printf("%x\n", key)
+}
+
+func (hulu) Request_Header() (http.Header, bool) {
+   return nil, false
+}
+
+func (roku) Request_Header() (http.Header, bool) {
+   return nil, false
+}
+
+func (hulu) Request_URL() (string, bool) {
+   return "https://hulu.playback.edge.bamgrid.com/widevine-hulu/v1/hulu/vod/obtain-license-legacy/196861183?deejay_device_id=166&nonce=252683275&signature=1701864514_f7e7ce0e7cefdaa486b3d768538e62f7a6df2fbd", true
+}
+
+func (roku) Request_URL() (string, bool) {
+   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0YCagoz4Kbd6db_aX6Qx6HBIlUkesl3aVFjHCnT5IEZmnxsvIl_UPYEq0KPx0p6rTObJ2ANZFv4Xx5pGLBzPaYcl3FFIwcZCMSLxubOEKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI1ZL8Sx8UQelPVazcd0hdp4tnCWnG&traceId=0aae4eb1ff9f9cf5946b878cf529d47a&ExpressPlayToken=none", true
 }

@@ -7,10 +7,17 @@ import (
    "net/http"
 )
 
+type Poster interface {
+   Request_URL() (string, bool)
+   Request_Header() (http.Header, bool)
+   Request_Body([]byte) ([]byte, error)
+   Response_Body([]byte) ([]byte, error)
+}
+
 func (m Module) Key(post Poster) ([]byte, error) {
-   address, err := post.Request_URL()
-   if err != nil {
-      return nil, err
+   address, ok := post.Request_URL()
+   if !ok {
+      return nil, errors.New("Poster.Request_URL")
    }
    body, err := func() ([]byte, error) {
       b, err := m.signed_request()
@@ -26,7 +33,7 @@ func (m Module) Key(post Poster) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   if head := post.Request_Header(); head != nil {
+   if head, ok := post.Request_Header(); ok {
       req.Header = head
    }
    res, err := http.DefaultClient.Do(req)
@@ -50,11 +57,4 @@ func (m Module) Key(post Poster) ([]byte, error) {
       return nil, err
    }
    return m.signed_response(body)
-}
-
-type Poster interface {
-   Request_URL() (string, error)
-   Request_Header() http.Header
-   Request_Body([]byte) ([]byte, error)
-   Response_Body([]byte) ([]byte, error)
 }
