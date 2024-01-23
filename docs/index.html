@@ -9,20 +9,46 @@
     <link rel="icon" type="image/png" sizes="32x32" href="_/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="_/icons/favicon-16x16.png">
     <link rel="shortcut icon" href="_/icons/favicon.ico">
-    <title>154.pages.dev/widevine</title>
+    <title>widevine</title>
 </head>
   <body>
-    <main><h3 id="pkg-directories">Directories</h3>
-
-<table>
-  <tbody>
-    <tr>
-        <td><a href="v1.1.8">v1.1.8</a></td>
-        <td></td>
-      </tr>
-    </tbody>
-</table>
-</main>
+<nav>
+  154.pages.dev/widevine<span class="navbar-right">
+  v1.1.8 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
+  </nav>
+<main><h2 id="pkg-overview">package widevine</h2>
+<pre class="chroma"><span class="kn">import</span> <span class="s">&#34;154.pages.dev/widevine&#34;</span></pre>
+<h3 id="pkg-index">Index</h3>
+<ul>
+  <li>
+      <a href="#Module">type Module</a>
+      <ul>
+          <li><a href="#New_Module">func New_Module(private_key, client_ID, key_ID, pssh []byte) (*Module, error)</a></li>
+          <li><a href="#Module.Key">func (m Module) Key(post Poster) ([]byte, error)</a></li>
+          </ul>
+      </li>
+  <li>
+      <a href="#Poster">type Poster</a>
+      </li>
+  </ul><h3 id="pkg-types">Types</h3>
+  <h3 id="Module">type Module</h3>
+    <pre class="chroma"><span class="kd">type</span> <span class="nx">Module</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// contains filtered or unexported fields
+</span><span class="c1"></span><span class="p">}</span></pre>
+    <h4 id="New_Module">func New_Module</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="nf">New_Module</span><span class="p">(</span><span class="nx">private_key</span><span class="p">,</span> <span class="nx">client_ID</span><span class="p">,</span> <span class="nx">key_ID</span><span class="p">,</span> <span class="nx">pssh</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">(</span><span class="o">*</span><a href="#Module"><span class="nx">Module</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+  <p>some sites use content_id, in which case you can provide PSSH instead of
+key_ID
+<h4 id="Module.Key">func (Module) Key</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <a href="#Module"><span class="nx">Module</span></a><span class="p">)</span> <span class="nf">Key</span><span class="p">(</span><span class="nx">post</span> <a href="#Poster"><span class="nx">Poster</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+  <h3 id="Poster">type Poster</h3>
+    <pre class="chroma"><span class="kd">type</span> <span class="nx">Poster</span> <span class="kd">interface</span> <span class="p">{</span>
+	<span id="Poster.Request_URL"><span class="nf">Request_URL</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
+	<span id="Poster.Request_Header"><span class="nf">Request_Header</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/net/http"><span class="nx">http</span></a><span class="p">.</span><a href="https://pkg.go.dev/net/http#Header"><span class="nx">Header</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
+	<span id="Poster.Request_Body"><span class="nf">Request_Body</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
+	<span id="Poster.Response_Body"><span class="nf">Response_Body</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
+<span class="p">}</span></pre>
+    </main>
     <hr>
     <footer>
       <small id="generated-by-footer">
