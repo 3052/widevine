@@ -26,7 +26,10 @@ func Test_Response(t *testing.T) {
          t.Fatal(err)
       }
       var module DecryptionModule
-      if err := module.New(private_key, client_ID, nil, pssh); err != nil {
+      if err := module.SetPrivateKey(private_key); err != nil {
+         t.Fatal(err)
+      }
+      if err := module.PSSH(client_ID, pssh); err != nil {
          t.Fatal(err)
       }
       signed, err := base64.StdEncoding.DecodeString(test.response)
@@ -57,4 +60,3 @@ var tests = []struct {
       response: "CAISpAEKGgoAEghBPi3uL18dhiABKAA4AEAASOrh758GEh4IARAAGAAgACgAMMnFCjgAQgBIAFAAWABgAHAAeAEaXgoQvfpNbNs5cC5baB+QYX+afhIQUkaPkIyfx8bplsyEg21YKhogQYRNMicID9i4twGGFm/fdKEmJGUVQuNnBXXfUtmYXH4gAigBMggIABAqGAAgADoICAAQKhgAIAAg6uHvnwY4ABoga0R69yOAW/lmax2ng2W92p0JzaIz+GNvKhgucUFs0qsigAKU3+gmgfhY4c6YXXDpAi5lt192PUBfXUCJ6WX+zu3haUI1sY9VxA389iUQ470xm6SW5mF2vcFg7NUeCFEeq+Y15GgZnN9JuLWOq7GQIqsQioLpKvQMIwEamd/KP16KtL8UQD6cCU6/tFQipbiGYw4XSeSQjSeqScZjWhkwzu69V6gYWgCeL7BuLqE4BrfgyUVjuGt2CeChhAxOZC8n1McIxxpZ50ST7F1HdWlpjRj1WrlsMLzLH/FaBWo4zqtGQxyg92d28AlwpiLgVIt1pDNt8PgrvHsyjCKhL4Vh373wmSMuiwVbBcG8Rl2x29ek2ot9UP9iZjSnNuC6BSsO9d6FOggKBjE3LjAuMUABWAA=",
    },
 }
-
