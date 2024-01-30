@@ -9,34 +9,6 @@ import (
    "testing"
 )
 
-func Test_Hulu(t *testing.T) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      t.Fatal(err)
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      t.Fatal(err)
-   }
-   client_ID, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      t.Fatal(err)
-   }
-   kid, err := hex.DecodeString(hulu_KID)
-   if err != nil {
-      t.Fatal(err)
-   }
-   mod, err := New_Module(private_key, client_ID, kid, nil)
-   if err != nil {
-      t.Fatal(err)
-   }
-   key, err := mod.Key(hulu{})
-   if err != nil {
-      t.Fatal(err)
-   }
-   fmt.Printf("%x\n", key)
-}
-
 func Test_Roku(t *testing.T) {
    home, err := os.UserHomeDir()
    if err != nil {
@@ -54,11 +26,11 @@ func Test_Roku(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   mod, err := New_Module(private_key, client_ID, nil, pssh)
-   if err != nil {
+   var module DecryptionModule
+   if err := module.New(private_key, client_ID, nil, pssh); err != nil {
       t.Fatal(err)
    }
-   key, err := mod.Key(roku{})
+   key, err := module.Key(roku{})
    if err != nil {
       t.Fatal(err)
    }
@@ -101,4 +73,32 @@ func (roku) Response_Body(b []byte) ([]byte, error) {
 }
 
 const hulu_KID = "21b82dc2ebb24d5aa9f8631f04726650"
+
+func Test_Hulu(t *testing.T) {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      t.Fatal(err)
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      t.Fatal(err)
+   }
+   client_ID, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      t.Fatal(err)
+   }
+   kid, err := hex.DecodeString(hulu_KID)
+   if err != nil {
+      t.Fatal(err)
+   }
+   var module DecryptionModule
+   if err := module.New(private_key, client_ID, kid, nil); err != nil {
+      t.Fatal(err)
+   }
+   key, err := module.Key(hulu{})
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
 

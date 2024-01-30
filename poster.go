@@ -19,8 +19,8 @@ func (d DecryptionModule) Key(post Poster) ([]byte, error) {
    if !ok {
       return nil, errors.New("Poster.Request_URL")
    }
-   body, err := func() ([]byte, error) {
-      b, err := d.signed_request()
+   signed, err := func() ([]byte, error) {
+      b, err := d.request_signed()
       if err != nil {
          return nil, err
       }
@@ -29,7 +29,7 @@ func (d DecryptionModule) Key(post Poster) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   req, err := http.NewRequest("POST", address, bytes.NewReader(body))
+   req, err := http.NewRequest("POST", address, bytes.NewReader(signed))
    if err != nil {
       return nil, err
    }
@@ -46,7 +46,7 @@ func (d DecryptionModule) Key(post Poster) ([]byte, error) {
       res.Write(&b)
       return nil, errors.New(b.String())
    }
-   body, err = func() ([]byte, error) {
+   signed, err = func() ([]byte, error) {
       b, err := io.ReadAll(res.Body)
       if err != nil {
          return nil, err
@@ -56,5 +56,6 @@ func (d DecryptionModule) Key(post Poster) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   return d.signed_response(body)
+   return d.response(signed)
 }
+
