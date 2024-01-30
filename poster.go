@@ -14,13 +14,13 @@ type Poster interface {
    Response_Body([]byte) ([]byte, error)
 }
 
-func (m Module) Key(post Poster) ([]byte, error) {
+func (d DecryptionModule) Key(post Poster) ([]byte, error) {
    address, ok := post.Request_URL()
    if !ok {
       return nil, errors.New("Poster.Request_URL")
    }
    body, err := func() ([]byte, error) {
-      b, err := m.signed_request()
+      b, err := d.signed_request()
       if err != nil {
          return nil, err
       }
@@ -56,5 +56,5 @@ func (m Module) Key(post Poster) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   return m.signed_response(body)
+   return d.signed_response(body)
 }
