@@ -7,13 +7,6 @@ import (
    "net/http"
 )
 
-type Poster interface {
-   Request_URL() (string, bool)
-   Request_Header() (http.Header, bool)
-   Request_Body([]byte) ([]byte, error)
-   Response_Body([]byte) ([]byte, error)
-}
-
 func (d DecryptionModule) Key(post Poster) ([]byte, error) {
    address, ok := post.Request_URL()
    if !ok {
@@ -59,3 +52,9 @@ func (d DecryptionModule) Key(post Poster) ([]byte, error) {
    return d.response(signed)
 }
 
+type Poster interface {
+   Request_URL() (string, bool)
+   Request_Header() (http.Header, bool)
+   Request_Body([]byte) ([]byte, error)
+   Response_Body([]byte) ([]byte, error)
+}

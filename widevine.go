@@ -14,6 +14,77 @@ import (
    "github.com/chmike/cmac-go"
 )
 
+func unpad(buf []byte) []byte {
+   if len(buf) >= 1 {
+      pad := buf[len(buf)-1]
+      if len(buf) >= int(pad) {
+         buf = buf[:len(buf)-int(pad)]
+      }
+   }
+   return buf
+}
+
+// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
+type DecryptionModule struct {
+   key_id          []byte
+   license_request []byte
+   private_key     *rsa.PrivateKey
+}
+
+func (d *DecryptionModule) Key_ID(private_key, client_id, key_id []byte) error {
+   // license_request
+   var request protobuf.Message // LicenseRequest
+   request.AddBytes(1, client_id) // client_id
+   request.AddFunc(2, func(m *protobuf.Message) { // content_id
+      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
+            m.AddBytes(2, key_id)
+         })
+      })
+   })
+   d.license_request = request.Encode()
+   // key_id
+   d.key_id = key_id
+   // private_key
+   return d.set_private_key(private_key)
+}
+
+// some sites use content_id, in which case you need PSSH
+func (d *DecryptionModule) PSSH(private_key, client_id, pssh []byte) error {
+   if len(pssh) <= 31 {
+      return errors.New("PSSH")
+   }
+   pssh = pssh[32:]
+   // license_request 
+   var request protobuf.Message // LicenseRequest
+   request.AddBytes(1, client_id) // client_id
+   request.AddFunc(2, func(m *protobuf.Message) { // content_id
+      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddBytes(1, pssh) // pssh_data
+      })
+   })
+   d.license_request = request.Encode()
+   // key_id
+   var err error
+   d.key_id, err = func() ([]byte, error) {
+      var m protobuf.Message
+      err := m.Consume(pssh) // WidevinePsshData
+      if err != nil {
+         return nil, err
+      }
+      v, ok := m.GetBytes(2)
+      if !ok {
+         return nil, errors.New("key_ids")
+      }
+      return v, nil
+   }()
+   if err != nil {
+      return err
+   }
+   // private_key
+   return d.set_private_key(private_key)
+}
+
 func (d DecryptionModule) request_signed() ([]byte, error) {
    hash := sha1.Sum(d.license_request)
    signature, err := rsa.SignPSS(
@@ -30,22 +101,6 @@ func (d DecryptionModule) request_signed() ([]byte, error) {
    signed.AddBytes(2, d.license_request)
    signed.AddBytes(3, signature)
    return signed.Encode(), nil
-}
-
-type no_operation struct{}
-
-func (no_operation) Read(buf []byte) (int, error) {
-   return len(buf), nil
-}
-
-func unpad(buf []byte) []byte {
-   if len(buf) >= 1 {
-      pad := buf[len(buf)-1]
-      if len(buf) >= int(pad) {
-         buf = buf[:len(buf)-int(pad)]
-      }
-   }
-   return buf
 }
 
 func (d DecryptionModule) response(signed []byte) ([]byte, error) {
@@ -107,14 +162,6 @@ func (d DecryptionModule) response(signed []byte) ([]byte, error) {
    return nil, errors.New("KeyContainer")
 }
 
-
-// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type DecryptionModule struct {
-   key_id          []byte
-   license_request []byte
-   private_key     *rsa.PrivateKey
-}
-
 func (d *DecryptionModule) set_private_key(key []byte) error {
    block, _ := pem.Decode(key)
    var err error
@@ -125,56 +172,8 @@ func (d *DecryptionModule) set_private_key(key []byte) error {
    return nil
 }
 
-// some sites use content_id, in which case you need PSSH
-func (d *DecryptionModule) PSSH(private_key, client_id, pssh []byte) error {
-   if len(pssh) <= 31 {
-      return errors.New("PSSH")
-   }
-   pssh = pssh[32:]
-   // license_request 
-   var request protobuf.Message // LicenseRequest
-   request.AddBytes(1, client_id) // client_id
-   request.AddFunc(2, func(m *protobuf.Message) { // content_id
-      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, pssh) // pssh_data
-      })
-   })
-   d.license_request = request.Encode()
-   // key_id
-   var err error
-   d.key_id, err = func() ([]byte, error) {
-      var m protobuf.Message
-      err := m.Consume(pssh) // WidevinePsshData
-      if err != nil {
-         return nil, err
-      }
-      v, ok := m.GetBytes(2)
-      if !ok {
-         return nil, errors.New("key_ids")
-      }
-      return v, nil
-   }()
-   if err != nil {
-      return err
-   }
-   // private_key
-   return d.set_private_key(private_key)
-}
+type no_operation struct{}
 
-func (d *DecryptionModule) Key_ID(private_key, client_id, key_id []byte) error {
-   // license_request
-   var request protobuf.Message // LicenseRequest
-   request.AddBytes(1, client_id) // client_id
-   request.AddFunc(2, func(m *protobuf.Message) { // content_id
-      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
-            m.AddBytes(2, key_id)
-         })
-      })
-   })
-   d.license_request = request.Encode()
-   // key_id
-   d.key_id = key_id
-   // private_key
-   return d.set_private_key(private_key)
+func (no_operation) Read(buf []byte) (int, error) {
+   return len(buf), nil
 }
