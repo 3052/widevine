@@ -105,5 +105,5 @@ func (hulu) Request_URL() (string, bool) {
 const hulu_key_id = "21b82dc2ebb24d5aa9f8631f04726650"
 
 func (roku) Request_URL() (string, bool) {
-   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc1OC60pyoOcJKdcqPijQx6HVItUye512qUS1nOhHs4FZ2ikuPAl_UffRq4PYkh-uuDOb5CHZ5Ni5nh_rDPOnvbPJAGQFo0ZZCMSAyu-PkKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI-cLaTR8efMmryKVF_CEZMt9E8PFk&traceId=4f5f187f629e4d47432d0f71fbde166d&ExpressPlayToken=none", true
+   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc1JXP0qydLJJacGpPijQx6PVdZUkOkkjKUQ1yX1G8xUNzSjsaQl_ReBS_0HPEks7baTOcLbZJBltyl4qDSYnvHOIVWXGY4ZZCMSIX2lPkKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI24jRTR_DWo8tccy24xBXSLNdEgnN&traceId=d8859f64add3f8743bcc4aa1aca1695d&ExpressPlayToken=none", true
 }

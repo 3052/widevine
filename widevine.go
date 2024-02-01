@@ -14,41 +14,6 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func unpad(buf []byte) []byte {
-   if len(buf) >= 1 {
-      pad := buf[len(buf)-1]
-      if len(buf) >= int(pad) {
-         buf = buf[:len(buf)-int(pad)]
-      }
-   }
-   return buf
-}
-
-// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type DecryptionModule struct {
-   key_id          []byte
-   license_request []byte
-   private_key     *rsa.PrivateKey
-}
-
-func (d DecryptionModule) request_signed() ([]byte, error) {
-   hash := sha1.Sum(d.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      d.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   var signed protobuf.Message // SignedMessage
-   signed.AddBytes(2, d.license_request)
-   signed.AddBytes(3, signature)
-   return signed.Encode(), nil
-}
-
 func (d DecryptionModule) response(signed []byte) ([]byte, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(signed)
@@ -87,21 +52,19 @@ func (d DecryptionModule) response(signed []byte) ([]byte, error) {
       return nil, errors.New("License")
    }
    for _, field := range license {
-      if field.Number == 3 { // KeyContainer key
-         if key, ok := field.Get(); ok {
-            id, _ := key.GetBytes(1) // optional bytes id
-            if bytes.Equal(id, d.key_id) {
-               iv, ok := key.GetBytes(2) // bytes iv
-               if !ok {
-                  return nil, errors.New("IV")
-               }
-               key, ok := key.GetBytes(3) // bytes key
-               if !ok {
-                  return nil, errors.New("key")
-               }
-               cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
-               return unpad(key), nil
+      if key, ok := field.Get(3); ok { // KeyContainer key
+         id, _ := key.GetBytes(1) // optional bytes id
+         if bytes.Equal(id, d.key_id) {
+            iv, ok := key.GetBytes(2) // bytes iv
+            if !ok {
+               return nil, errors.New("IV")
             }
+            key, ok := key.GetBytes(3) // bytes key
+            if !ok {
+               return nil, errors.New("key")
+            }
+            cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
+            return unpad(key), nil
          }
       }
    }
@@ -167,4 +130,38 @@ func (d *DecryptionModule) PSSH(client_id, pssh []byte) error {
       return errors.New("key_ids")
    }
    return nil
+}
+func unpad(buf []byte) []byte {
+   if len(buf) >= 1 {
+      pad := buf[len(buf)-1]
+      if len(buf) >= int(pad) {
+         buf = buf[:len(buf)-int(pad)]
+      }
+   }
+   return buf
+}
+
+// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
+type DecryptionModule struct {
+   key_id          []byte
+   license_request []byte
+   private_key     *rsa.PrivateKey
+}
+
+func (d DecryptionModule) request_signed() ([]byte, error) {
+   hash := sha1.Sum(d.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      d.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   var signed protobuf.Message // SignedMessage
+   signed.AddBytes(2, d.license_request)
+   signed.AddBytes(3, signature)
+   return signed.Encode(), nil
 }
