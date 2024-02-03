@@ -87,22 +87,6 @@ func (d *DecryptionModule) SetPrivateKey(b []byte) error {
    return nil
 }
 
-func (d *DecryptionModule) Key_ID(client_id, key_id []byte) {
-   // key_id
-   d.key_id = key_id
-   // license_request
-   var request protobuf.Message // LicenseRequest
-   request.AddBytes(1, client_id) // client_id
-   request.AddFunc(2, func(m *protobuf.Message) { // content_id
-      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
-            m.AddBytes(2, key_id)
-         })
-      })
-   })
-   d.license_request = request.Encode()
-}
-
 // some sites use content_id, in which case you need PSSH
 func (d *DecryptionModule) PSSH(client_id, pssh []byte) error {
    if len(pssh) <= 31 {

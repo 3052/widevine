@@ -14,7 +14,7 @@
   <body>
     <nav>
         154.pages.dev/widevine<span class="navbar-right">
-          v1.2.1 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
+          v1.2.2 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
       </nav>
     <main><h2 id="pkg-overview">package widevine</h2>
 <pre class="chroma"><span class="kn">import</span> <span class="s">&#34;154.pages.dev/widevine&#34;</span></pre>
@@ -24,7 +24,6 @@
       <a href="#DecryptionModule">type DecryptionModule</a>
       <ul>
           <li><a href="#DecryptionModule.Key">func (d DecryptionModule) Key(post Poster) ([]byte, error)</a></li>
-          <li><a href="#DecryptionModule.Key_ID">func (d *DecryptionModule) Key_ID(client_id, key_id []byte)</a></li>
           <li><a href="#DecryptionModule.PSSH">func (d *DecryptionModule) PSSH(client_id, pssh []byte) error</a></li>
           <li><a href="#DecryptionModule.SetPrivateKey">func (d *DecryptionModule) SetPrivateKey(b []byte) error</a></li>
           </ul>
@@ -40,8 +39,6 @@
     <p>wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
 <h4 id="DecryptionModule.Key">func (DecryptionModule) Key</h4>
   <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">d</span> <a href="#DecryptionModule"><span class="nx">DecryptionModule</span></a><span class="p">)</span> <span class="nf">Key</span><span class="p">(</span><span class="nx">post</span> <a href="#Poster"><span class="nx">Poster</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
-  <h4 id="DecryptionModule.Key_ID">func (*DecryptionModule) Key_ID</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">d</span> <span class="o">*</span><a href="#DecryptionModule"><span class="nx">DecryptionModule</span></a><span class="p">)</span> <span class="nf">Key_ID</span><span class="p">(</span><span class="nx">client_id</span><span class="p">,</span> <span class="nx">key_id</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span></pre>
   <h4 id="DecryptionModule.PSSH">func (*DecryptionModule) PSSH</h4>
   <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">d</span> <span class="o">*</span><a href="#DecryptionModule"><span class="nx">DecryptionModule</span></a><span class="p">)</span> <span class="nf">PSSH</span><span class="p">(</span><span class="nx">client_id</span><span class="p">,</span> <span class="nx">pssh</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
   <p>some sites use content_id, in which case you need PSSH
