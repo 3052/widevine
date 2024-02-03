@@ -7,13 +7,13 @@ import (
    "net/http"
 )
 
-func (d DecryptionModule) Key(post Poster) ([]byte, error) {
+func (c CDM) Key(post Poster) ([]byte, error) {
    address, ok := post.Request_URL()
    if !ok {
       return nil, errors.New("Poster.Request_URL")
    }
    signed, err := func() ([]byte, error) {
-      b, err := d.request_signed()
+      b, err := c.request_signed()
       if err != nil {
          return nil, err
       }
@@ -49,7 +49,7 @@ func (d DecryptionModule) Key(post Poster) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   return d.response(signed)
+   return c.response(signed)
 }
 
 type Poster interface {
