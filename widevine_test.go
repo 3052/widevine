@@ -16,7 +16,7 @@ func Test_Response(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   client_ID, err := os.ReadFile(home + "/widevine/client_id.bin")
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
    if err != nil {
       t.Fatal(err)
    }
@@ -26,10 +26,7 @@ func Test_Response(t *testing.T) {
          t.Fatal(err)
       }
       var module DecryptionModule
-      if err := module.SetPrivateKey(private_key); err != nil {
-         t.Fatal(err)
-      }
-      if err := module.PSSH(client_ID, pssh); err != nil {
+      if err := module.New(private_key, client_id, pssh); err != nil {
          t.Fatal(err)
       }
       signed, err := base64.StdEncoding.DecodeString(test.response)
