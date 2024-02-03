@@ -14,13 +14,6 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type CDM struct {
-   key_id          []byte
-   license_request []byte
-   private_key     *rsa.PrivateKey
-}
-
 func (c CDM) response(signed []byte) ([]byte, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(signed)
@@ -76,6 +69,13 @@ func (c CDM) response(signed []byte) ([]byte, error) {
       }
    }
    return nil, errors.New("KeyContainer")
+}
+
+// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
+type CDM struct {
+   key_id          []byte
+   license_request []byte
+   private_key     *rsa.PrivateKey
 }
 
 type no_operation struct{}
