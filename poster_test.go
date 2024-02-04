@@ -8,6 +8,24 @@ import (
    "testing"
 )
 
+func (roku) Request_URL() (string, bool) {
+   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc1LWqkvntCYIqcO-fiqQx7VVt1Ukewk36UWgiT0T8tTY2jxsKAl_RKOQPlfbE0ourfEPpWGYpAwsH0qrmGdyvWUeVzARN9KZCMSD0DUPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI9avATR8m2oNk3tm5aXtW1GWjh5kS&traceId=a731a6206e341e14fe7124dee998add7&ExpressPlayToken=none", true
+}
+
+func (roku) Request_Header() (http.Header, bool) {
+   return nil, false
+}
+
+type roku struct{}
+
+func (roku) Request_Body(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+func (roku) Response_Body(b []byte) ([]byte, error) {
+   return b, nil
+}
+
 func Test_Roku(t *testing.T) {
    home, err := os.UserHomeDir()
    if err != nil {
@@ -26,7 +44,10 @@ func Test_Roku(t *testing.T) {
       t.Fatal(err)
    }
    var module CDM
-   if err := module.New(private_key, client_id, pssh); err != nil {
+   if err := module.New(private_key); err != nil {
+      t.Fatal(err)
+   }
+   if err := module.PSSH(client_id, pssh); err != nil {
       t.Fatal(err)
    }
    key, err := module.Key(roku{})
@@ -34,22 +55,4 @@ func Test_Roku(t *testing.T) {
       t.Fatal(err)
    }
    fmt.Printf("%x\n", key)
-}
-
-func (roku) Request_Header() (http.Header, bool) {
-   return nil, false
-}
-
-type roku struct{}
-
-func (roku) Request_Body(b []byte) ([]byte, error) {
-   return b, nil
-}
-
-func (roku) Response_Body(b []byte) ([]byte, error) {
-   return b, nil
-}
-
-func (roku) Request_URL() (string, bool) {
-   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0cDfgumdXKcqcMrvOvQx6CVdZUyuggi6UUg3CgGcxXZjmjufQl_UfdFaoLYkos6eWWa5HUZpVls3J--WyclvOaeFHFQ9kfZCMSOFfTPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMIwtbHTR_i_2GIrUmU1emdMEV6F74R&traceId=4dfb5854e7aa57513f8ee9e9c785dcbb&ExpressPlayToken=none", true
 }

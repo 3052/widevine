@@ -53,8 +53,13 @@ func (c CDM) response(signed []byte) ([]byte, error) {
    }
    for _, field := range license {
       if key, ok := field.Get(3); ok { // KeyContainer key
-         id, _ := key.GetBytes(1) // optional bytes id
-         if bytes.Equal(id, c.key_id) {
+         id := func() bool {
+            if v, ok := key.GetBytes(1); ok { // optional bytes id
+               return bytes.Equal(v, c.key_id)
+            }
+            return true
+         }
+         if id() {
             iv, ok := key.GetBytes(2) // bytes iv
             if !ok {
                return nil, errors.New("IV")
@@ -71,51 +76,42 @@ func (c CDM) response(signed []byte) ([]byte, error) {
    return nil, errors.New("KeyContainer")
 }
 
-// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type CDM struct {
-   key_id          []byte
-   license_request []byte
-   private_key     *rsa.PrivateKey
-}
-
 type no_operation struct{}
 
 func (no_operation) Read(buf []byte) (int, error) {
    return len(buf), nil
 }
 
-func unpad(buf []byte) []byte {
-   if len(buf) >= 1 {
-      pad := buf[len(buf)-1]
-      if len(buf) >= int(pad) {
-         buf = buf[:len(buf)-int(pad)]
-      }
+func (c *CDM) New(private_key []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return err
    }
-   return buf
+   return nil
 }
 
-func (c CDM) request_signed() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   var signed protobuf.Message // SignedMessage
-   signed.AddBytes(2, c.license_request)
-   signed.AddBytes(3, signature)
-   return signed.Encode(), nil
+func (c *CDM) Key_ID(client_id, key_id []byte) {
+   // key_id
+   c.key_id = key_id
+   // license_request
+   var request protobuf.Message // LicenseRequest
+   request.AddBytes(1, client_id) // client_id
+   request.AddFunc(2, func(m *protobuf.Message) { // content_id
+      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
+            m.AddBytes(2, key_id)
+         })
+      })
+   })
+   c.license_request = request.Encode()
 }
 
 // some sites use content_id, in which case you need PSSH
-func (c *CDM) New(private_key, client_id, pssh []byte) error {
+func (c *CDM) PSSH(client_id, pssh []byte) error {
    if len(pssh) <= 31 {
-      return errors.New("PSSH")
+      return errors.New("CDM.PSSH")
    }
    pssh = pssh[32:]
    // key_id
@@ -138,11 +134,41 @@ func (c *CDM) New(private_key, client_id, pssh []byte) error {
       })
    })
    c.license_request = request.Encode()
-   // private_key
-   block, _ := pem.Decode(private_key)
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return err
-   }
    return nil
 }
+
+func unpad(buf []byte) []byte {
+   if len(buf) >= 1 {
+      pad := buf[len(buf)-1]
+      if len(buf) >= int(pad) {
+         buf = buf[:len(buf)-int(pad)]
+      }
+   }
+   return buf
+}
+
+// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
+type CDM struct {
+   key_id          []byte
+   license_request []byte
+   private_key     *rsa.PrivateKey
+}
+
+func (c CDM) request_signed() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   var signed protobuf.Message // SignedMessage
+   signed.AddBytes(2, c.license_request)
+   signed.AddBytes(3, signature)
+   return signed.Encode(), nil
+}
+

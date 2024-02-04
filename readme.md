@@ -1,8 +1,7 @@
 # Widevine
 
-> Theatricality and deception, powerful agents to the uninitiated.
->
-> But we are initiated, aren’t we, Bruce?
+> Theatricality and deception, powerful agents to the uninitiated. But we are
+> initiated, aren’t we, Bruce?
 >
 > The Dark Knight Rises (2012)
 
