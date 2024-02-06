@@ -13,6 +13,41 @@ import (
    "net/http"
 )
 
+// some sites use content_id, in which case you need PSSH
+func (c *CDM) PSSH(client_id, pssh []byte) error {
+   // unsigned int(32) size;
+   // unsigned int(32) type = boxtype;
+   // unsigned int(8) version = v;
+   // bit(24) flags = f;
+   // unsigned int(8)[16] SystemID;
+   // unsigned int(32) DataSize;
+   if len(pssh) <= 31 {
+      return errors.New("CDM.PSSH")
+   }
+   pssh = pssh[32:]
+   // key_id
+   var pssh_data protobuf.Message // WidevinePsshData
+   err := pssh_data.Consume(pssh)
+   if err != nil {
+      return err
+   }
+   var ok bool
+   c.key_id, ok = pssh_data.GetBytes(2)
+   if !ok {
+      return errors.New("key_ids")
+   }
+   // license_request 
+   var request protobuf.Message // LicenseRequest
+   request.AddBytes(1, client_id) // client_id
+   request.AddFunc(2, func(m *protobuf.Message) { // content_id
+      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddBytes(1, pssh) // pssh_data
+      })
+   })
+   c.license_request = request.Encode()
+   return nil
+}
+
 func (c CDM) Key(post Poster) ([]byte, error) {
    address, ok := post.Request_URL()
    if !ok {
@@ -97,35 +132,6 @@ func (c *CDM) Key_ID(client_id, key_id []byte) {
    c.license_request = request.Encode()
 }
 
-// some sites use content_id, in which case you need PSSH
-func (c *CDM) PSSH(client_id, pssh []byte) error {
-   if len(pssh) <= 31 {
-      return errors.New("CDM.PSSH")
-   }
-   pssh = pssh[32:]
-   // key_id
-   var pssh_data protobuf.Message // WidevinePsshData
-   err := pssh_data.Consume(pssh)
-   if err != nil {
-      return err
-   }
-   var ok bool
-   c.key_id, ok = pssh_data.GetBytes(2)
-   if !ok {
-      return errors.New("key_ids")
-   }
-   // license_request 
-   var request protobuf.Message // LicenseRequest
-   request.AddBytes(1, client_id) // client_id
-   request.AddFunc(2, func(m *protobuf.Message) { // content_id
-      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, pssh) // pssh_data
-      })
-   })
-   c.license_request = request.Encode()
-   return nil
-}
-
 func unpad(buf []byte) []byte {
    if len(buf) >= 1 {
       pad := buf[len(buf)-1]
@@ -160,4 +166,3 @@ func (c CDM) request_signed() ([]byte, error) {
    signed.AddBytes(3, signature)
    return signed.Encode(), nil
 }
-
