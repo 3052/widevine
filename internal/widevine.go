@@ -4,6 +4,7 @@ import (
    "154.pages.dev/protobuf"
    "bytes"
    "encoding/binary"
+   "encoding/hex"
    "net/http"
 )
 
@@ -60,20 +61,27 @@ import (
 //     unsigned int(8)[DataSize] Data;
 //  }
 type protectionSystem struct {
-   specificHeader struct {
+   SpecificHeader struct {
       Size uint32
-      Type uint32
+      Type Type
       Version uint8
       Flags [3]byte
-      SystemID [16]uint8
+      SystemID SystemID
       DataSize uint32
    }
-   data protobuf.Message
+   Data protobuf.Message
 }
 
-// optional bytes content_id = 4;
-func (p protectionSystem) content_id() ([]byte, bool) {
-   return p.data.GetBytes(4)
+type SystemID [16]uint8
+
+func (s SystemID) String() string {
+   return hex.EncodeToString(s[:])
+}
+
+type Type [4]byte
+
+func (t Type) String() string {
+   return string(t[:])
 }
 
 type poster interface {
@@ -85,22 +93,36 @@ type poster interface {
 
 func (p *protectionSystem) New(data []byte) error {
    buf := bytes.NewBuffer(data)
-   err := binary.Read(buf, binary.BigEndian, &p.specificHeader)
+   err := binary.Read(buf, binary.BigEndian, &p.SpecificHeader)
    if err != nil {
       return err
    }
-   return p.data.Consume(buf.Bytes())
+   return p.Data.Consume(buf.Bytes())
+}
+
+// optional bytes content_id = 4;
+func (p protectionSystem) content_id() ([]byte, bool) {
+   return p.Data.GetBytes(4)
+}
+
+type keyContainer struct {
+   id []byte
+   key []byte
 }
 
 // repeated bytes key_ids = 2;
 func (p protectionSystem) key_ids() [][]byte {
    var bs [][]byte
-   for _, field := range p.data {
+   for _, field := range p.Data {
       if b, ok := field.GetBytes(2); ok {
          bs = append(bs, b)
       }
    }
    return bs
+}
+
+func (protectionSystem) key([]keyContainer) ([]byte, bool) {
+   return nil, false
 }
 
 func (protectionSystem) cdm(private_key, client_id []byte) (*cdm, error) {
@@ -111,13 +133,4 @@ func (cdm) keyContainer(poster) ([]keyContainer, error) {
    return nil, nil
 }
 
-func (protectionSystem) key([]keyContainer) ([]byte, bool) {
-   return nil, false
-}
-
 type cdm struct{}
-
-type keyContainer struct {
-   id []byte
-   key []byte
-}
