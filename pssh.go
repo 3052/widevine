@@ -3,7 +3,9 @@ package widevine
 import (
    "154.pages.dev/protobuf"
    "bytes"
+   "crypto/x509"
    "encoding/binary"
+   "encoding/pem"
 )
 
 // ISO/IEC 14496-12
@@ -58,7 +60,7 @@ import (
 //     unsigned int(32) DataSize;
 //     unsigned int(8)[DataSize] Data;
 //  }
-type protectionSystem struct {
+type PSSH struct {
    SpecificHeader struct {
       Size uint32
       Type Type
@@ -67,31 +69,51 @@ type protectionSystem struct {
       SystemID SystemID
       DataSize uint32
    }
-   Data protobuf.Message
+   // all of the Widevine PSSH I have seen so far are single `key_id`, so we
+   // are going to implement that for now, because its not clear what the logic
+   // would be with multiple key_ids.
+   Key_ID []byte
+   content_id []byte
 }
 
-func (p *protectionSystem) New(data []byte) error {
+// some sites use content_id, in which case you need PSSH
+func (p *PSSH) New(data []byte) error {
    buf := bytes.NewBuffer(data)
    err := binary.Read(buf, binary.BigEndian, &p.SpecificHeader)
    if err != nil {
       return err
    }
-   return p.Data.Consume(buf.Bytes())
+   var pssh protobuf.Message
+   if err := pssh.Consume(buf.Bytes()); err != nil {
+      return err
+   }
+   // Cannot be used in conjunction with content_id
+   p.Key_ID, _ = pssh.GetBytes(2)
+   // Cannot be present in conjunction with key_id
+   p.content_id, _ = pssh.GetBytes(4)
+   return nil
 }
 
-// optional bytes content_id = 4;
-func (p protectionSystem) content_id() ([]byte, bool) {
-   return p.Data.GetBytes(4)
-}
-
-// all of the Widevine PSSH I have seen so far are single `key_id`, so we are
-// going to implement that for now, because its not clear what the logic would
-// be with multiple key_ids.
-func (p protectionSystem) key_id() ([]byte, bool) {
-   // repeated bytes key_ids = 2;
-   return p.Data.GetBytes(2)
-}
-
-func (protectionSystem) CDM(private_key, client_id []byte) (*CDM, error) {
-   return nil, nil
+func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
+   var module CDM
+   // license_request
+   var request protobuf.Message // LicenseRequest
+   request.AddBytes(1, client_id) // client_id
+   request.AddFunc(2, func(m *protobuf.Message) { // content_id
+      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
+            m.AddBytes(2, p.Key_ID)
+            m.AddBytes(4, p.content_id)
+         })
+      })
+   })
+   module.license_request = request.Encode()
+   // private_key
+   block, _ := pem.Decode(private_key)
+   var err error
+   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return nil, err
+   }
+   return &module, nil
 }
