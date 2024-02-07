@@ -110,6 +110,18 @@ type keyContainer struct {
    key []byte
 }
 
+func (protectionSystem) cdm(private_key, client_id []byte) (*cdm, error) {
+   return nil, nil
+}
+
+type cdm struct{}
+
+func (cdm) keyContainer(poster) ([]keyContainer, error) {
+   return nil, nil
+}
+
+//////////////////////////////////////
+
 // repeated bytes key_ids = 2;
 func (p protectionSystem) key_ids() [][]byte {
    var bs [][]byte
@@ -124,13 +136,3 @@ func (p protectionSystem) key_ids() [][]byte {
 func (protectionSystem) key([]keyContainer) ([]byte, bool) {
    return nil, false
 }
-
-func (protectionSystem) cdm(private_key, client_id []byte) (*cdm, error) {
-   return nil, nil
-}
-
-func (cdm) keyContainer(poster) ([]keyContainer, error) {
-   return nil, nil
-}
-
-type cdm struct{}

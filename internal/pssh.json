@@ -1,9 +1,0 @@
-{
-  "algorithm": "AESCTR",
-  "keyIds": [
-    "d41tdrKESTqmJnLHZiJ/nw=="
-  ],
-  "provider": "widevine_test",
-  "contentId": "MTIzNDU2Nzg=",
-  "policy": "default"
-}

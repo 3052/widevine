@@ -1,0 +1,7 @@
+{
+	"algorithm":"AESCTR",
+	"keyIds":["mtclYOIPSRevOgA4m9wEEg=="],
+	"provider":"widevine_test",
+	"contentId":"MTIzNDU2Nzg=",
+	"policy":"default"
+}
