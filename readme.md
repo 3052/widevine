@@ -1,25 +1,24 @@
-# Widevine
+# widevine
 
 > Theatricality and deception, powerful agents to the uninitiated. But we are
 > initiated, aren’t we, Bruce?
 >
 > The Dark Knight Rises (2012)
 
-First Widevine commit was May 21 2022:
+first Widevine commit was
+[May 21 2022](//github.com/gucio321/mech/commit/9d3dff51)
 
-https://github.com/gucio321/mech/commit/9d3dff51
+## what is a CDM?
 
-## What is a CDM?
-
-The way it works, is you need a key to decrypt the media. To get that key, you
-make a request to a license server, and they give you the key back. However the
+the way it works, is you need a key to decrypt the media. to get that key, you
+make a request to a license server, and they give you the key back. however the
 key returned from the license server, is **itself encrypted**, so before you can
-use the key, you have to decrypt it. Thats what the CDM is for. Without the
+use the key, you have to decrypt it. that's what the CDM is for. without the
 CDM, you cant decrypt the key, and you cant then use the decrypted key to
-decrypt some media. theres **a lot** more detail to it, but thats the high
+decrypt some media. there's **a lot** more detail to it, but thats the high
 level view of whats going on.
 
-## Where did proto file come from?
+## where did proto file come from?
 
 <https://github.com/rlaphoenix/pywidevine/blob/master/pywidevine/license_protocol.proto>
 
@@ -32,38 +31,42 @@ Widevine_DRM_Architecture_Overview.pdf
 
 https://github.com/github/dmca/blob/master/2020/11/2020-11-09-Google.md
 
-## Where to download L3 CDM?
+## PSSH
 
-I cant host those here for legal reasons, but you should be able to download
-them from here:
+https://integration.widevine.com/diagnostics
 
-<https://github.com/Jnzzi/4464_L3-CDM>
+## where to download L3 CDM?
 
-or search:
+I can't host those here for legal reasons, but you should be able to download
+them [from here](//github.com/Jnzzi/4464_L3-CDM) or
+[from search](//github.com/search?q=L3+CDM)
 
-https://github.com/search?q=L3+CDM
+## how to dump L3 CDM?
 
-## How to dump L3 CDM?
+install [Android Studio][1]. then create Android virtual device:
 
-Install [Android Studio][1]. Then create Android virtual device:
+<dl>
+   <dt>abi</dt>
+   <dd>x86</dd>
+   <dt>api level</dt>
+   <dd>24</dd>
+   <dt>target</dt>
+   <dd>Android 7.0 (Google APIs)</dd>
+</dl>
 
-API Level | ABI | Target
-----------|-----|--------------------------
-24        | x86 | Android 7.0 (Google APIs)
-
-Then download [Widevine Dumper][2]. Then install:
+then download [Widevine Dumper][2]. Then install:
 
 ~~~
 pip install -r requirements.txt
 ~~~
 
-Then download [Frida server][3], example file:
+then download [Frida server][3], example file:
 
 ~~~
 frida-server-15.1.17-android-x86.xz
 ~~~
 
-Then start Frida server:
+then start Frida server:
 
 ~~~
 adb root
@@ -72,21 +75,21 @@ adb shell chmod +x /data/frida-server
 adb shell /data/frida-server
 ~~~
 
-Then start Android Chrome and visit [Shaka Player][4]. Click the green play
-button. If you receive this prompt:
+then start Android Chrome and visit [Shaka Player][4]. click the green play
+button. if you receive this prompt:
 
 > bitmovin.com wants to play protected content. Your device’s identity will be
 > verified by Google.
 
-Click ALLOW. Then start dumper:
+click ALLOW. then start dumper:
 
 ~~~
 $env:PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION = 'python'
 python dump_keys.py
 ~~~
 
-Once you see "Hooks completed", go back to Chrome and click the green play
-button again. Result:
+once you see "Hooks completed", go back to Chrome and click the green play
+button again. result:
 
 ~~~
 2022-05-21 02:10:52 PM - Helpers.Scanner - 49 - INFO - Key pairs saved at

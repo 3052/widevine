@@ -4,8 +4,6 @@ import (
    "154.pages.dev/protobuf"
    "bytes"
    "encoding/binary"
-   "encoding/hex"
-   "net/http"
 )
 
 // ISO/IEC 14496-12
@@ -72,25 +70,6 @@ type protectionSystem struct {
    Data protobuf.Message
 }
 
-type SystemID [16]uint8
-
-func (s SystemID) String() string {
-   return hex.EncodeToString(s[:])
-}
-
-type Type [4]byte
-
-func (t Type) String() string {
-   return string(t[:])
-}
-
-type poster interface {
-   requestHeader() (http.Header, bool)
-   requestBody([]byte) ([]byte, error)
-   responseBody([]byte) ([]byte, error)
-   requestUrl() (string, bool)
-}
-
 func (p *protectionSystem) New(data []byte) error {
    buf := bytes.NewBuffer(data)
    err := binary.Read(buf, binary.BigEndian, &p.SpecificHeader)
@@ -105,34 +84,14 @@ func (p protectionSystem) content_id() ([]byte, bool) {
    return p.Data.GetBytes(4)
 }
 
-type keyContainer struct {
-   id []byte
-   key []byte
+// all of the Widevine PSSH I have seen so far are single `key_id`, so we are
+// going to implement that for now, because its not clear what the logic would
+// be with multiple key_ids.
+func (p protectionSystem) key_id() ([]byte, bool) {
+   // repeated bytes key_ids = 2;
+   return p.Data.GetBytes(2)
 }
 
-func (protectionSystem) cdm(private_key, client_id []byte) (*cdm, error) {
+func (protectionSystem) CDM(private_key, client_id []byte) (*CDM, error) {
    return nil, nil
-}
-
-type cdm struct{}
-
-func (cdm) keyContainer(poster) ([]keyContainer, error) {
-   return nil, nil
-}
-
-//////////////////////////////////////
-
-// repeated bytes key_ids = 2;
-func (p protectionSystem) key_ids() [][]byte {
-   var bs [][]byte
-   for _, field := range p.Data {
-      if b, ok := field.GetBytes(2); ok {
-         bs = append(bs, b)
-      }
-   }
-   return bs
-}
-
-func (protectionSystem) key([]keyContainer) ([]byte, bool) {
-   return nil, false
 }

@@ -3,7 +3,6 @@ package widevine
 import (
    "encoding/base64"
    "fmt"
-   "os"
    "testing"
 )
 
@@ -24,39 +23,17 @@ var tests = []struct {
    },
 }
 
-func Test_Response(t *testing.T) {
-   home, err := os.UserHomeDir()
+func TestProtectionSystem(t *testing.T) {
+   var protect protectionSystem
+   data, err := base64.StdEncoding.DecodeString(tests[0].pssh)
    if err != nil {
       t.Fatal(err)
    }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
+   if err := protect.New(data); err != nil {
       t.Fatal(err)
    }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      t.Fatal(err)
-   }
-   for _, test := range tests {
-      pssh, err := base64.StdEncoding.DecodeString(test.pssh)
-      if err != nil {
-         t.Fatal(err)
-      }
-      var module CDM
-      if err := module.New(private_key); err != nil {
-         t.Fatal(err)
-      }
-      if err := module.PSSH(client_id, pssh); err != nil {
-         t.Fatal(err)
-      }
-      signed, err := base64.StdEncoding.DecodeString(test.response)
-      if err != nil {
-         t.Fatal(err)
-      }
-      key, err := module.response(signed)
-      if err != nil {
-         t.Fatal(err)
-      }
-      fmt.Printf("%v\n%x\n\n", test.url, key)
-   }
+   key_id, ok := protect.key_id()
+   fmt.Printf("%q %v\n", key_id, ok)
+   content_id, ok := protect.content_id()
+   fmt.Printf("%q %v\n", content_id, ok)
 }
