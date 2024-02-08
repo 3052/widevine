@@ -15,6 +15,49 @@ import (
    "net/http"
 )
 
+func (c Cdm) Keys(p Poster) (License, error) {
+   address, ok := p.RequestUrl()
+   if !ok {
+      return nil, errors.New("Poster.RequestUrl")
+   }
+   signed, err := func() ([]byte, error) {
+      b, err := c.request_signed()
+      if err != nil {
+         return nil, err
+      }
+      return p.RequestBody(b)
+   }()
+   if err != nil {
+      return nil, err
+   }
+   req, err := http.NewRequest("POST", address, bytes.NewReader(signed))
+   if err != nil {
+      return nil, err
+   }
+   if head, ok := p.RequestHeader(); ok {
+      req.Header = head
+   }
+   res, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer res.Body.Close()
+   if res.StatusCode != http.StatusOK {
+      return nil, errors.New(res.Status)
+   }
+   signed, err = func() ([]byte, error) {
+      b, err := io.ReadAll(res.Body)
+      if err != nil {
+         return nil, err
+      }
+      return p.ResponseBody(b)
+   }()
+   if err != nil {
+      return nil, err
+   }
+   return c.response(signed)
+}
+
 func unpad(buf []byte) []byte {
    if len(buf) >= 1 {
       pad := buf[len(buf)-1]
@@ -25,9 +68,9 @@ func unpad(buf []byte) []byte {
    return buf
 }
 
-type SystemID [16]uint8
+type SystemId [16]uint8
 
-func (s SystemID) String() string {
+func (s SystemId) String() string {
    return hex.EncodeToString(s[:])
 }
 
@@ -38,10 +81,10 @@ func (t Type) String() string {
 }
 
 type Poster interface {
-   Request_URL() (string, bool)
-   Request_Header() (http.Header, bool)
-   Request_Body([]byte) ([]byte, error)
-   Response_Body([]byte) ([]byte, error)
+   RequestUrl() (string, bool)
+   RequestHeader() (http.Header, bool)
+   RequestBody([]byte) ([]byte, error)
+   ResponseBody([]byte) ([]byte, error)
 }
 
 type no_operation struct{}
@@ -50,7 +93,7 @@ func (no_operation) Read(buf []byte) (int, error) {
    return len(buf), nil
 }
 
-func (c CDM) request_signed() ([]byte, error) {
+func (c Cdm) request_signed() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
       no_operation{},
@@ -69,58 +112,13 @@ func (c CDM) request_signed() ([]byte, error) {
 }
 
 // wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type CDM struct {
+type Cdm struct {
    block cipher.Block
    license_request []byte
    private_key     *rsa.PrivateKey
 }
 
-func (c CDM) Keys(p Poster) (License, error) {
-   address, ok := p.Request_URL()
-   if !ok {
-      return nil, errors.New("Poster.Request_URL")
-   }
-   signed, err := func() ([]byte, error) {
-      b, err := c.request_signed()
-      if err != nil {
-         return nil, err
-      }
-      return p.Request_Body(b)
-   }()
-   if err != nil {
-      return nil, err
-   }
-   req, err := http.NewRequest("POST", address, bytes.NewReader(signed))
-   if err != nil {
-      return nil, err
-   }
-   if head, ok := p.Request_Header(); ok {
-      req.Header = head
-   }
-   res, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      res.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   signed, err = func() ([]byte, error) {
-      b, err := io.ReadAll(res.Body)
-      if err != nil {
-         return nil, err
-      }
-      return p.Response_Body(b)
-   }()
-   if err != nil {
-      return nil, err
-   }
-   return c.response(signed)
-}
-
-func (c *CDM) response(signed []byte) (License, error) {
+func (c *Cdm) response(signed []byte) (License, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(signed)
    if err != nil {
@@ -162,32 +160,29 @@ func (c *CDM) response(signed []byte) (License, error) {
 
 type License protobuf.Message
 
-func (p PSSH) Key(l License) (*KeyContainer, bool) {
+type KeyContainer struct {
+   m protobuf.Message
+}
+
+func (p Pssh) Key(l License) (*KeyContainer, bool) {
    for _, field := range l {
       if key, ok := field.Get(3); ok { // KeyContainer key
-         id := func() bool {
-            if v, ok := key.GetBytes(1); ok { // optional bytes id
-               return bytes.Equal(v, p.Key_ID)
+         // this field is optional:
+         // optional bytes id = 1;
+         // but CONTENT keys should always have it
+         if id, ok := key.GetBytes(1); ok {
+            if bytes.Equal(id, p.Key_id) {
+               return &KeyContainer{key}, true
             }
-            return true
-         }
-         if id() {
-            return &KeyContainer{key}, true
          }
       }
    }
    return nil, false
 }
 
-type KeyContainer struct {
-   m protobuf.Message
-}
-
-func (c CDM) Decrypt(k KeyContainer) ([]byte, bool) {
-   iv, ok := k.m.GetBytes(2) // bytes iv
-   if ok {
-      key, ok := k.m.GetBytes(3) // bytes key
-      if ok {
+func (c Cdm) Decrypt(k KeyContainer) ([]byte, bool) {
+   if iv, ok := k.m.GetBytes(2); ok { // bytes iv
+      if key, ok := k.m.GetBytes(3); ok { // bytes key
          cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
          return unpad(key), true
       }

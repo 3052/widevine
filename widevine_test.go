@@ -26,7 +26,7 @@ func Test_Response(t *testing.T) {
       if err != nil {
          t.Fatal(err)
       }
-      var module CDM
+      var module Cdm
       if err := module.New(private_key); err != nil {
          t.Fatal(err)
       }
@@ -80,7 +80,7 @@ func Test_Roku(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   var module CDM
+   var module Cdm
    if err := module.New(private_key); err != nil {
       t.Fatal(err)
    }

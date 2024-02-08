@@ -22,10 +22,12 @@ var tests = []struct {
    },
    {
       url: "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
+      pssh: "AAAAV3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADcIARIQ/zFt5li1T7C00hLL9vmivhoLYnV5ZHJta2V5b3MiEP8xbeZYtU+wtNISy/b5or4qAkhE",
       response: "CAISqgEKIgoAEhAA+Ul+JOc/Q4PJMsuCVv0wIAEoADgAQABI+JWMrgYSHAgBEAAYACAAKAAwADgAQgBIAFAAWABgAHAAeAEaXgoQ/zFt5li1T7C00hLL9vmivhIQLow1+azT1ejZFeDyPMlFrhogBsXtujDeqX0i8FcAmK55sclSVpZgxBChZPtvmrBSgG4gAigBMggIABAqGAAgADoICAAQKhgAIAAg+JWMrgY4ABoglxNFfSrPIJoSQKJ5mqDy1HSXuVkwGz8ap7x72URDTJwigAJmEHqN+3Q/atdGEEhVAm3WQMSnGjMgptbaow09ZFFCs/laxG+cuqo71NOKRMBXHRr/Tdba+YzciOB1U4r8Jj2C/qFEFc5jzWGIp372/RMGzpdjFPb3+/TB8adUN6UhjdiR8mv+588BP71SYl6H1e2Ko4y5/OosH1rZS3A2sFsM4Dhqigmk5EysjhNo4HiJCLNhgbnV65pluwPWvXRhf52r5RP9xa2Rnz+leg7EEcfamSI1RtfhaFHpkWbdpGcJVjiRx/Kfp47kRjWlTXy4+ENkgK0f/ggqH5+mAa7jYo1ZnXiP9dip6iCBrbE1lpV3CWS1+lezcnlV/Df3AvYwgUxaOggKBjE2LjQuNEABWAA=",
    },
    {
       url: "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
+      pssh: "AAAAWHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADgIARIQPeDzPBuKT86WHtqpUOLnMiIgYnFzSmhfejdvNEFSNmt0dWlfOXk4d0lIcXpFRXFiaHI4AQ==",
       response: "CAIS6gEKGgoAEgil3tdjPdud9yABKAA4AEAASOmWjK4GEhwIARAAGAAgACgAMAA4AEIASABQAFgAYAFwAHgBGkYSEOPNAFB8t/OAlRSOn0e4C+waMHogf9DJWujs7wUI6qMoqRSb/PhwXR09EwOrusdXraftU3OftIvJgY88uxLkGYwMyCABGl4KED3g8zwbik/Olh7aqVDi5zISEJJ0VK5hV2dcl3pkh5MGv24aIBFLAWKOF05UdzsJ6nt6kiqxLr5mGMu9LbmP7O0MXr7CIAIoATIICAAQKhgAIAA6CAgAECoYACAAIOmWjK4GOAAaIKcLhXstis/9o8Eo+bnQHmeEEjeWMSWtdxJk5GqHN57UIoACQY/tJvK+dumFlxvu7fkD8nUSE04Ral8xZgv0NVZxWHkr+MxqLnbsW0ZY7aEXvo5tTOCNUG2K1jjGYrLxK4XTJ5cebJJZzdwUmzXNrKVlqlcyULFBdKxHVesgcUVngOtyqeHXmTdZG8eFzx6FgPfis09LUekohWBWxqJcfuBxbA95EnGbV05Xrj3bDL1KQSE/Tw2N7h5ASBnJ0qSsnj1HhIRjPO2+mTXhlJ5UEZL5of1LnQMpGsFJJcrnMN9b2kQRoWEGPloi2hxPJd4AQtaZI507H+xn+w627XnI1xemTrIZZwj16d8gdFfDj+oBKqCOqmGjrCzJCxXjeGEWifShhjoICgYxNy40LjBAAVgA",
    },
    { // 2023-11-14 this requires content_id, so PSSH is needed:
@@ -35,8 +37,8 @@ var tests = []struct {
    },
 }
 
-func TestProtectionSystem(t *testing.T) {
-   var protect protectionSystem
+func TestPssh(t *testing.T) {
+   var protect Pssh
    data, err := base64.StdEncoding.DecodeString(tests[0].pssh)
    if err != nil {
       t.Fatal(err)
