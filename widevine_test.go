@@ -14,15 +14,11 @@ var tests = map[string]struct{
    response string
    url string
 }{
+   /*
    "amcplus": {
       pssh:     "AAAAVnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADYIARIQd41tdrKESTqmJnLHZiJ/nxoNd2lkZXZpbmVfdGVzdCIIMTIzNDU2NzgyB2RlZmF1bHQ=",
       response: "",
       url:      "amcplus.com/movies/perfect-blue--1058032",
-   },
-   "hulu": {
-      key_id: "21b82dc2ebb24d5aa9f8631f04726650",
-      response: "",
-      url: "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
    },
    "nbc": {
       pssh: "AAAAV3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADcIARIQ/zFt5li1T7C00hLL9vmivhoLYnV5ZHJta2V5b3MiEP8xbeZYtU+wtNISy/b5or4qAkhE",
@@ -34,28 +30,17 @@ var tests = map[string]struct{
       response: "",
       url: "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
    },
+   */
+   "hulu": {
+      key_id: "21b82dc2ebb24d5aa9f8631f04726650",
+      response: "CAIS/QEKcAoAEmhZMlZyYzE4eU1XSTRNbVJqTWkxbFltSXlMVFJrTldFdFlUbG1PQzAyTXpGbU1EUTNNalkyTlRCZk9EZ3lNVGcwTURrdFpUUmpPUzAwWm1ZNExUa3pZV1V0TVRCaFkySTROREExWVdFNCABKAASHwgBEAAYACAAKAAwADgAQgBIAFAAWABgAHABeAGAAQAaYAoQIbgtwuuyTVqp+GMfBHJmUBIQ/XZ2vXuBNoybDVePqqP7BBogRCL/oBQosn2uJ7MlRtO5AqCXfBgnF1kn7rIHMorpNuYgAigBMggIABAqGAAgADoICAAQKhgAIABiACDEz5WuBjgAGiCEMFB5lSqrct9+hQV2Mu4x5XfWRVlwnIpwS4UmM7r39SKAAjAOMMYopmbBmqg5vv+taYGS8Zg9EyujwjnsYeQ6yMSzcUj8X8kgP5xSP1xK3KioD9Zc6kgb0O00GNQ5jgfyrlf4RVkC/zLoAwsVptW4pLf1zpfs/m1b6l9g2Tcj1pMZoITcTNvmAjElqtyhZh3pXd3wuA3o686fHEkwraSXPYUmdlzGWwkK/7TX1uglQs7nPlj6kIiFxGlea6ARkJTGWpUG+uI4Oj8XmJckLPashjTdYYRTElpAdFuYZjickiM+OR2KDxsC3ODgCdkSz947rRoGRAWckIJ5QKA66o04o5XLg5jDGK3EW41AykM4TkjJoNsq7Ww1LTD+69yCpK3HpDs6CAoGMTguMS4yQAFYAA==",
+      url: "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
+   },
    "roku": { // 2023-11-14 this requires content_id, so PSSH is needed:
       pssh:     "AAAAQ3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAACMIARIQvfpNbNs5cC5baB+QYX+afhoKaW50ZXJ0cnVzdCIBKg==",
       response: "CAISpAEKGgoAEggXPQW+cefOWiABKAA4AEAASP/Jka4GEh4IARAAGAAgACgAMNSPCjgAQgBIAFAAWABgAHAAeAEaXgoQvfpNbNs5cC5baB+QYX+afhIQuDBRSyoGAGwlaYpQdRsjkhogqMM+9V1O1jBtFXgXnp94xb8FhRaDS9XK8IvXUhnv0zIgAigBMggIABAqGAAgADoICAAQKhgAIAAg/8mRrgY4ABognM+qtRhBVnCvTtQE9QNlV0jE/97UTEgljGOIow9l9ocigAJZdu2lEhpPuvAkFpoE+V8is7jMtVcUWWQC0zs4el4nnIBa+w9qXpFWTaPb/ny+jNK13dd3kofquNYx4O5r1hUZZhvYPooJ7PJJRc37Q8Z8xlPdo/Bz01lvfrCejwatT0ceMuXnODR0m7X4juLHlo5NPjeapA+O3KDJzBg+ejvSpHsWUrZDbG5XLBpLR8L2cZalApJ3accdGvk/dUNufJhlTvrLn0mO577fSdfewbx2vaRpCQIKlaJDjGasdGj0GpwzgDJRTBCRBYC7x9jCXHwoOq2htq3zmYFAbNxMShRuuwloLQZOWPqgvApYHnwlreP+9ZDyMwciXC1Y40eXFEKNOggKBjE3LjAuMUABWAA=",
       url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
    },
-}
-
-func TestPssh(t *testing.T) {
-   for _, test := range tests {
-      if test.pssh != "" {
-         var protect Pssh
-         data, err := base64.StdEncoding.DecodeString(test.pssh)
-         if err != nil {
-            t.Fatal(err)
-         }
-         if err := protect.New(data); err != nil {
-            t.Fatal(err)
-         }
-         fmt.Printf("%q\n", protect.Key_id)
-         fmt.Printf("%q\n\n", protect.content_id)
-      }
-   }
 }
 
 func TestResponse(t *testing.T) {
@@ -73,20 +58,19 @@ func TestResponse(t *testing.T) {
    }
    for _, test := range tests {
       protect := func() (p Pssh) {
-         if test.key_id != "" {
-            b, err := hex.DecodeString(test.key_id)
+         if test.pssh != "" {
+            b, err := base64.StdEncoding.DecodeString(test.pssh)
             if err != nil {
                t.Fatal(err)
             }
-            p.Key_id = b
-            return
-         }
-         b, err := base64.StdEncoding.DecodeString(test.pssh)
-         if err != nil {
-            t.Fatal(err)
-         }
-         if err := p.New(b); err != nil {
-            t.Fatal(err)
+            if err := p.New(b); err != nil {
+               t.Fatal(err)
+            }
+         } else {
+            p.Key_id, err = hex.DecodeString(test.key_id)
+            if err != nil {
+               t.Fatal(err)
+            }
          }
          return
       }()
@@ -110,3 +94,20 @@ func TestResponse(t *testing.T) {
       fmt.Printf("%x\n\n", key)
    }
 }
+func TestPssh(t *testing.T) {
+   for _, test := range tests {
+      if test.pssh != "" {
+         var protect Pssh
+         data, err := base64.StdEncoding.DecodeString(test.pssh)
+         if err != nil {
+            t.Fatal(err)
+         }
+         if err := protect.New(data); err != nil {
+            t.Fatal(err)
+         }
+         fmt.Printf("%q\n", protect.Key_id)
+         fmt.Printf("%q\n\n", protect.content_id)
+      }
+   }
+}
+

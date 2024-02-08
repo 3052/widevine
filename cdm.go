@@ -18,6 +18,33 @@ import (
    "net/http"
 )
 
+func (c Cdm) Key(m *LicenseMessage) ([]byte, bool) {
+   for _, field := range m.m {
+      if container, ok := field.Get(3); ok { // KeyContainer key
+         // this field is: optional bytes id = 1;
+         // but CONTENT keys should always have it
+         id, ok := container.GetBytes(1)
+         if !ok {
+            continue
+         }
+         if !bytes.Equal(id, c.key_id) {
+            continue
+         }
+         iv, ok := container.GetBytes(2)
+         if !ok {
+            continue
+         }
+         key, ok := container.GetBytes(3)
+         if !ok {
+            continue
+         }
+         cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
+         return unpad(key), true
+      }
+   }
+   return nil, false
+}
+
 func (c *Cdm) License(p Poster) (*LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
@@ -155,31 +182,4 @@ func (c *Cdm) response(signed []byte) (*LicenseMessage, error) {
       return nil, errors.New("License")
    }
    return &LicenseMessage{license}, nil
-}
-
-func (c Cdm) Key(m *LicenseMessage) ([]byte, bool) {
-   for _, field := range m.m {
-      if container, ok := field.Get(3); ok { // KeyContainer key
-         // this field is: optional bytes id = 1;
-         // but CONTENT keys should always have it
-         id, ok := container.GetBytes(1)
-         if !ok {
-            continue
-         }
-         if !bytes.Equal(id, c.key_id) {
-            continue
-         }
-         iv, ok := container.GetBytes(2)
-         if !ok {
-            continue
-         }
-         key, ok := container.GetBytes(3)
-         if !ok {
-            continue
-         }
-         cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
-         return unpad(key), true
-      }
-   }
-   return nil, false
 }

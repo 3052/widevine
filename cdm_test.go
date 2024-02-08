@@ -2,6 +2,7 @@ package widevine
 
 import (
    "encoding/base64"
+   "encoding/hex"
    "fmt"
    "log/slog"
    "net/http"
@@ -9,36 +10,59 @@ import (
    "testing"
 )
 
-func TestRoku(t *testing.T) {
+func new_module(pssh, key_id string) (*Cdm, error) {
    home, err := os.UserHomeDir()
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
    private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
    client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
-   test := tests["roku"]
-   protect := func() (p Pssh) {
-      b, err := base64.StdEncoding.DecodeString(test.pssh)
+   protect, err := func() (p Pssh, err error) {
+      if key_id != "" {
+         p.Key_id, err = hex.DecodeString(key_id)
+         return
+      }
+      b, err := base64.StdEncoding.DecodeString(pssh)
       if err != nil {
-         t.Fatal(err)
+         return
       }
-      if err := p.New(b); err != nil {
-         t.Fatal(err)
-      }
+      err = p.New(b)
       return
    }()
-   module, err := protect.Cdm(private_key, client_id)
+   if err != nil {
+      return nil, err
+   }
+   return protect.Cdm(private_key, client_id)
+}
+
+type post struct{}
+
+func (post) RequestHeader() (http.Header, bool) {
+   return nil, false
+}
+
+func (post) RequestBody(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+func (post) ResponseBody(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+func TestRoku(t *testing.T) {
+   test := tests["roku"]
+   module, err := new_module(test.pssh, test.key_id)
    if err != nil {
       t.Fatal(err)
    }
    slog.SetLogLoggerLevel(slog.LevelDebug)
-   license, err := module.License(roku(roku_license))
+   license, err := module.License(roku{})
    if err != nil {
       t.Fatal(err)
    }
@@ -47,22 +71,34 @@ func TestRoku(t *testing.T) {
    fmt.Printf("%x %v\n", key, ok)
 }
 
-const roku_license = "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0WCv8ozdHNJKcNqveoQx6GU9hUke0i0KVFhSPwEJoDM2_14aIl_RGOFvpcbhl77uSSPsXTMZVu4nx5qWLIyqnOd1TAQYxNZCMSTjTJPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMItPatTh_rCS9YohaDtC13-pxNypWg&traceId=b7e2b4fcb6e4a0b1876b571e9c70aa70&ExpressPlayToken=none"
-
-type roku string
-
-func (r roku) RequestUrl() (string, bool) {
-   return string(r), true
+type roku struct {
+   post
 }
 
-func (roku) RequestHeader() (http.Header, bool) {
-   return nil, false
+func (roku) RequestUrl() (string, bool) {
+   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc1NCqB8ztXGI6dbqPKtQx6EBYpUkOoui6VE0XDzTMhXMD2vtaAl_UvcRvtaYx0gveHBaZ3WN5Y05Xgjq2SYzqSUcVLAEtgeZCMSBG7yPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI_p2mTh91RI_2y1OCSDQBBuO3yLbx&traceId=8e53d9b8136c95d2b02871aa4916a2cc&ExpressPlayToken=none", true
 }
 
-func (roku) RequestBody(b []byte) ([]byte, error) {
-   return b, nil
+type hulu struct {
+   post
 }
 
-func (roku) ResponseBody(b []byte) ([]byte, error) {
-   return b, nil
+func TestHulu(t *testing.T) {
+   test := tests["hulu"]
+   module, err := new_module(test.pssh, test.key_id)
+   if err != nil {
+      t.Fatal(err)
+   }
+   slog.SetLogLoggerLevel(slog.LevelDebug)
+   license, err := module.License(hulu{})
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Println(test.url)
+   key, ok := module.Key(license)
+   fmt.Printf("%x %v\n", key, ok)
+}
+
+func (hulu) RequestUrl() (string, bool) {
+   return "https://hulu.playback.edge.bamgrid.com/widevine-hulu/v1/hulu/vod/obtain-license-legacy/196861183?deejay_device_id=166&nonce=260592616&signature=1707469382_3724304c40d6e0c31e7eb51a070b3928a989831f", true
 }
