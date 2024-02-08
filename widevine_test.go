@@ -2,18 +2,64 @@ package widevine
 
 import (
    "encoding/base64"
+   "encoding/hex"
    "fmt"
-   "net/http"
    "os"
    "testing"
 )
 
-func Test_Response(t *testing.T) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      t.Fatal(err)
+var tests = map[string]struct{
+   key_id string
+   pssh string
+   response string
+   url string
+}{
+   "amcplus": {
+      pssh:     "AAAAVnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADYIARIQd41tdrKESTqmJnLHZiJ/nxoNd2lkZXZpbmVfdGVzdCIIMTIzNDU2NzgyB2RlZmF1bHQ=",
+      response: "",
+      url:      "amcplus.com/movies/perfect-blue--1058032",
+   },
+   "hulu": {
+      key_id: "21b82dc2ebb24d5aa9f8631f04726650",
+      response: "",
+      url: "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
+   },
+   "nbc": {
+      pssh: "AAAAV3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADcIARIQ/zFt5li1T7C00hLL9vmivhoLYnV5ZHJta2V5b3MiEP8xbeZYtU+wtNISy/b5or4qAkhE",
+      response: "",
+      url: "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
+   },
+   "paramountplus": {
+      pssh: "AAAAWHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADgIARIQPeDzPBuKT86WHtqpUOLnMiIgYnFzSmhfejdvNEFSNmt0dWlfOXk4d0lIcXpFRXFiaHI4AQ==",
+      response: "",
+      url: "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
+   },
+   "roku": { // 2023-11-14 this requires content_id, so PSSH is needed:
+      pssh:     "AAAAQ3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAACMIARIQvfpNbNs5cC5baB+QYX+afhoKaW50ZXJ0cnVzdCIBKg==",
+      response: "CAISpAEKGgoAEggXPQW+cefOWiABKAA4AEAASP/Jka4GEh4IARAAGAAgACgAMNSPCjgAQgBIAFAAWABgAHAAeAEaXgoQvfpNbNs5cC5baB+QYX+afhIQuDBRSyoGAGwlaYpQdRsjkhogqMM+9V1O1jBtFXgXnp94xb8FhRaDS9XK8IvXUhnv0zIgAigBMggIABAqGAAgADoICAAQKhgAIAAg/8mRrgY4ABognM+qtRhBVnCvTtQE9QNlV0jE/97UTEgljGOIow9l9ocigAJZdu2lEhpPuvAkFpoE+V8is7jMtVcUWWQC0zs4el4nnIBa+w9qXpFWTaPb/ny+jNK13dd3kofquNYx4O5r1hUZZhvYPooJ7PJJRc37Q8Z8xlPdo/Bz01lvfrCejwatT0ceMuXnODR0m7X4juLHlo5NPjeapA+O3KDJzBg+ejvSpHsWUrZDbG5XLBpLR8L2cZalApJ3accdGvk/dUNufJhlTvrLn0mO577fSdfewbx2vaRpCQIKlaJDjGasdGj0GpwzgDJRTBCRBYC7x9jCXHwoOq2htq3zmYFAbNxMShRuuwloLQZOWPqgvApYHnwlreP+9ZDyMwciXC1Y40eXFEKNOggKBjE3LjAuMUABWAA=",
+      url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
+   },
+}
+
+func TestPssh(t *testing.T) {
+   for _, test := range tests {
+      if test.pssh != "" {
+         var protect Pssh
+         data, err := base64.StdEncoding.DecodeString(test.pssh)
+         if err != nil {
+            t.Fatal(err)
+         }
+         if err := protect.New(data); err != nil {
+            t.Fatal(err)
+         }
+         fmt.Printf("%q\n", protect.Key_id)
+         fmt.Printf("%q\n\n", protect.content_id)
+      }
    }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+}
+
+func TestResponse(t *testing.T) {
+   home, err := os.UserHomeDir()
    if err != nil {
       t.Fatal(err)
    }
@@ -21,8 +67,20 @@ func Test_Response(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      t.Fatal(err)
+   }
    for _, test := range tests {
       protect := func() (p Pssh) {
+         if test.key_id != "" {
+            b, err := hex.DecodeString(test.key_id)
+            if err != nil {
+               t.Fatal(err)
+            }
+            p.Key_id = b
+            return
+         }
          b, err := base64.StdEncoding.DecodeString(test.pssh)
          if err != nil {
             t.Fatal(err)
@@ -32,11 +90,11 @@ func Test_Response(t *testing.T) {
          }
          return
       }()
-      signed, err := base64.StdEncoding.DecodeString(test.response)
+      module, err := protect.Cdm(private_key, client_id)
       if err != nil {
          t.Fatal(err)
       }
-      module, err := protect.Cdm(private_key, client_id)
+      signed, err := base64.StdEncoding.DecodeString(test.response)
       if err != nil {
          t.Fatal(err)
       }
@@ -51,85 +109,4 @@ func Test_Response(t *testing.T) {
       fmt.Println(test.url)
       fmt.Printf("%x\n\n", key)
    }
-}
-
-func Test_Roku(t *testing.T) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      t.Fatal(err)
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      t.Fatal(err)
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      t.Fatal(err)
-   }
-   // PSSH
-   protect := func() (p Pssh) {
-      b, err := base64.StdEncoding.DecodeString(tests[1].pssh)
-      if err != nil {
-         t.Fatal(err)
-      }
-      if err := p.New(b); err != nil {
-         t.Fatal(err)
-      }
-      return
-   }()
-   
-   
-   
-   
-   signed, err := base64.StdEncoding.DecodeString(test.response)
-   if err != nil {
-      t.Fatal(err)
-   }
-   module, err := protect.Cdm(private_key, client_id)
-   if err != nil {
-      t.Fatal(err)
-   }
-   license, err := module.response(signed)
-   if err != nil {
-      t.Fatal(err)
-   }
-   key, ok := module.Key(license)
-   if !ok {
-      t.Fatal("Cdm.Key")
-   }
-   fmt.Println(test.url)
-   fmt.Printf("%x\n\n", key)
-   
-   
-   
-   var module Cdm
-   if err := module.New(private_key); err != nil {
-      t.Fatal(err)
-   }
-   if err := module.PSSH(client_id, pssh); err != nil {
-      t.Fatal(err)
-   }
-   key, err := module.Key(roku{})
-   if err != nil {
-      t.Fatal(err)
-   }
-   fmt.Printf("%x\n", key)
-}
-
-func (roku) Request_URL() (string, bool) {
-   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc1LWqkvntCYIqcO-fiqQx7VVt1Ukewk36UWgiT0T8tTY2jxsKAl_RKOQPlfbE0ourfEPpWGYpAwsH0qrmGdyvWUeVzARN9KZCMSD0DUPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI9avATR8m2oNk3tm5aXtW1GWjh5kS&traceId=a731a6206e341e14fe7124dee998add7&ExpressPlayToken=none", true
-}
-
-func (roku) Request_Header() (http.Header, bool) {
-   return nil, false
-}
-
-type roku struct{}
-
-func (roku) Request_Body(b []byte) ([]byte, error) {
-   return b, nil
-}
-
-func (roku) Response_Body(b []byte) ([]byte, error) {
-   return b, nil
 }
