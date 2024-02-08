@@ -96,6 +96,8 @@ func (p *Pssh) New(data []byte) error {
 
 func (p Pssh) Cdm(private_key, client_id []byte) (*Cdm, error) {
    var module Cdm
+   // key_id
+   module.key_id = p.Key_id
    // license_request
    var request protobuf.Message // LicenseRequest
    request.AddBytes(1, client_id) // client_id

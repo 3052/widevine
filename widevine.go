@@ -15,7 +15,7 @@ import (
    "net/http"
 )
 
-func (c Cdm) Keys(p Poster) (License, error) {
+func (c Cdm) License(p Poster) (LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
       return nil, errors.New("Poster.RequestUrl")
@@ -111,14 +111,7 @@ func (c Cdm) request_signed() ([]byte, error) {
    return signed.Encode(), nil
 }
 
-// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type Cdm struct {
-   block cipher.Block
-   license_request []byte
-   private_key     *rsa.PrivateKey
-}
-
-func (c *Cdm) response(signed []byte) (License, error) {
+func (c *Cdm) response(signed []byte) (LicenseMessage, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(signed)
    if err != nil {
@@ -151,38 +144,50 @@ func (c *Cdm) response(signed []byte) (License, error) {
    if err != nil {
       return nil, err
    }
-   license, ok := message.Get(2) // License
+   // this is listed as: optional bytes msg = 2;
+   // but assuming the type is: LICENSE = 2;
+   // the result is actually: optional License msg = 2;
+   license, ok := message.Get(2)
    if !ok {
       return nil, errors.New("License")
    }
-   return License(license), nil
+   return LicenseMessage(license), nil
 }
 
-type License protobuf.Message
+type LicenseMessage protobuf.Message
 
 type KeyContainer struct {
    m protobuf.Message
 }
 
-func (p Pssh) Key(l License) (*KeyContainer, bool) {
-   for _, field := range l {
-      if key, ok := field.Get(3); ok { // KeyContainer key
-         // this field is optional:
-         // optional bytes id = 1;
-         // but CONTENT keys should always have it
-         if id, ok := key.GetBytes(1); ok {
-            if bytes.Equal(id, p.Key_id) {
-               return &KeyContainer{key}, true
-            }
-         }
-      }
-   }
-   return nil, false
+// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
+type Cdm struct {
+   block cipher.Block
+   key_id []byte
+   license_request []byte
+   private_key *rsa.PrivateKey
 }
 
-func (c Cdm) Decrypt(k KeyContainer) ([]byte, bool) {
-   if iv, ok := k.m.GetBytes(2); ok { // bytes iv
-      if key, ok := k.m.GetBytes(3); ok { // bytes key
+func (c Cdm) Key(m LicenseMessage) ([]byte, bool) {
+   for _, field := range m {
+      if container, ok := field.Get(3); ok { // KeyContainer key
+         // this field is: optional bytes id = 1;
+         // but CONTENT keys should always have it
+         id, ok := container.GetBytes(1)
+         if !ok {
+            continue
+         }
+         if !bytes.Equal(id, c.key_id) {
+            continue
+         }
+         iv, ok := container.GetBytes(2)
+         if !ok {
+            continue
+         }
+         key, ok := container.GetBytes(3)
+         if !ok {
+            continue
+         }
          cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
          return unpad(key), true
       }
