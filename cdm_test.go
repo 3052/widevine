@@ -23,17 +23,24 @@ func new_module(pssh, key_id string) (*Cdm, error) {
    if err != nil {
       return nil, err
    }
-   protect, err := func() (p Pssh, err error) {
-      if key_id != "" {
+   protect, err := func() (*Pssh, error) {
+      var p Pssh
+      if pssh != "" {
+         b, err := base64.StdEncoding.DecodeString(pssh)
+         if err != nil {
+            return nil, err
+         }
+         if err := p.New(b); err != nil {
+            return nil, err
+         }
+      } else {
+         var err error
          p.Key_id, err = hex.DecodeString(key_id)
-         return
+         if err != nil {
+            return nil, err
+         }
       }
-      b, err := base64.StdEncoding.DecodeString(pssh)
-      if err != nil {
-         return
-      }
-      err = p.New(b)
-      return
+      return &p, nil
    }()
    if err != nil {
       return nil, err
