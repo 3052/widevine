@@ -8,9 +8,7 @@ import (
    "crypto/cipher"
    "crypto/rsa"
    "crypto/sha1"
-   "crypto/x509"
    "encoding/base64"
-   "encoding/pem"
    "errors"
    "github.com/chmike/cmac-go"
    "io"
@@ -73,7 +71,9 @@ func (c *Cdm) License(p Poster) (*LicenseMessage, error) {
    }
    defer res.Body.Close()
    if res.StatusCode != http.StatusOK {
-      return nil, errors.New(res.Status)
+      var b bytes.Buffer
+      res.Write(&b)
+      return nil, errors.New(b.String())
    }
    signed, err = func() ([]byte, error) {
       b, err := io.ReadAll(res.Body)
@@ -87,32 +87,6 @@ func (c *Cdm) License(p Poster) (*LicenseMessage, error) {
    }
    slog.Debug("license", "response", base64.StdEncoding.EncodeToString(signed))
    return c.response(signed)
-}
-
-func (p Pssh) Cdm(private_key, client_id []byte) (*Cdm, error) {
-   var module Cdm
-   // key_id
-   module.key_id = p.Key_id
-   // license_request
-   var request protobuf.Message // LicenseRequest
-   request.AddBytes(1, client_id) // client_id
-   request.AddFunc(2, func(m *protobuf.Message) { // content_id
-      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
-            m.AddBytes(2, p.Key_id)
-            m.AddBytes(4, p.content_id)
-         })
-      })
-   })
-   module.license_request = request.Encode()
-   // private_key
-   block, _ := pem.Decode(private_key)
-   var err error
-   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return nil, err
-   }
-   return &module, nil
 }
 
 func (c Cdm) request_signed() ([]byte, error) {
