@@ -137,8 +137,6 @@ type nbc struct {
    post
 }
 
-///////////////
-
 func TestParamount(t *testing.T) {
    test := tests["paramount"]
    module, err := new_module(test.pssh, test.key_id)
@@ -155,16 +153,46 @@ func TestParamount(t *testing.T) {
    fmt.Printf("%x %v\n", key, ok)
 }
 
+type paramount struct {
+   post
+}
+
 func (paramount) RequestHeader() (http.Header, bool) {
    h := make(http.Header)
-   h.Set("content-type", "application/octet-stream")
+   h.Set("authorization", "Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6IjNkNjg4NGJmLWViMDktNDA1Zi1hOWZjLWU0NGE1NmY3NjZiNiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbm9ueW1vdXNfVVMiLCJlbnQiOlt7ImJpZCI6IkFsbEFjY2Vzc01haW4iLCJlcGlkIjo3fV0sImlhdCI6MTcwNzQzOTk3NCwiZXhwIjoxNzA3NDQ3MTc0LCJpc3MiOiJjYnMiLCJhaWQiOiJjYnNpIiwiaXNlIjp0cnVlLCJqdGkiOiJjYjAzZjhhMS05NzA5LTQxY2ItYjYzZi0yM2Y5YjRjMTA2OWQifQ.FQ1YVic69LrlxuwRDHRZEehzuW_xz2WjnGWACYSOQW8")
    return h, true
 }
 
 func (paramount) RequestUrl() (string, bool) {
-   return "", true
+   return "https://cbsi.live.ott.irdeto.com/widevine/getlicense?CrmId=cbsi&AccountId=cbsi&SubContentType=Default&contentId=bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr", true
 }
 
-type paramount struct {
+func TestAmc(t *testing.T) {
+   test := tests["amc"]
+   module, err := new_module(test.pssh, test.key_id)
+   if err != nil {
+      t.Fatal(err)
+   }
+   slog.SetLogLoggerLevel(slog.LevelDebug)
+   license, err := module.License(amc{})
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Println(test.url)
+   key, ok := module.Key(license)
+   fmt.Printf("%x %v\n", key, ok)
+}
+
+type amc struct {
    post
+}
+
+func (amc) RequestUrl() (string, bool) {
+   return "https://manifest.prod.boltdns.net/license/v1/cenc/widevine/6245817279001/38f59301-5b9d-4233-b212-89e64e9d4e6a/e66f98ef-cb03-43dd-a764-f3e54b49e752?fastly_token=NjVjNWVmODhfZmZhNTJjMWM0NWFlY2M4NjIwZmNhNGJkYTA3YTAwNzQ4YzJhNDdkNjhkOTdmZGI1N2YxNTY1ZTcwOTM1YjZkMA%3D%3D", true
+}
+
+func (amc) RequestHeader() (http.Header, bool) {
+   h := make(http.Header)
+   h.Set("bcov-auth", "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1aWQiOiJiNzIzMDc3OC1iNTViLTRiNzAtYTU2MC00NGUyNTM5YmQ3ZGMiLCJhY2NpZCI6IjYyNDU4MTcyNzkwMDEiLCJwcmlkIjoiODJkMWI0MmEtMWQ0Mi00ZGZiLTg2MmUtNTNmZDhkNWU2NmE4IiwiY29uaWQiOiI2MzQwNjE1ODgzMTEyIiwiY2xpbWl0Ijo0LCJleHAiOjE3MDc1MjcxMjIsImNiZWgiOiJCTE9DS19ORVdfVVNFUiIsImlhdCI6MTcwNzQ0MDcyMiwianRpIjoiNmRkYTA2MTgtNmYwZi00ZGVlLTkwZmEtNjlhMTdkNzQzNTRhIiwic2lkIjoiR28taHR0cC1jbGllbnQvMi4wIC0gNzUxMzQ3ODcwMSJ9.hFcANEj7g60k-UKSOjDuQSaB3aaPn2alAS9sGNMTwh1pkQaXMwASuN74ymIx-_d1go-Bn0HFxfVnCvsgJBFzqlQ9m8bsM1nwIBqGD5kmo4ADKXr-36cy0bDojErnCPyAWPPRr4d2A2NVvFMrizVqTHGzT8i_zaqS5lN_BYdA3gnVuaQH7-eyqG3IvP4Bh-uCbkwv4fhxJLl71dInbMXYSEwek94cnWApW2nuvpdFWiY7SrGRk2Ap2W4L1Jr85ll6R6JmRkZEW_qBOdcy61Ysa7SY88aOiTbCSK1Y9unarBFka8fSS7asX02ebsJawMPFqCbgAS2v668XQFFd0iA8mg")
+   return h, true
 }

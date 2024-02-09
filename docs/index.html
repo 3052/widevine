@@ -14,47 +14,148 @@
   <body>
     <nav>
         154.pages.dev/widevine<span class="navbar-right">
-          v1.2.5 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
+          v1.2.6 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
       </nav>
     <main><h2 id="pkg-overview">package widevine</h2>
 <pre class="chroma"><span class="kn">import</span> <span class="s">&#34;154.pages.dev/widevine&#34;</span></pre>
 <h3 id="pkg-index">Index</h3>
 <ul>
   <li>
-      <a href="#CDM">type CDM</a>
+      <a href="#Cdm">type Cdm</a>
       <ul>
-          <li><a href="#CDM.Key">func (c CDM) Key(post Poster) ([]byte, error)</a></li>
-          <li><a href="#CDM.Key_ID">func (c *CDM) Key_ID(client_id, key_id []byte)</a></li>
-          <li><a href="#CDM.New">func (c *CDM) New(private_key []byte) error</a></li>
-          <li><a href="#CDM.PSSH">func (c *CDM) PSSH(client_id, pssh []byte) error</a></li>
+          <li><a href="#Cdm.Key">func (c Cdm) Key(m *LicenseMessage) ([]byte, bool)</a></li>
+          <li><a href="#Cdm.License">func (c *Cdm) License(p Poster) (*LicenseMessage, error)</a></li>
           </ul>
+      </li>
+  <li>
+      <a href="#LicenseMessage">type LicenseMessage</a>
       </li>
   <li>
       <a href="#Poster">type Poster</a>
       </li>
+  <li>
+      <a href="#Pssh">type Pssh</a>
+      <ul>
+          <li><a href="#Pssh.Cdm">func (p Pssh) Cdm(private_key, client_id []byte) (*Cdm, error)</a></li>
+          <li><a href="#Pssh.New">func (p *Pssh) New(data []byte) error</a></li>
+          </ul>
+      </li>
+  <li>
+      <a href="#SystemId">type SystemId</a>
+      <ul>
+          <li><a href="#SystemId.String">func (s SystemId) String() string</a></li>
+          </ul>
+      </li>
+  <li>
+      <a href="#Type">type Type</a>
+      <ul>
+          <li><a href="#Type.String">func (t Type) String() string</a></li>
+          </ul>
+      </li>
   </ul><h3 id="pkg-types">Types</h3>
-  <h3 id="CDM">type CDM</h3>
-    <pre class="chroma"><span class="kd">type</span> <span class="nx">CDM</span> <span class="kd">struct</span> <span class="p">{</span>
+  <h3 id="Cdm">type Cdm</h3>
+    <pre class="chroma"><span class="kd">type</span> <span class="nx">Cdm</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="c1">// contains filtered or unexported fields
 </span><span class="c1"></span><span class="p">}</span></pre>
     <p>wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-<h4 id="CDM.Key">func (CDM) Key</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <a href="#CDM"><span class="nx">CDM</span></a><span class="p">)</span> <span class="nf">Key</span><span class="p">(</span><span class="nx">post</span> <a href="#Poster"><span class="nx">Poster</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
-  <h4 id="CDM.Key_ID">func (*CDM) Key_ID</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#CDM"><span class="nx">CDM</span></a><span class="p">)</span> <span class="nf">Key_ID</span><span class="p">(</span><span class="nx">client_id</span><span class="p">,</span> <span class="nx">key_id</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span></pre>
-  <h4 id="CDM.New">func (*CDM) New</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#CDM"><span class="nx">CDM</span></a><span class="p">)</span> <span class="nf">New</span><span class="p">(</span><span class="nx">private_key</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
-  <h4 id="CDM.PSSH">func (*CDM) PSSH</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#CDM"><span class="nx">CDM</span></a><span class="p">)</span> <span class="nf">PSSH</span><span class="p">(</span><span class="nx">client_id</span><span class="p">,</span> <span class="nx">pssh</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
-  <p>some sites use content_id, in which case you need PSSH
-<h3 id="Poster">type Poster</h3>
+<h4 id="Cdm.Key">func (Cdm) Key</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <a href="#Cdm"><span class="nx">Cdm</span></a><span class="p">)</span> <span class="nf">Key</span><span class="p">(</span><span class="nx">m</span> <span class="o">*</span><a href="#LicenseMessage"><span class="nx">LicenseMessage</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span></pre>
+  <h4 id="Cdm.License">func (*Cdm) License</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#Cdm"><span class="nx">Cdm</span></a><span class="p">)</span> <span class="nf">License</span><span class="p">(</span><span class="nx">p</span> <a href="#Poster"><span class="nx">Poster</span></a><span class="p">)</span> <span class="p">(</span><span class="o">*</span><a href="#LicenseMessage"><span class="nx">LicenseMessage</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+  <h3 id="LicenseMessage">type LicenseMessage</h3>
+    <pre class="chroma"><span class="kd">type</span> <span class="nx">LicenseMessage</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="c1">// contains filtered or unexported fields
+</span><span class="c1"></span><span class="p">}</span></pre>
+    <h3 id="Poster">type Poster</h3>
     <pre class="chroma"><span class="kd">type</span> <span class="nx">Poster</span> <span class="kd">interface</span> <span class="p">{</span>
-	<span id="Poster.Request_URL"><span class="nf">Request_URL</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
-	<span id="Poster.Request_Header"><span class="nf">Request_Header</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/net/http"><span class="nx">http</span></a><span class="p">.</span><a href="https://pkg.go.dev/net/http#Header"><span class="nx">Header</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
-	<span id="Poster.Request_Body"><span class="nf">Request_Body</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
-	<span id="Poster.Response_Body"><span class="nf">Response_Body</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
+	<span id="Poster.RequestUrl"><span class="nf">RequestUrl</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
+	<span id="Poster.RequestHeader"><span class="nf">RequestHeader</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/net/http"><span class="nx">http</span></a><span class="p">.</span><a href="https://pkg.go.dev/net/http#Header"><span class="nx">Header</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
+	<span id="Poster.RequestBody"><span class="nf">RequestBody</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
+	<span id="Poster.ResponseBody"><span class="nf">ResponseBody</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
 <span class="p">}</span></pre>
-    </main>
+    <h3 id="Pssh">type Pssh</h3>
+    <pre class="chroma"><span class="kd">type</span> <span class="nx">Pssh</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span id="Pssh.SpecificHeader"><span class="nx">SpecificHeader</span></span> <span class="kd">struct</span> <span class="p">{</span>
+		<span id="Pssh.Size"><span class="nx">Size</span></span>     <a href="https://pkg.go.dev/builtin#uint32"><span class="kt">uint32</span></a>
+		<span id="Pssh.Type"><span class="nx">Type</span></span>     <a href="#Type"><span class="nx">Type</span></a>
+		<span id="Pssh.Version"><span class="nx">Version</span></span>  <a href="https://pkg.go.dev/builtin#uint8"><span class="kt">uint8</span></a>
+		<span id="Pssh.Flags"><span class="nx">Flags</span></span>    <span class="p">[</span><span class="mi">3</span><span class="p">]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a>
+		<span id="Pssh.SystemId"><span class="nx">SystemId</span></span> <a href="#SystemId"><span class="nx">SystemId</span></a>
+		<span id="Pssh.DataSize"><span class="nx">DataSize</span></span> <a href="https://pkg.go.dev/builtin#uint32"><span class="kt">uint32</span></a>
+	<span class="p">}</span>
+	<span class="c1">// all of the Widevine PSSH I have seen so far are single `key_id`, so we
+</span><span class="c1"></span>	<span class="c1">// are going to implement that for now, because its not clear what the logic
+</span><span class="c1"></span>	<span class="c1">// would be with multiple key_ids.
+</span><span class="c1"></span>	<span id="Pssh.Key_id"><span class="nx">Key_id</span></span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a>
+	<span class="c1">// contains filtered or unexported fields
+</span><span class="c1"></span><span class="p">}</span></pre>
+    <p>ISO/IEC 14496-12
+<pre>aligned(8) class Box (
+   unsigned int(32) boxtype, optional unsigned int(8)[16] extended_type
+) {
+   BoxHeader(boxtype, extended_type);
+   // the remaining bytes are the BoxPayload
+}
+
+aligned(8) class BoxHeader (
+   unsigned int(32) boxtype, optional unsigned int(8)[16] extended_type
+) {
+   unsigned int(32) size;
+   unsigned int(32) type = boxtype;
+   if (size==1) {
+      unsigned int(64) largesize;
+   } else if (size==0) {
+      // box extends to end of file
+   }
+   if (boxtype==&apos;uuid&apos;) {
+      unsigned int(8)[16] usertype = extended_type;
+   }
+}
+
+aligned(8) class FullBox(
+   unsigned int(32) boxtype,
+   unsigned int(8) v,
+   bit(24) f,
+   optional unsigned int(8)[16] extended_type
+) extends Box(boxtype, extended_type) {
+   FullBoxHeader(v, f);
+   // the remaining bytes are the FullBoxPayload
+}
+
+aligned(8) class FullBoxHeader(unsigned int(8) v, bit(24) f) {
+   unsigned int(8) version = v;
+   bit(24) flags = f;
+}
+</pre>
+<p>ISO/IEC 23001-7
+<pre>aligned(8) class ProtectionSystemSpecificHeaderBox extends FullBox(
+   &apos;pssh&apos;, version, flags=0,
+) {
+   unsigned int(8)[16] SystemID;
+   if (version &gt; 0) {
+      unsigned int(32) KID_count;
+      {
+         unsigned int(8)[16] KID;
+      } [KID_count];
+   }
+   unsigned int(32) DataSize;
+   unsigned int(8)[DataSize] Data;
+}
+</pre>
+<h4 id="Pssh.Cdm">func (Pssh) Cdm</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <a href="#Pssh"><span class="nx">Pssh</span></a><span class="p">)</span> <span class="nf">Cdm</span><span class="p">(</span><span class="nx">private_key</span><span class="p">,</span> <span class="nx">client_id</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">(</span><span class="o">*</span><a href="#Cdm"><span class="nx">Cdm</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+  <h4 id="Pssh.New">func (*Pssh) New</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="o">*</span><a href="#Pssh"><span class="nx">Pssh</span></a><span class="p">)</span> <span class="nf">New</span><span class="p">(</span><span class="nx">data</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
+  <p>some sites use content_id, in which case you need PSSH
+<h3 id="SystemId">type SystemId</h3>
+    <pre class="chroma"><span class="kd">type</span> <span class="nx">SystemId</span> <span class="p">[</span><span class="mi">16</span><span class="p">]</span><a href="https://pkg.go.dev/builtin#uint8"><span class="kt">uint8</span></a></pre>
+    <h4 id="SystemId.String">func (SystemId) String</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <a href="#SystemId"><span class="nx">SystemId</span></a><span class="p">)</span> <span class="nf">String</span><span class="p">()</span> <a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <h3 id="Type">type Type</h3>
+    <pre class="chroma"><span class="kd">type</span> <span class="nx">Type</span> <span class="p">[</span><span class="mi">4</span><span class="p">]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a></pre>
+    <h4 id="Type.String">func (Type) String</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">t</span> <a href="#Type"><span class="nx">Type</span></a><span class="p">)</span> <span class="nf">String</span><span class="p">()</span> <a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  </main>
     <hr>
     <footer>
       <small id="generated-by-footer">
