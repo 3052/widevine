@@ -44,6 +44,7 @@ type flags struct {
    private_key string
    authorization string
    ticket string
+   protect widevine.Pssh
 }
 
 func main() {
@@ -70,13 +71,13 @@ func main() {
          panic(err)
       }
       key, ok := module.Key(license)
-      fmt.Printf("%x %v\n", key, ok)
+      fmt.Printf("%x:%x %v\n", f.protect.Key_id, key, ok)
    } else {
       flag.Usage()
    }
 }
 
-func (f flags) module() (*widevine.Cdm, error) {
+func (f *flags) module() (*widevine.Cdm, error) {
    private_key, err := os.ReadFile(f.private_key)
    if err != nil {
       return nil, err
@@ -85,13 +86,12 @@ func (f flags) module() (*widevine.Cdm, error) {
    if err != nil {
       return nil, err
    }
-   var protect widevine.Pssh
    data, err := base64.StdEncoding.DecodeString(f.pssh)
    if err != nil {
       return nil, err
    }
-   if err := protect.New(data); err != nil {
+   if err := f.protect.New(data); err != nil {
       return nil, err
    }
-   return protect.Cdm(private_key, client_id)
+   return f.protect.Cdm(private_key, client_id)
 }
