@@ -16,7 +16,7 @@ import (
    "net/http"
 )
 
-func (c Cdm) Key(m *LicenseMessage) ([]byte, bool) {
+func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
    for _, field := range m.m {
       if container, ok := field.Get(3); ok { // KeyContainer key
          // this field is: optional bytes id = 1;
@@ -43,7 +43,7 @@ func (c Cdm) Key(m *LicenseMessage) ([]byte, bool) {
    return nil, false
 }
 
-func (c *Cdm) License(p Poster) (*LicenseMessage, error) {
+func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
       return nil, errors.New("Poster.RequestUrl")
@@ -89,7 +89,7 @@ func (c *Cdm) License(p Poster) (*LicenseMessage, error) {
    return c.response(signed)
 }
 
-func (c Cdm) request_signed() ([]byte, error) {
+func (c CDM) request_signed() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
       no_operation{},
@@ -108,14 +108,14 @@ func (c Cdm) request_signed() ([]byte, error) {
 }
 
 // wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type Cdm struct {
+type CDM struct {
    block cipher.Block
    key_id []byte
    license_request []byte
    private_key *rsa.PrivateKey
 }
 
-func (c *Cdm) response(signed []byte) (*LicenseMessage, error) {
+func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(signed)
    if err != nil {

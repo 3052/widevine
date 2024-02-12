@@ -10,7 +10,7 @@ import (
    "testing"
 )
 
-func new_module(pssh, key_id string) (*Cdm, error) {
+func new_module(raw_pssh, key_id string) (*CDM, error) {
    home, err := os.UserHomeDir()
    if err != nil {
       return nil, err
@@ -23,10 +23,10 @@ func new_module(pssh, key_id string) (*Cdm, error) {
    if err != nil {
       return nil, err
    }
-   protect, err := func() (*Pssh, error) {
-      var p Pssh
-      if pssh != "" {
-         b, err := base64.StdEncoding.DecodeString(pssh)
+   protect, err := func() (*PSSH, error) {
+      var p PSSH
+      if raw_pssh != "" {
+         b, err := base64.StdEncoding.DecodeString(raw_pssh)
          if err != nil {
             return nil, err
          }
@@ -35,7 +35,7 @@ func new_module(pssh, key_id string) (*Cdm, error) {
          }
       } else {
          var err error
-         p.Key_id, err = hex.DecodeString(key_id)
+         p.Key_ID, err = hex.DecodeString(key_id)
          if err != nil {
             return nil, err
          }
@@ -45,7 +45,7 @@ func new_module(pssh, key_id string) (*Cdm, error) {
    if err != nil {
       return nil, err
    }
-   return protect.Cdm(private_key, client_id)
+   return protect.CDM(private_key, client_id)
 }
 
 type post struct{}

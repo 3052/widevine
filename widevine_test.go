@@ -55,7 +55,7 @@ func TestResponse(t *testing.T) {
       t.Fatal(err)
    }
    for _, test := range tests {
-      protect := func() (p Pssh) {
+      protect := func() (p PSSH) {
          if test.pssh != "" {
             b, err := base64.StdEncoding.DecodeString(test.pssh)
             if err != nil {
@@ -65,14 +65,14 @@ func TestResponse(t *testing.T) {
                t.Fatal(err)
             }
          } else {
-            p.Key_id, err = hex.DecodeString(test.key_id)
+            p.Key_ID, err = hex.DecodeString(test.key_id)
             if err != nil {
                t.Fatal(err)
             }
          }
          return
       }()
-      module, err := protect.Cdm(private_key, client_id)
+      module, err := protect.CDM(private_key, client_id)
       if err != nil {
          t.Fatal(err)
       }
@@ -86,7 +86,7 @@ func TestResponse(t *testing.T) {
       }
       key, ok := module.Key(license)
       if !ok {
-         t.Fatal("Cdm.Key")
+         t.Fatal("CDM.Key")
       }
       fmt.Println(test.url)
       fmt.Printf("%x\n\n", key)
@@ -96,7 +96,7 @@ func TestResponse(t *testing.T) {
 func TestPssh(t *testing.T) {
    for _, test := range tests {
       if test.pssh != "" {
-         var protect Pssh
+         var protect PSSH
          data, err := base64.StdEncoding.DecodeString(test.pssh)
          if err != nil {
             t.Fatal(err)
@@ -104,7 +104,7 @@ func TestPssh(t *testing.T) {
          if err := protect.New(data); err != nil {
             t.Fatal(err)
          }
-         fmt.Printf("%q\n", protect.Key_id)
+         fmt.Printf("%q\n", protect.Key_ID)
          fmt.Printf("%q\n\n", protect.content_id)
       }
    }

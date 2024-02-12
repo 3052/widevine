@@ -10,17 +10,17 @@ import (
    "net/http"
 )
 
-func (p Pssh) Cdm(private_key, client_id []byte) (*Cdm, error) {
-   var module Cdm
+func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
+   var module CDM
    // key_id
-   module.key_id = p.Key_id
+   module.key_id = p.Key_ID
    // license_request
    var request protobuf.Message // LicenseRequest
    request.AddBytes(1, client_id) // client_id
    request.AddFunc(2, func(m *protobuf.Message) { // content_id
       m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
          m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
-            m.AddBytes(2, p.Key_id)
+            m.AddBytes(2, p.Key_ID)
             m.AddBytes(4, p.content_id)
          })
       })
@@ -88,7 +88,7 @@ func (p Pssh) Cdm(private_key, client_id []byte) (*Cdm, error) {
 //     unsigned int(32) DataSize;
 //     unsigned int(8)[DataSize] Data;
 //  }
-type Pssh struct {
+type PSSH struct {
    SpecificHeader struct {
       Size uint32
       Type Type
@@ -100,12 +100,12 @@ type Pssh struct {
    // all of the Widevine PSSH I have seen so far are single `key_id`, so we
    // are going to implement that for now, because its not clear what the logic
    // would be with multiple key_ids.
-   Key_id []byte
+   Key_ID []byte
    content_id []byte
 }
 
 // some sites use content_id, in which case you need PSSH
-func (p *Pssh) New(data []byte) error {
+func (p *PSSH) New(data []byte) error {
    buf := bytes.NewBuffer(data)
    err := binary.Read(buf, binary.BigEndian, &p.SpecificHeader)
    if err != nil {
@@ -116,7 +116,7 @@ func (p *Pssh) New(data []byte) error {
       return err
    }
    // Cannot be used in conjunction with content_id
-   p.Key_id, _ = pssh.GetBytes(2)
+   p.Key_ID, _ = pssh.GetBytes(2)
    // Cannot be present in conjunction with key_id
    p.content_id, _ = pssh.GetBytes(4)
    return nil
