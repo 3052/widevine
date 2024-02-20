@@ -10,6 +10,13 @@ import (
    "net/http"
 )
 
+type Poster interface {
+   RequestUrl() (string, bool)
+   RequestHeader() (http.Header, error)
+   RequestBody([]byte) ([]byte, error)
+   ResponseBody([]byte) ([]byte, error)
+}
+
 func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
    var module CDM
    // key_id
@@ -142,13 +149,6 @@ type Type [4]byte
 
 func (t Type) String() string {
    return string(t[:])
-}
-
-type Poster interface {
-   RequestUrl() (string, bool)
-   RequestHeader() (http.Header, bool)
-   RequestBody([]byte) ([]byte, error)
-   ResponseBody([]byte) ([]byte, error)
 }
 
 type no_operation struct{}

@@ -16,33 +16,6 @@ import (
    "net/http"
 )
 
-func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
-   for _, field := range m.m {
-      if container, ok := field.Get(3); ok { // KeyContainer key
-         // this field is: optional bytes id = 1;
-         // but CONTENT keys should always have it
-         id, ok := container.GetBytes(1)
-         if !ok {
-            continue
-         }
-         if !bytes.Equal(id, c.key_id) {
-            continue
-         }
-         iv, ok := container.GetBytes(2)
-         if !ok {
-            continue
-         }
-         key, ok := container.GetBytes(3)
-         if !ok {
-            continue
-         }
-         cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
-         return unpad(key), true
-      }
-   }
-   return nil, false
-}
-
 func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
@@ -62,8 +35,9 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    if err != nil {
       return nil, err
    }
-   if head, ok := p.RequestHeader(); ok {
-      req.Header = head
+   req.Header, err = p.RequestHeader()
+   if err != nil {
+      return nil, err
    }
    res, err := http.DefaultClient.Do(req)
    if err != nil {
@@ -156,4 +130,31 @@ func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
       return nil, errors.New("License")
    }
    return &LicenseMessage{license}, nil
+}
+
+func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
+   for _, field := range m.m {
+      if container, ok := field.Get(3); ok { // KeyContainer key
+         // this field is: optional bytes id = 1;
+         // but CONTENT keys should always have it
+         id, ok := container.GetBytes(1)
+         if !ok {
+            continue
+         }
+         if !bytes.Equal(id, c.key_id) {
+            continue
+         }
+         iv, ok := container.GetBytes(2)
+         if !ok {
+            continue
+         }
+         key, ok := container.GetBytes(3)
+         if !ok {
+            continue
+         }
+         cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
+         return unpad(key), true
+      }
+   }
+   return nil, false
 }
