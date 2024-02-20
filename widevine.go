@@ -118,14 +118,14 @@ func (p *PSSH) New(data []byte) error {
    if err != nil {
       return err
    }
-   var pssh protobuf.Message
-   if err := pssh.Consume(buf.Bytes()); err != nil {
+   var protect protobuf.Message
+   if err := protect.Consume(buf.Bytes()); err != nil {
       return err
    }
    // Cannot be used in conjunction with content_id
-   p.Key_ID, _ = pssh.GetBytes(2)
+   p.Key_ID, _ = protect.GetBytes(2)
    // Cannot be present in conjunction with key_id
-   p.content_id, _ = pssh.GetBytes(4)
+   p.content_id, _ = protect.GetBytes(4)
    return nil
 }
 
