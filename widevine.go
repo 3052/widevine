@@ -11,9 +11,9 @@ import (
 )
 
 type Poster interface {
-   RequestUrl() (string, bool)
-   RequestHeader() (http.Header, error)
    RequestBody([]byte) ([]byte, error)
+   RequestHeader([]byte) (http.Header, error)
+   RequestUrl() (string, bool)
    ResponseBody([]byte) ([]byte, error)
 }
 

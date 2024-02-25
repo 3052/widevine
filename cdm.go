@@ -35,7 +35,7 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    if err != nil {
       return nil, err
    }
-   req.Header, err = p.RequestHeader()
+   req.Header, err = p.RequestHeader(signed)
    if err != nil {
       return nil, err
    }

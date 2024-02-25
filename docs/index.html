@@ -14,7 +14,7 @@
   <body>
     <nav>
         154.pages.dev/widevine<span class="navbar-right">
-          v1.2.8 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
+          v1.2.9 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
       </nav>
     <main><h2 id="pkg-overview">package widevine</h2>
 <pre class="chroma"><span class="kn">import</span> <span class="s">&#34;154.pages.dev/widevine&#34;</span></pre>
@@ -142,9 +142,9 @@ aligned(8) class FullBoxHeader(unsigned int(8) v, bit(24) f) {
   <p>some sites use content_id, in which case you need PSSH
 <h3 id="Poster">type Poster</h3>
     <pre class="chroma"><span class="kd">type</span> <span class="nx">Poster</span> <span class="kd">interface</span> <span class="p">{</span>
-	<span id="Poster.RequestUrl"><span class="nf">RequestUrl</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
-	<span id="Poster.RequestHeader"><span class="nf">RequestHeader</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/net/http"><span class="nx">http</span></a><span class="p">.</span><a href="https://pkg.go.dev/net/http#Header"><span class="nx">Header</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
 	<span id="Poster.RequestBody"><span class="nf">RequestBody</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
+	<span id="Poster.RequestHeader"><span class="nf">RequestHeader</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">(</span><a href="https://pkg.go.dev/net/http"><span class="nx">http</span></a><span class="p">.</span><a href="https://pkg.go.dev/net/http#Header"><span class="nx">Header</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
+	<span id="Poster.RequestUrl"><span class="nf">RequestUrl</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
 	<span id="Poster.ResponseBody"><span class="nf">ResponseBody</span></span><span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>
 <span class="p">}</span></pre>
     <h3 id="SystemId">type SystemId</h3>
