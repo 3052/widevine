@@ -16,6 +16,7 @@ func main() {
    if err := message.Consume(data); err != nil {
       panic(err)
    }
+   message, _ = message.Get(2)
    file, err := os.Create("peacock.go")
    if err != nil {
       panic(err)
