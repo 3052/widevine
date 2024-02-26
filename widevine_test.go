@@ -4,9 +4,84 @@ import (
    "encoding/base64"
    "encoding/hex"
    "fmt"
+   "net/http"
    "os"
    "testing"
 )
+
+func new_module(raw_pssh, key_id string) (*CDM, error) {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      return nil, err
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      return nil, err
+   }
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      return nil, err
+   }
+   protect, err := func() (*PSSH, error) {
+      var p PSSH
+      if raw_pssh != "" {
+         b, err := base64.StdEncoding.DecodeString(raw_pssh)
+         if err != nil {
+            return nil, err
+         }
+         if err := p.New(b); err != nil {
+            return nil, err
+         }
+      } else {
+         var err error
+         p.Key_ID, err = hex.DecodeString(key_id)
+         if err != nil {
+            return nil, err
+         }
+      }
+      return &p, nil
+   }()
+   if err != nil {
+      return nil, err
+   }
+   return protect.CDM(private_key, client_id)
+}
+
+type post struct{}
+
+func (post) RequestBody(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+func (post) ResponseBody(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+type roku struct {
+   post
+}
+
+// therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76
+func (roku) RequestUrl() (string, bool) {
+   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0fDfsqmdLNcKddqPGoQx6HWNhUyrpy0aUXhyCgGZtUZzqgsqAl_RGJF60IOx19vOWVO8HVMcU04Hh4-G3Oy6SUcAaSF49MZCMSSm-rPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMIsJ3PTh8KjAgYl4USeYEgiG7QyIQ3&traceId=b0de6abe07b1e6bab52cd87d490b3741&ExpressPlayToken=none", true
+}
+
+func (roku) RequestHeader([]byte) (http.Header, error) {
+   return http.Header{}, nil
+}
+
+type peacock struct {
+   post
+}
+
+func (peacock) RequestHeader([]byte) (http.Header, error) {
+   return http.Header{}, nil
+}
+
+// peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR
+func (peacock) RequestUrl() (string, bool) {
+   return "https://ovp.peacocktv.com/drm/widevine/acquirelicense?bt=98-1OUKVO1bTWjJd9-23lIp7fbCdNTiNc3KDPMWj9TPicaMjsJNF-e1NX0i6ODLH79PwRMmdi23HQn6SbO8u1gyRP0RxPRyxq24H0kw39ysQB2e8G7pkcmA6oVDFqJD-9UKI1aLz12DF1FEm1ovTD5Ar1jje_I3_bcywhypE012Mrx6h0YzfODDQ1oYnGHdLf3-S3he1IQJla57h1ApZMkYnq6ccA7WvpZQCPig6G6Z7sbj3DJ3GjpB7OwZ8irdBfTXpalT_qBXx3o2pYkrMdMmL3NGkuKTV4lhm5mbp4z7CWZYM3Z6EMvxnGK5i32s97nx4XJ0_cQuXxlCbndr_FCxanyNQpbhkC7TgQ2uqYUcQbYVgcp5g2sUxCZNOMGbcJ9B3oKn5jT_", true
+}
 
 var tests = map[string]struct{
    key_id string
@@ -14,6 +89,10 @@ var tests = map[string]struct{
    response string
    url string
 }{
+   "peacock": {
+      url:      "peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR",
+      pssh:     "AAAAOHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAABgSEAAW4jRz6+d9k9jRpy3GkNdI49yVmwY=",
+   },
    "amc": {
       url:      "amcplus.com/movies/blackberry--1065021",
       pssh:     "AAAAVnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADYIARIQJxTtpnq7TjW7URquBXrxahoNd2lkZXZpbmVfdGVzdCIIMTIzNDU2NzgyB2RlZmF1bHQ=",
