@@ -2,7 +2,8 @@ package main
 
 import "154.pages.dev/protobuf"
 
-var address = "bt=99-phXc4EtDsJgqXIC3tOLjeDPmRC34rSHe8UBPvY8NHHs1E8VKN3Lb_tBfSdFNYzlXknCcoM665VqfshXcD0fP2pMDwZ0FRNMeGGwnESSSJGhbuGZQqwA58Fx8pc3Dn1ZVr89FzAAJqyAlK9DKccgsBvJPaFQyjgYmT3aySs5tALO9STEGFXaR3tb8w9EqTntyogt11p5pAyjDW2O76OUm0DHLajebCTSC0Wwrnid0jKd5-dKZIVfuaEBfppPwaMmWtNh1RdqRHwzB4pMrMbQVpDt7bt0n-Axk2V5uEAEpo4ab8Li591oq9sH3a5_zz75yn6u0YAO2uUbApdruO8Lu8pzZHZrPbhy1XHELCw9gepo7pyIyWZUlFlezoWGUgBKHSO1QefrcgLGSHYi3"
+var address = "bt=99-3cSXtCchX6Ifr82yLt3ZOdeWiDkMub0ADJhrfigcTw5oMtUwlZrPGII72uj9vtz3o9ouQRNvClLSkp9PUBjaexmjnvdjg63DJHcrYmH-9QaIQrV6bs-GPkkkFYP7l-53-rcVyGkSd1KFa1IjsJlRmHfn9YrzczZG5Bb3uJbNP67QQGBSnzmWPuorI3aEWWWU7FR6Cb1er1nofM0-u55aP5BHYZ9sDjsLZtL8AksYBeexrUCIa4xD9sCC_5UM0TMeK_DE2zjRhNB1YxlTG5_W6zIjMN9kDNDvxjU7zEThc4ci6AFUjBZ8eW_yn7xJroiut0YdNWBVjp1kAB2XoAAu1IS1TrZF-84f-1ej_jV7CG03b6gJHH9NEmQ4qDVH5ijT7WaOveXykO45hWsP"
+
 var message = protobuf.Message{
    protobuf.Field{Number: 1, Type: 2, Value: protobuf.Message{
       protobuf.Field{Number: 1, Type: 0, Value: protobuf.Varint(1)},
