@@ -4,7 +4,6 @@ import (
    "encoding/base64"
    "encoding/hex"
    "fmt"
-   "net/http"
    "os"
    "testing"
 )
@@ -114,6 +113,7 @@ func TestPssh(t *testing.T) {
       }
    }
 }
+
 func new_module(raw_pssh, key_id string) (*CDM, error) {
    home, err := os.UserHomeDir()
    if err != nil {
@@ -152,25 +152,3 @@ func new_module(raw_pssh, key_id string) (*CDM, error) {
    return protect.CDM(private_key, client_id)
 }
 
-type post struct{}
-
-func (post) RequestBody(b []byte) ([]byte, error) {
-   return b, nil
-}
-
-func (post) ResponseBody(b []byte) ([]byte, error) {
-   return b, nil
-}
-
-type roku struct {
-   post
-}
-
-// therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76
-func (roku) RequestUrl() (string, bool) {
-   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0fDfsqmdLNcKddqPGoQx6HWNhUyrpy0aUXhyCgGZtUZzqgsqAl_RGJF60IOx19vOWVO8HVMcU04Hh4-G3Oy6SUcAaSF49MZCMSSm-rPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMIsJ3PTh8KjAgYl4USeYEgiG7QyIQ3&traceId=b0de6abe07b1e6bab52cd87d490b3741&ExpressPlayToken=none", true
-}
-
-func (roku) RequestHeader([]byte) (http.Header, error) {
-   return http.Header{}, nil
-}

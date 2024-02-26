@@ -36,7 +36,7 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    if err != nil {
       return nil, err
    }
-   req.Header, err = p.RequestHeader(signed)
+   req.Header, err = p.RequestHeader()
    if err != nil {
       return nil, err
    }
@@ -143,9 +143,9 @@ func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
 }
 
 type Poster interface {
-   RequestBody([]byte) ([]byte, error)
-   RequestHeader([]byte) (http.Header, error)
    RequestUrl() (string, bool)
+   RequestHeader() (http.Header, error)
+   RequestBody([]byte) ([]byte, error)
    ResponseBody([]byte) ([]byte, error)
 }
 

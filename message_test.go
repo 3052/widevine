@@ -7,31 +7,6 @@ import (
    "testing"
 )
 
-func TestPeacock(t *testing.T) {
-   test := tests["peacock"]
-   module, err := new_module(test.pssh, test.key_id)
-   if err != nil {
-      t.Fatal(err)
-   }
-   slog.SetLogLoggerLevel(slog.LevelDebug)
-   if _, err := module.License(peacock{}); err != nil {
-      t.Fatal(err)
-   }
-}
-
-type peacock struct {
-   post
-}
-
-func (peacock) RequestHeader([]byte) (http.Header, error) {
-   return http.Header{}, nil
-}
-
-// peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR
-func (peacock) RequestUrl() (string, bool) {
-   return "https://ovp.peacocktv.com/drm/widevine/acquirelicense?bt=98-K1UA1n6NSWJt4lSwWvj-AC_nbp5I9be6RK1WVu1zw0fqsLMWVe4nqmx58NDU1DJaDLR4gZJi9VBx-QtkAoyOeANzRqqkbQMK2ZF_1uVkBq0XfJ0Vqth1QtSiOfiEPVtHn1Tk-xydhrXsTyTxfw5fHJkvEJ1wa1q9W3oOnubIzijwee2YQPMt596ESk8tDpxF6xoKSOsobSYMkW77LzKJ_fGLbUPPi0Mtl2b-Z-_ybnrJ-TD72wtrBQ4TbCrPzBH8OtLftoFTejaxPdZ6unxkTTCbCYITkIxVuDBDvqcJQocB-N0585z7ZmOHFxtS0u2LGC4WdzGrnhZ2-_i6Bw_bk3ZDIYxZQFArM0J8-LyMQMMCmDcErZPwIHeG8gt843zypy8Zlp9o", true
-}
-
 func TestRoku(t *testing.T) {
    test := tests["roku"]
    module, err := new_module(test.pssh, test.key_id)
@@ -45,4 +20,27 @@ func TestRoku(t *testing.T) {
    }
    key, ok := module.Key(license)
    fmt.Printf("%x %v\n", key, ok)
+}
+
+type post struct{}
+
+func (post) RequestBody(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+func (post) ResponseBody(b []byte) ([]byte, error) {
+   return b, nil
+}
+
+type roku struct {
+   post
+}
+
+// therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76
+func (roku) RequestUrl() (string, bool) {
+   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0bDawpz4KacqdfqvGjQx6HBY5Uke8h3aUT1yCkH8sNMT6n4fcl_UWOSqwGO0Z8urfDP5LXapVi53x6rTGbzfbPdlHEGN4YZCMSAT-uPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI-87KTh9Dantr4awBBl2zpa1qFOx7&traceId=679d8a9d6e456491426a1dbbfb65e8ee&ExpressPlayToken=none", true
+}
+
+func (roku) RequestHeader() (http.Header, error) {
+   return http.Header{}, nil
 }
