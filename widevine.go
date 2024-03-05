@@ -17,6 +17,13 @@ import (
    "net/http"
 )
 
+type Poster interface {
+   RequestUrl() (string, bool)
+   RequestHeader() (http.Header, error)
+   RequestBody([]byte) ([]byte, error)
+   ResponseBody([]byte) ([]byte, error)
+}
+
 func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
@@ -140,13 +147,6 @@ func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
       }
    }
    return nil, false
-}
-
-type Poster interface {
-   RequestUrl() (string, bool)
-   RequestHeader() (http.Header, error)
-   RequestBody([]byte) ([]byte, error)
-   ResponseBody([]byte) ([]byte, error)
 }
 
 // ISO/IEC 14496-12

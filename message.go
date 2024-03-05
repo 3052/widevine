@@ -34,9 +34,9 @@ func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
    // license_request
    var request protobuf.Message // LicenseRequest
    request.AddBytes(1, client_id) // client_id
-   request.AddFunc(2, func(m *protobuf.Message) { // content_id
-      m.AddFunc(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddFunc(1, func(m *protobuf.Message) { // pssh_data
+   request.Add(2, func(m *protobuf.Message) { // content_id
+      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.Add(1, func(m *protobuf.Message) { // pssh_data
             m.AddBytes(2, p.Key_ID)
             m.AddBytes(4, p.content_id)
          })
