@@ -17,6 +17,13 @@ import (
    "net/http"
 )
 
+type Poster interface {
+   RequestUrl() (string, bool)
+   RequestHeader() (http.Header, bool)
+   RequestBody([]byte) ([]byte, error)
+   ResponseBody([]byte) ([]byte, error)
+}
+
 func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
@@ -36,9 +43,8 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    if err != nil {
       return nil, err
    }
-   req.Header, err = p.RequestHeader()
-   if err != nil {
-      return nil, err
+   if v, ok := p.RequestHeader(); ok {
+      req.Header = v
    }
    res, err := http.DefaultClient.Do(req)
    if err != nil {
@@ -140,13 +146,6 @@ func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
       }
    }
    return nil, false
-}
-
-type Poster interface {
-   RequestUrl() (string, bool)
-   RequestHeader() (http.Header, error)
-   RequestBody([]byte) ([]byte, error)
-   ResponseBody([]byte) ([]byte, error)
 }
 
 // ISO/IEC 14496-12
