@@ -17,111 +17,6 @@ import (
    "net/http"
 )
 
-type Poster interface {
-   RequestUrl() (string, bool)
-   RequestHeader() (http.Header, error)
-   RequestBody([]byte) ([]byte, error)
-   ResponseBody([]byte) ([]byte, error)
-}
-
-func (c *CDM) License(p Poster) (*LicenseMessage, error) {
-   address, ok := p.RequestUrl()
-   if !ok {
-      return nil, errors.New("Poster.RequestUrl")
-   }
-   signed, err := func() ([]byte, error) {
-      b, err := c.request_signed()
-      if err != nil {
-         return nil, err
-      }
-      return p.RequestBody(b)
-   }()
-   if err != nil {
-      return nil, err
-   }
-   req, err := http.NewRequest("POST", address, bytes.NewReader(signed))
-   if err != nil {
-      return nil, err
-   }
-   req.Header, err = p.RequestHeader()
-   if err != nil {
-      return nil, err
-   }
-   res, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      res.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   signed, err = func() ([]byte, error) {
-      b, err := io.ReadAll(res.Body)
-      if err != nil {
-         return nil, err
-      }
-      return p.ResponseBody(b)
-   }()
-   if err != nil {
-      return nil, err
-   }
-   slog.Debug("license", "response", base64.StdEncoding.EncodeToString(signed))
-   return c.response(signed)
-}
-
-// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type CDM struct {
-   block cipher.Block
-   key_id []byte
-   license_request []byte
-   private_key *rsa.PrivateKey
-}
-
-func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
-   var message protobuf.Message // SignedMessage
-   err := message.Consume(signed)
-   if err != nil {
-      return nil, err
-   }
-   session_key, err := func() ([]byte, error) {
-      v, ok := message.GetBytes(4) // bytes session_key
-      if !ok {
-         return nil, errors.New("session_key")
-      }
-      return rsa.DecryptOAEP(sha1.New(), nil, c.private_key, v, nil)
-   }()
-   if err != nil {
-      return nil, err
-   }
-   c.block, err = func() (cipher.Block, error) {
-      var b []byte
-      b = append(b, 1)
-      b = append(b, "ENCRYPTION"...)
-      b = append(b, 0)
-      b = append(b, c.license_request...)
-      b = append(b, 0, 0, 0, 0x80)
-      h, err := cmac.New(aes.NewCipher, session_key)
-      if err != nil {
-         return nil, err
-      }
-      h.Write(b)
-      return aes.NewCipher(h.Sum(nil))
-   }()
-   if err != nil {
-      return nil, err
-   }
-   // this is listed as: optional bytes msg = 2;
-   // but assuming the type is: LICENSE = 2;
-   // the result is actually: optional License msg = 2;
-   license, ok := message.Get(2)
-   if !ok {
-      return nil, errors.New("License")
-   }
-   return &LicenseMessage{license}, nil
-}
-
 func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
    for _, field := range m.m {
       if container, ok := field.Get(3); ok { // KeyContainer key
@@ -266,3 +161,108 @@ func (no_operation) Read(buf []byte) (int, error) {
 type LicenseMessage struct {
    m protobuf.Message
 }
+type Poster interface {
+   RequestUrl() (string, bool)
+   RequestHeader() (http.Header, error)
+   RequestBody([]byte) ([]byte, error)
+   ResponseBody([]byte) ([]byte, error)
+}
+
+func (c *CDM) License(p Poster) (*LicenseMessage, error) {
+   address, ok := p.RequestUrl()
+   if !ok {
+      return nil, errors.New("Poster.RequestUrl")
+   }
+   signed, err := func() ([]byte, error) {
+      b, err := c.request_signed()
+      if err != nil {
+         return nil, err
+      }
+      return p.RequestBody(b)
+   }()
+   if err != nil {
+      return nil, err
+   }
+   req, err := http.NewRequest("POST", address, bytes.NewReader(signed))
+   if err != nil {
+      return nil, err
+   }
+   req.Header, err = p.RequestHeader()
+   if err != nil {
+      return nil, err
+   }
+   res, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer res.Body.Close()
+   if res.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      res.Write(&b)
+      return nil, errors.New(b.String())
+   }
+   signed, err = func() ([]byte, error) {
+      b, err := io.ReadAll(res.Body)
+      if err != nil {
+         return nil, err
+      }
+      return p.ResponseBody(b)
+   }()
+   if err != nil {
+      return nil, err
+   }
+   slog.Debug("license", "response", base64.StdEncoding.EncodeToString(signed))
+   return c.response(signed)
+}
+
+// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
+type CDM struct {
+   block cipher.Block
+   key_id []byte
+   license_request []byte
+   private_key *rsa.PrivateKey
+}
+
+func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
+   var message protobuf.Message // SignedMessage
+   err := message.Consume(signed)
+   if err != nil {
+      return nil, err
+   }
+   session_key, err := func() ([]byte, error) {
+      v, ok := <-message.GetBytes(4)
+      if !ok {
+         return nil, errors.New("session_key")
+      }
+      return rsa.DecryptOAEP(sha1.New(), nil, c.private_key, v, nil)
+   }()
+   if err != nil {
+      return nil, err
+   }
+   c.block, err = func() (cipher.Block, error) {
+      var b []byte
+      b = append(b, 1)
+      b = append(b, "ENCRYPTION"...)
+      b = append(b, 0)
+      b = append(b, c.license_request...)
+      b = append(b, 0, 0, 0, 0x80)
+      h, err := cmac.New(aes.NewCipher, session_key)
+      if err != nil {
+         return nil, err
+      }
+      h.Write(b)
+      return aes.NewCipher(h.Sum(nil))
+   }()
+   if err != nil {
+      return nil, err
+   }
+   // this is listed as: optional bytes msg = 2;
+   // but assuming the type is: LICENSE = 2;
+   // the result is actually: optional License msg = 2;
+   license, ok := <-message.Get(2)
+   if !ok {
+      return nil, errors.New("License")
+   }
+   return &LicenseMessage{license}, nil
+}
+
