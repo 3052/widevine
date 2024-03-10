@@ -17,101 +17,6 @@ import (
    "net/http"
 )
 
-func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
-   for _, field := range m.m {
-      if container, ok := field.Get(3); ok { // KeyContainer key
-         // this field is: optional bytes id = 1;
-         // but CONTENT keys should always have it
-         id, ok := container.GetBytes(1)
-         if !ok {
-            continue
-         }
-         if !bytes.Equal(id, c.key_id) {
-            continue
-         }
-         iv, ok := container.GetBytes(2)
-         if !ok {
-            continue
-         }
-         key, ok := container.GetBytes(3)
-         if !ok {
-            continue
-         }
-         cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
-         return unpad(key), true
-      }
-   }
-   return nil, false
-}
-
-// ISO/IEC 14496-12
-//  aligned(8) class Box (
-//     unsigned int(32) boxtype, optional unsigned int(8)[16] extended_type
-//  ) {
-//     BoxHeader(boxtype, extended_type);
-//     // the remaining bytes are the BoxPayload
-//  }
-//
-//  aligned(8) class BoxHeader (
-//     unsigned int(32) boxtype, optional unsigned int(8)[16] extended_type
-//  ) {
-//     unsigned int(32) size;
-//     unsigned int(32) type = boxtype;
-//     if (size==1) {
-//        unsigned int(64) largesize;
-//     } else if (size==0) {
-//        // box extends to end of file
-//     }
-//     if (boxtype=='uuid') {
-//        unsigned int(8)[16] usertype = extended_type;
-//     }
-//  }
-//
-//  aligned(8) class FullBox(
-//     unsigned int(32) boxtype,
-//     unsigned int(8) v,
-//     bit(24) f,
-//     optional unsigned int(8)[16] extended_type
-//  ) extends Box(boxtype, extended_type) {
-//     FullBoxHeader(v, f);
-//     // the remaining bytes are the FullBoxPayload
-//  }
-//
-//  aligned(8) class FullBoxHeader(unsigned int(8) v, bit(24) f) {
-//     unsigned int(8) version = v;
-//     bit(24) flags = f;
-//  }
-//
-// ISO/IEC 23001-7
-//  aligned(8) class ProtectionSystemSpecificHeaderBox extends FullBox(
-//     'pssh', version, flags=0,
-//  ) {
-//     unsigned int(8)[16] SystemID;
-//     if (version > 0) {
-//        unsigned int(32) KID_count;
-//        {
-//           unsigned int(8)[16] KID;
-//        } [KID_count];
-//     }
-//     unsigned int(32) DataSize;
-//     unsigned int(8)[DataSize] Data;
-//  }
-type PSSH struct {
-   SpecificHeader struct {
-      Size uint32
-      Type Type
-      Version uint8
-      Flags [3]byte
-      SystemId SystemId
-      DataSize uint32
-   }
-   // all of the Widevine PSSH I have seen so far are single `key_id`, so we
-   // are going to implement that for now, because its not clear what the logic
-   // would be with multiple key_ids.
-   Key_ID []byte
-   content_id []byte
-}
-
 // some sites use content_id, in which case you need PSSH
 func (p *PSSH) New(data []byte) error {
    buf := bytes.NewBuffer(data)
@@ -124,9 +29,9 @@ func (p *PSSH) New(data []byte) error {
       return err
    }
    // Cannot be used in conjunction with content_id
-   p.Key_ID, _ = protect.GetBytes(2)
+   p.Key_ID = <-protect.GetBytes(2)
    // Cannot be present in conjunction with key_id
-   p.content_id, _ = protect.GetBytes(4)
+   p.content_id = <-protect.GetBytes(4)
    return nil
 }
 
@@ -264,5 +169,98 @@ func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
       return nil, errors.New("License")
    }
    return &LicenseMessage{license}, nil
+}
+
+func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
+   for container := range m.m.Get(3) { // KeyContainer key
+      // this field is: optional bytes id = 1;
+      // but CONTENT keys should always have it
+      id, ok := <-container.GetBytes(1)
+      if !ok {
+         continue
+      }
+      if !bytes.Equal(id, c.key_id) {
+         continue
+      }
+      iv, ok := <-container.GetBytes(2)
+      if !ok {
+         continue
+      }
+      key, ok := <-container.GetBytes(3)
+      if !ok {
+         continue
+      }
+      cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
+      return unpad(key), true
+   }
+   return nil, false
+}
+
+// ISO/IEC 14496-12
+//  aligned(8) class Box (
+//     unsigned int(32) boxtype, optional unsigned int(8)[16] extended_type
+//  ) {
+//     BoxHeader(boxtype, extended_type);
+//     // the remaining bytes are the BoxPayload
+//  }
+//
+//  aligned(8) class BoxHeader (
+//     unsigned int(32) boxtype, optional unsigned int(8)[16] extended_type
+//  ) {
+//     unsigned int(32) size;
+//     unsigned int(32) type = boxtype;
+//     if (size==1) {
+//        unsigned int(64) largesize;
+//     } else if (size==0) {
+//        // box extends to end of file
+//     }
+//     if (boxtype=='uuid') {
+//        unsigned int(8)[16] usertype = extended_type;
+//     }
+//  }
+//
+//  aligned(8) class FullBox(
+//     unsigned int(32) boxtype,
+//     unsigned int(8) v,
+//     bit(24) f,
+//     optional unsigned int(8)[16] extended_type
+//  ) extends Box(boxtype, extended_type) {
+//     FullBoxHeader(v, f);
+//     // the remaining bytes are the FullBoxPayload
+//  }
+//
+//  aligned(8) class FullBoxHeader(unsigned int(8) v, bit(24) f) {
+//     unsigned int(8) version = v;
+//     bit(24) flags = f;
+//  }
+//
+// ISO/IEC 23001-7
+//  aligned(8) class ProtectionSystemSpecificHeaderBox extends FullBox(
+//     'pssh', version, flags=0,
+//  ) {
+//     unsigned int(8)[16] SystemID;
+//     if (version > 0) {
+//        unsigned int(32) KID_count;
+//        {
+//           unsigned int(8)[16] KID;
+//        } [KID_count];
+//     }
+//     unsigned int(32) DataSize;
+//     unsigned int(8)[DataSize] Data;
+//  }
+type PSSH struct {
+   SpecificHeader struct {
+      Size uint32
+      Type Type
+      Version uint8
+      Flags [3]byte
+      SystemId SystemId
+      DataSize uint32
+   }
+   // all of the Widevine PSSH I have seen so far are single `key_id`, so we
+   // are going to implement that for now, because its not clear what the logic
+   // would be with multiple key_ids.
+   Key_ID []byte
+   content_id []byte
 }
 

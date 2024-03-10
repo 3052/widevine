@@ -38,7 +38,7 @@ type roku struct {
 
 // therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76
 func (roku) RequestUrl() (string, bool) {
-   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc0bDawpz4KacqdfqvGjQx6HBY5Uke8h3aUT1yCkH8sNMT6n4fcl_UWOSqwGO0Z8urfDP5LXapVi53x6rTGbzfbPdlHEGN4YZCMSAT-uPUKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMI-87KTh9Dantr4awBBl2zpa1qFOx7&traceId=679d8a9d6e456491426a1dbbfb65e8ee&ExpressPlayToken=none", true
+   return "https://wv-license.sr.roku.com/license/v1/license/wv?token=Lc1ODK0omdCaI6dfpfepQx7VWdxUyu8v36UYhiWjHZpRZzugsPUl_UvbRf4Ia0t-vLHFP5bbYJFi5H0i_W3Pm_aeI1aXGI5PZCMSOhqQPEKM9HrY2G-mfm3sbX6xIORKllMLb2DHFpJJIhTs4_iTSP5pyktnTOqU0quvQERvpJiioTumJBF73MOrIUN2yW3hZLNA5SZC88QRxguAbadUwD9krAbA2Nh1j5YACLInD2izaLAyASusqIYuNxVi_Pa-wsRW8A-u8hKGSGzmVH3LNjfo-QEiIr5IpQHhndmHN6fup3kMkdeCoHYQ5Qz7heMIwJGFTx9586BxopmUqm-BZoWYJdu4&traceId=8b66614f0c2528354179a864f3c26852&ExpressPlayToken=none", true
 }
 
 func (roku) RequestHeader() (http.Header, error) {

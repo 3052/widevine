@@ -14,10 +14,6 @@ var tests = map[string]struct{
    response string
    url string
 }{
-   "peacock": {
-      url:      "peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR",
-      pssh:     "AAAAOHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAABgSEAAW4jRz6+d9k9jRpy3GkNdI49yVmwY=",
-   },
    "amc": {
       url:      "amcplus.com/movies/blackberry--1065021",
       pssh:     "AAAAVnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADYIARIQJxTtpnq7TjW7URquBXrxahoNd2lkZXZpbmVfdGVzdCIIMTIzNDU2NzgyB2RlZmF1bHQ=",
@@ -37,6 +33,11 @@ var tests = map[string]struct{
       pssh: "AAAAWHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADgIARIQPeDzPBuKT86WHtqpUOLnMiIgYnFzSmhfejdvNEFSNmt0dWlfOXk4d0lIcXpFRXFiaHI4AQ==",
       response: "CAIS6gEKGgoAEgiPtUboQP44hiABKAA4AEAASK7vla4GEhwIARAAGAAgACgAMAA4AEIASABQAFgAYAFwAHgBGkYSECuVaGTK0rYTApJ6mFPNer8aMPc9TxjCTjTqDWXn/kYKD65+Dc+Hl4EKxni4JQnycuDfX7C7nxUJItX2KsCceCFXmyABGl4KED3g8zwbik/Olh7aqVDi5zISEAIUstwuQnyfxGqNDPYCn3YaICBfgvJS4vqr4xWi2F83JUNtHFDLy/g0CCdGgv/lpFgeIAIoATIICAAQKhgAIAA6CAgAECoYACAAIK7vla4GOAAaIJoAha40+btxbvaHBn1rinfs+qbO66XznIGGgIH73gPkIoACfKJBakBqe7nt8gvYDbIt0NAkRSnT48TqordmvbgeSLUatEWga63fMSooSMeEFkHm/yJrizUzX45gsjk8r2oPuSIXEfIemAkvz2DKmsPxtxRnwipffUQePJXjEveiqVTMpSkLmuYSXHR5HT7c+rdDNWu1CekT5reM10Rfd5q0PxFdD1gvvU2O92L/g587/fx4YtlsfS6KcF9BaB2CHO700ZcMFKCopWS5Ghdkt354eH7AMdv7YJnDx4DzoK3zTDYYBEPuTHzfL4cjq/82XZEG00OgMWNGALB1uRHUF4iZURj6nQ51Fk2n3byUqqlCYSs8oTdnmLpTJtnPszvmEyeRUjoICgYxNy40LjBAAVgA",
       url: "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
+   },
+   "peacock": {
+      pssh:     "AAAAOHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAABgSEAAW4jRz6+d9k9jRpy3GkNdI49yVmwY=",
+      response: "CAISuwEKLAoAEiQ2ZDk4N2QzNy1kMmQyLTRkOTUtYTY0ZC1iM2VjZWVkMWNkNzkgASgAEh8IARAAGAAgACgAMAA4AEIASABQAFgAYABwAHgBgAEAGmIKEAAW4jRz6+d9k9jRpy3GkNcSEHlGhtD2SBRzRbwqeB/EegEaIDLzekXxkzG9+XTvZD9c/MPsfrwc0FT0ervaJcimv7IuIAIoATIICAEQKhgAIAA6CAgBECoYACAAYgJTRCCkvLivBjgAGiCAoczp3bIIL+WxzRK0kww+1zGb1azr5Zw39UEFO5AzbSKAAgDTt1Qoq7vZBDWs9uLD6/MJluS4OoSzUmeHfX2c8z4tdOdA7mhSRegZztL2kOCSuqNwB00ZZEBGGHebZoDj4cITlRDuukMgCw1VoAr6o6+tfLdEL0oHT+eA3KAKTuMvmLWTZHoHhnJ5OSuBMm/XCSzFF4yEkVBVfHmBjP/mhLlmCJI/kNi6t7Ih7Ne8b4UOn08ylRfvRCGzkvqRyA7j3OSSliWy/hQ3JaBx7Q8sp6XKEnCDp48D3S43dLFuwjl4waDpCS61Oc7+i8vRkeluM/0rZ7MeYw6IxTj6/XC0cDD/3TY4as0m5L3bO1eRFFnB/U+8dpAERD34mmmyxWFEa6c6CAoGMTguMS4yQAFYAA==",
+      url:      "peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR",
    },
    "roku": { // 2023-11-14 this requires content_id, so PSSH is needed:
       pssh:     "AAAAQ3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAACMIARIQvfpNbNs5cC5baB+QYX+afhoKaW50ZXJ0cnVzdCIBKg==",
@@ -151,4 +152,3 @@ func new_module(raw_pssh, key_id string) (*CDM, error) {
    }
    return protect.CDM(private_key, client_id)
 }
-
