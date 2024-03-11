@@ -16,24 +16,6 @@ import (
    "net/http"
 )
 
-func (c CDM) request_signed() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   var signed protobuf.Message // SignedMessage
-   signed.AddBytes(2, c.license_request)
-   signed.AddBytes(3, signature)
-   return signed.Encode(), nil
-}
-
 func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
@@ -44,6 +26,7 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
       if err != nil {
          return nil, err
       }
+      slog.Debug("license", "request", base64.StdEncoding.EncodeToString(b))
       return p.RequestBody(b)
    }()
    if err != nil {
@@ -81,12 +64,30 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    return c.response(signed)
 }
 
+func (c CDM) request_signed() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   var signed protobuf.Message // SignedMessage
+   signed.AddBytes(2, c.license_request)
+   signed.AddBytes(3, signature)
+   return signed.Encode(), nil
+}
+
 // wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
 type CDM struct {
-   block cipher.Block
-   key_id []byte
+   block           cipher.Block
+   key_id          []byte
    license_request []byte
-   private_key *rsa.PrivateKey
+   private_key     *rsa.PrivateKey
 }
 
 func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
