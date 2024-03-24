@@ -7,52 +7,6 @@ import (
    "testing"
 )
 
-func new_module(raw_pssh string) (*CDM, error) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      return nil, err
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      return nil, err
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      return nil, err
-   }
-   var protect PSSH
-   p.data, err = base64.StdEncoding.DecodeString(raw_pssh)
-   if err != nil {
-      return nil, err
-   }
-   if err := p.consume(); err != nil {
-      return nil, err
-   }
-   return protect.CDM(private_key, client_id)
-}
-
-func TestResponse(t *testing.T) {
-   for _, test := range tests {
-      module, err := new_module(test.pssh)
-      if err != nil {
-         t.Fatal(err)
-      }
-      signed, err := base64.StdEncoding.DecodeString(test.response)
-      if err != nil {
-         t.Fatal(err)
-      }
-      license, err := module.response(signed)
-      if err != nil {
-         t.Fatal(err)
-      }
-      key, ok := module.Key(license)
-      if !ok {
-         t.Fatal("CDM.Key")
-      }
-      fmt.Println(test.url)
-      fmt.Printf("%x\n\n", key)
-   }
-}
 var tests = map[string]struct {
    pssh     string
    response string
@@ -92,21 +46,66 @@ var tests = map[string]struct {
    },
 }
 
+func new_module(raw_pssh string) (*CDM, error) {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      return nil, err
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      return nil, err
+   }
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      return nil, err
+   }
+   var protect PSSH
+   protect.Data, err = base64.StdEncoding.DecodeString(raw_pssh)
+   if err != nil {
+      return nil, err
+   }
+   if err := protect.Consume(); err != nil {
+      return nil, err
+   }
+   return protect.CDM(private_key, client_id)
+}
+
 func TestPssh(t *testing.T) {
    for _, test := range tests {
       var (
          protect PSSH
          err error
       )
-      protect.data, err = base64.StdEncoding.DecodeString(test.pssh)
+      protect.Data, err = base64.StdEncoding.DecodeString(test.pssh)
       if err != nil {
          t.Fatal(err)
       }
-      if err := protect.consume(); err != nil {
+      if err := protect.Consume(); err != nil {
          t.Fatal(err)
       }
-      fmt.Println(protect.content_id())
-      fmt.Println(protect.key_id())
+      fmt.Printf("%x\n", protect.key_id())
    }
 }
 
+func TestResponse(t *testing.T) {
+   for _, test := range tests {
+      module, err := new_module(test.pssh)
+      if err != nil {
+         t.Fatal(err)
+      }
+      signed, err := base64.StdEncoding.DecodeString(test.response)
+      if err != nil {
+         t.Fatal(err)
+      }
+      license, err := module.response(signed)
+      if err != nil {
+         t.Fatal(err)
+      }
+      key, ok := module.Key(license)
+      if !ok {
+         t.Fatal("CDM.Key")
+      }
+      fmt.Println(test.url)
+      fmt.Printf("%x\n\n", key)
+   }
+}

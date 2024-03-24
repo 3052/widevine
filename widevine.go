@@ -34,28 +34,6 @@ func unpad(data []byte) []byte {
    return data
 }
 
-func (p *PSSH) consume() error {
-   return p.m.Consume(p.data)
-}
-
-// Cannot be present in conjunction with key_id
-func (p PSSH) content_id() []byte {
-   return <-p.m.GetBytes(4)
-}
-
-// Cannot be used in conjunction with content_id. all of the Widevine PSSH I
-// have seen so far are single `key_id`, so we are going to implement that for
-// now, because its not clear what the logic would be with multiple key_ids
-func (p PSSH) key_id() []byte {
-   return <-p.m.GetBytes(2)
-}
-
-// some sites use content_id, in which case you need PSSH
-type PSSH struct {
-   data []byte
-   m protobuf.Message
-}
-
 func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
    var module CDM
    // private_key
@@ -72,9 +50,26 @@ func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
    request.AddBytes(1, client_id)             // client_id
    request.Add(2, func(m *protobuf.Message) { // content_id
       m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, p.data) // pssh_data
+         m.AddBytes(1, p.Data) // pssh_data
       })
    })
    module.license_request = request.Encode()
    return &module, nil
+}
+
+// some sites use content_id, in which case you need PSSH
+type PSSH struct {
+   Data []byte
+   m protobuf.Message
+}
+
+func (p *PSSH) Consume() error {
+   return p.m.Consume(p.Data)
+}
+
+// Cannot be used in conjunction with content_id. all of the Widevine PSSH I
+// have seen so far are single `key_id`, so we are going to implement that for
+// now, because its not clear what the logic would be with multiple key_ids
+func (p PSSH) key_id() []byte {
+   return <-p.m.GetBytes(2)
 }

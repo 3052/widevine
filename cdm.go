@@ -34,7 +34,6 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
       if err != nil {
          return nil, err
       }
-      slog.Debug("license", "request", base64.StdEncoding.EncodeToString(b))
       return p.RequestBody(b)
    }()
    if err != nil {
