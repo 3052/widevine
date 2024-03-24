@@ -7,21 +7,6 @@ import (
    "testing"
 )
 
-func TestRoku(t *testing.T) {
-   test := tests["roku"]
-   module, err := new_module(test.pssh, test.key_id)
-   if err != nil {
-      t.Fatal(err)
-   }
-   slog.SetLogLoggerLevel(slog.LevelDebug)
-   license, err := module.License(roku{})
-   if err != nil {
-      t.Fatal(err)
-   }
-   key, ok := module.Key(license)
-   fmt.Printf("%x %v\n", key, ok)
-}
-
 type post struct{}
 
 func (post) RequestBody(b []byte) ([]byte, error) {
@@ -43,4 +28,19 @@ func (roku) RequestUrl() (string, bool) {
 
 func (roku) RequestHeader() (http.Header, error) {
    return http.Header{}, nil
+}
+
+func TestRoku(t *testing.T) {
+   test := tests["roku"]
+   module, err := new_module(test.pssh)
+   if err != nil {
+      t.Fatal(err)
+   }
+   slog.SetLogLoggerLevel(slog.LevelDebug)
+   license, err := module.License(roku{})
+   if err != nil {
+      t.Fatal(err)
+   }
+   key, ok := module.Key(license)
+   fmt.Printf("%x %v\n", key, ok)
 }

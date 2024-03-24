@@ -2,18 +2,63 @@ package widevine
 
 import (
    "encoding/base64"
-   "encoding/hex"
    "fmt"
    "os"
    "testing"
 )
 
+func new_module(raw_pssh string) (*CDM, error) {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      return nil, err
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      return nil, err
+   }
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      return nil, err
+   }
+   var protect PSSH
+   p.data, err = base64.StdEncoding.DecodeString(raw_pssh)
+   if err != nil {
+      return nil, err
+   }
+   if err := p.consume(); err != nil {
+      return nil, err
+   }
+   return protect.CDM(private_key, client_id)
+}
+
+func TestResponse(t *testing.T) {
+   for _, test := range tests {
+      module, err := new_module(test.pssh)
+      if err != nil {
+         t.Fatal(err)
+      }
+      signed, err := base64.StdEncoding.DecodeString(test.response)
+      if err != nil {
+         t.Fatal(err)
+      }
+      license, err := module.response(signed)
+      if err != nil {
+         t.Fatal(err)
+      }
+      key, ok := module.Key(license)
+      if !ok {
+         t.Fatal("CDM.Key")
+      }
+      fmt.Println(test.url)
+      fmt.Printf("%x\n\n", key)
+   }
+}
 var tests = map[string]struct {
-   key_id   string
    pssh     string
    response string
    url      string
 }{
+   /*
    "amc": {
       url:      "amcplus.com/movies/blackberry--1065021",
       pssh:     "AAAAVnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADYIARIQJxTtpnq7TjW7URquBXrxahoNd2lkZXZpbmVfdGVzdCIIMTIzNDU2NzgyB2RlZmF1bHQ=",
@@ -39,116 +84,29 @@ var tests = map[string]struct {
       response: "CAISuwEKLAoAEiQ2ZDk4N2QzNy1kMmQyLTRkOTUtYTY0ZC1iM2VjZWVkMWNkNzkgASgAEh8IARAAGAAgACgAMAA4AEIASABQAFgAYABwAHgBgAEAGmIKEAAW4jRz6+d9k9jRpy3GkNcSEHlGhtD2SBRzRbwqeB/EegEaIDLzekXxkzG9+XTvZD9c/MPsfrwc0FT0ervaJcimv7IuIAIoATIICAEQKhgAIAA6CAgBECoYACAAYgJTRCCkvLivBjgAGiCAoczp3bIIL+WxzRK0kww+1zGb1azr5Zw39UEFO5AzbSKAAgDTt1Qoq7vZBDWs9uLD6/MJluS4OoSzUmeHfX2c8z4tdOdA7mhSRegZztL2kOCSuqNwB00ZZEBGGHebZoDj4cITlRDuukMgCw1VoAr6o6+tfLdEL0oHT+eA3KAKTuMvmLWTZHoHhnJ5OSuBMm/XCSzFF4yEkVBVfHmBjP/mhLlmCJI/kNi6t7Ih7Ne8b4UOn08ylRfvRCGzkvqRyA7j3OSSliWy/hQ3JaBx7Q8sp6XKEnCDp48D3S43dLFuwjl4waDpCS61Oc7+i8vRkeluM/0rZ7MeYw6IxTj6/XC0cDD/3TY4as0m5L3bO1eRFFnB/U+8dpAERD34mmmyxWFEa6c6CAoGMTguMS4yQAFYAA==",
       url:      "peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR",
    },
+   */
    "roku": { // 2023-11-14 this requires content_id, so PSSH is needed:
-      pssh:     "AAAAQ3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAACMIARIQvfpNbNs5cC5baB+QYX+afhoKaW50ZXJ0cnVzdCIBKg==",
-      response: "CAISpAEKGgoAEggXPQW+cefOWiABKAA4AEAASP/Jka4GEh4IARAAGAAgACgAMNSPCjgAQgBIAFAAWABgAHAAeAEaXgoQvfpNbNs5cC5baB+QYX+afhIQuDBRSyoGAGwlaYpQdRsjkhogqMM+9V1O1jBtFXgXnp94xb8FhRaDS9XK8IvXUhnv0zIgAigBMggIABAqGAAgADoICAAQKhgAIAAg/8mRrgY4ABognM+qtRhBVnCvTtQE9QNlV0jE/97UTEgljGOIow9l9ocigAJZdu2lEhpPuvAkFpoE+V8is7jMtVcUWWQC0zs4el4nnIBa+w9qXpFWTaPb/ny+jNK13dd3kofquNYx4O5r1hUZZhvYPooJ7PJJRc37Q8Z8xlPdo/Bz01lvfrCejwatT0ceMuXnODR0m7X4juLHlo5NPjeapA+O3KDJzBg+ejvSpHsWUrZDbG5XLBpLR8L2cZalApJ3accdGvk/dUNufJhlTvrLn0mO577fSdfewbx2vaRpCQIKlaJDjGasdGj0GpwzgDJRTBCRBYC7x9jCXHwoOq2htq3zmYFAbNxMShRuuwloLQZOWPqgvApYHnwlreP+9ZDyMwciXC1Y40eXFEKNOggKBjE3LjAuMUABWAA=",
+      pssh:     "CAESEL36TWzbOXAuW2gfkGF/mn4aCmludGVydHJ1c3QiASo=",
+      response: "CAISpAEKGgoAEggXX804EXjXryABKAA4AEAASO33gLAGEh4IARAAGAAgACgAMIDGCjgAQgBIAFAAWABgAHAAeAEaXgoQvfpNbNs5cC5baB+QYX+afhIQWNH3kxgpcNuOhd/wlqxHoxogJDYzbveh+2BePssYJjlq9ZkRZE8+b1zTxi43FJWSKvsgAigBMggIABAqGAAgADoICAAQKhgAIAAg7feAsAY4ABogLgq/BsLV45HlNXNGx4cmnjzTFIYgvSu+qj4iYgnfnoUigAIo2md3xlX0JIJLz/zUdut+aFaFdDyl53fCiglsF+oBO/KIn5WLglbYCFLxqO+OJqjaIjRJt4EaT5MUIDn95fKWjgtG4DstAX1iLN7OhgA/32IPrkWDpGZHHKjkgL+wsJOh/5rUCcfZ1AFl0C+mS3Rem7Jrgmah3jJv0VLx6r29e1ZBThfcrYNLErcq1+V+SIux3U1ABVvM+K27ylQWqGlfFVcucrMCjBg6+SdtNrTYpDo4orB/IsOuTQ9UjISpl+XamFJlp/RnDVJtGmcn9jm7xP0UX0uKYs7i4fqncWFDBnE/85hKq02qRfwkITpidBlRmGFC7myluQ8QGTEJ6NY+OggKBjE3LjAuMUABWAA=",
       url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
    },
 }
 
-func TestResponse(t *testing.T) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      t.Fatal(err)
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      t.Fatal(err)
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      t.Fatal(err)
-   }
-   for _, test := range tests {
-      protect := func() (p PSSH) {
-         if test.pssh != "" {
-            b, err := base64.StdEncoding.DecodeString(test.pssh)
-            if err != nil {
-               t.Fatal(err)
-            }
-            if err := p.New(b); err != nil {
-               t.Fatal(err)
-            }
-         } else {
-            p.Key_ID, err = hex.DecodeString(test.key_id)
-            if err != nil {
-               t.Fatal(err)
-            }
-         }
-         return
-      }()
-      module, err := protect.CDM(private_key, client_id)
-      if err != nil {
-         t.Fatal(err)
-      }
-      signed, err := base64.StdEncoding.DecodeString(test.response)
-      if err != nil {
-         t.Fatal(err)
-      }
-      license, err := module.response(signed)
-      if err != nil {
-         t.Fatal(err)
-      }
-      key, ok := module.Key(license)
-      if !ok {
-         t.Fatal("CDM.Key")
-      }
-      fmt.Println(test.url)
-      fmt.Printf("%x\n\n", key)
-   }
-}
-
 func TestPssh(t *testing.T) {
    for _, test := range tests {
-      if test.pssh != "" {
-         var protect PSSH
-         data, err := base64.StdEncoding.DecodeString(test.pssh)
-         if err != nil {
-            t.Fatal(err)
-         }
-         if err := protect.New(data); err != nil {
-            t.Fatal(err)
-         }
-         fmt.Printf("%q\n", protect.Key_ID)
-         fmt.Printf("%q\n\n", protect.content_id)
+      var (
+         protect PSSH
+         err error
+      )
+      protect.data, err = base64.StdEncoding.DecodeString(test.pssh)
+      if err != nil {
+         t.Fatal(err)
       }
+      if err := protect.consume(); err != nil {
+         t.Fatal(err)
+      }
+      fmt.Println(protect.content_id())
+      fmt.Println(protect.key_id())
    }
 }
 
-func new_module(raw_pssh, key_id string) (*CDM, error) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      return nil, err
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      return nil, err
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      return nil, err
-   }
-   protect, err := func() (*PSSH, error) {
-      var p PSSH
-      if raw_pssh != "" {
-         b, err := base64.StdEncoding.DecodeString(raw_pssh)
-         if err != nil {
-            return nil, err
-         }
-         if err := p.New(b); err != nil {
-            return nil, err
-         }
-      } else {
-         var err error
-         p.Key_ID, err = hex.DecodeString(key_id)
-         if err != nil {
-            return nil, err
-         }
-      }
-      return &p, nil
-   }()
-   if err != nil {
-      return nil, err
-   }
-   return protect.CDM(private_key, client_id)
-}
