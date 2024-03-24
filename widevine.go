@@ -2,95 +2,10 @@ package widevine
 
 import (
    "154.pages.dev/protobuf"
-   "bytes"
    "crypto/x509"
-   "encoding/binary"
-   "encoding/hex"
    "encoding/pem"
    "net/http"
 )
-
-type PSSH struct {
-   SpecificHeader struct {
-      Size     uint32
-      Type     Type
-      Version  uint8
-      Flags    [3]byte
-      SystemId SystemId
-      DataSize uint32
-   }
-   // all of the Widevine PSSH I have seen so far are single `key_id`, so we
-   // are going to implement that for now, because its not clear what the logic
-   // would be with multiple key_ids.
-   Key_ID     []byte
-   content_id []byte
-}
-
-func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
-   var module CDM
-   // key_id
-   module.key_id = p.Key_ID
-   // license_request
-   var request protobuf.Message               // LicenseRequest
-   request.AddBytes(1, client_id)             // client_id
-   request.Add(2, func(m *protobuf.Message) { // content_id
-      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.Add(1, func(m *protobuf.Message) { // pssh_data
-            m.AddBytes(2, p.Key_ID)
-            m.AddBytes(4, p.content_id)
-         })
-      })
-   })
-   module.license_request = request.Encode()
-   // private_key
-   block, _ := pem.Decode(private_key)
-   var err error
-   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return nil, err
-   }
-   return &module, nil
-}
-
-// some sites use content_id, in which case you need PSSH
-func (p *PSSH) New(data []byte) error {
-   buf := bytes.NewBuffer(data)
-   err := binary.Read(buf, binary.BigEndian, &p.SpecificHeader)
-   if err != nil {
-      return err
-   }
-   var protect protobuf.Message
-   if err := protect.Consume(buf.Bytes()); err != nil {
-      return err
-   }
-   // Cannot be used in conjunction with content_id
-   p.Key_ID = <-protect.GetBytes(2)
-   // Cannot be present in conjunction with key_id
-   p.content_id = <-protect.GetBytes(4)
-   return nil
-}
-
-func unpad(buf []byte) []byte {
-   if len(buf) >= 1 {
-      pad := buf[len(buf)-1]
-      if len(buf) >= int(pad) {
-         buf = buf[:len(buf)-int(pad)]
-      }
-   }
-   return buf
-}
-
-type SystemId [16]uint8
-
-func (s SystemId) String() string {
-   return hex.EncodeToString(s[:])
-}
-
-type Type [4]byte
-
-func (t Type) String() string {
-   return string(t[:])
-}
 
 type no_operation struct{}
 
@@ -101,6 +16,7 @@ func (no_operation) Read(buf []byte) (int, error) {
 type LicenseMessage struct {
    m protobuf.Message
 }
+
 type Poster interface {
    RequestUrl() (string, bool)
    RequestHeader() (http.Header, error)
@@ -108,3 +24,57 @@ type Poster interface {
    ResponseBody([]byte) ([]byte, error)
 }
 
+func unpad(data []byte) []byte {
+   if len(data) >= 1 {
+      pad := data[len(data)-1]
+      if len(data) >= int(pad) {
+         data = data[:len(data)-int(pad)]
+      }
+   }
+   return data
+}
+
+func (p *PSSH) consume() error {
+   return p.m.Consume(p.data)
+}
+
+// Cannot be present in conjunction with key_id
+func (p PSSH) content_id() []byte {
+   return <-p.m.GetBytes(4)
+}
+
+// Cannot be used in conjunction with content_id. all of the Widevine PSSH I
+// have seen so far are single `key_id`, so we are going to implement that for
+// now, because its not clear what the logic would be with multiple key_ids
+func (p PSSH) key_id() []byte {
+   return <-p.m.GetBytes(2)
+}
+
+// some sites use content_id, in which case you need PSSH
+type PSSH struct {
+   data []byte
+   m protobuf.Message
+}
+
+func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
+   var module CDM
+   // private_key
+   block, _ := pem.Decode(private_key)
+   var err error
+   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return nil, err
+   }
+   // key_id
+   module.key_id = p.key_id()
+   // license_request
+   var request protobuf.Message               // LicenseRequest
+   request.AddBytes(1, client_id)             // client_id
+   request.Add(2, func(m *protobuf.Message) { // content_id
+      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddBytes(1, p.data) // pssh_data
+      })
+   })
+   module.license_request = request.Encode()
+   return &module, nil
+}

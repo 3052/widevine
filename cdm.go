@@ -16,6 +16,14 @@ import (
    "net/http"
 )
 
+// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
+type CDM struct {
+   block           cipher.Block
+   key_id          []byte
+   license_request []byte
+   private_key     *rsa.PrivateKey
+}
+
 func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    address, ok := p.RequestUrl()
    if !ok {
@@ -80,14 +88,6 @@ func (c CDM) request_signed() ([]byte, error) {
    signed.AddBytes(2, c.license_request)
    signed.AddBytes(3, signature)
    return signed.Encode(), nil
-}
-
-// wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
-type CDM struct {
-   block           cipher.Block
-   key_id          []byte
-   license_request []byte
-   private_key     *rsa.PrivateKey
 }
 
 func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
