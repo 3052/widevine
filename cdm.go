@@ -16,6 +16,31 @@ import (
    "net/http"
 )
 
+func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
+   for container := range m.m.Get(3) { // KeyContainer key
+      // this field is: optional bytes id = 1;
+      // but CONTENT keys should always have it
+      id, ok := <-container.GetBytes(1)
+      if !ok {
+         continue
+      }
+      if !bytes.Equal(id, c.key_id) {
+         continue
+      }
+      iv, ok := <-container.GetBytes(2)
+      if !ok {
+         continue
+      }
+      key, ok := <-container.GetBytes(3)
+      if !ok {
+         continue
+      }
+      cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
+      return unpad(key), true
+   }
+   return nil, false
+}
+
 // wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
 type CDM struct {
    block           cipher.Block
@@ -130,29 +155,4 @@ func (c *CDM) response(signed []byte) (*LicenseMessage, error) {
       return nil, errors.New("License")
    }
    return &LicenseMessage{license}, nil
-}
-
-func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
-   for container := range m.m.Get(3) { // KeyContainer key
-      // this field is: optional bytes id = 1;
-      // but CONTENT keys should always have it
-      id, ok := <-container.GetBytes(1)
-      if !ok {
-         continue
-      }
-      if !bytes.Equal(id, c.key_id) {
-         continue
-      }
-      iv, ok := <-container.GetBytes(2)
-      if !ok {
-         continue
-      }
-      key, ok := <-container.GetBytes(3)
-      if !ok {
-         continue
-      }
-      cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
-      return unpad(key), true
-   }
-   return nil, false
 }

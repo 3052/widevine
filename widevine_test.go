@@ -12,38 +12,64 @@ var tests = map[string]struct {
    response string
    url      string
 }{
-   /*
    "amc": {
       url:      "amcplus.com/movies/blackberry--1065021",
-      pssh:     "AAAAVnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADYIARIQJxTtpnq7TjW7URquBXrxahoNd2lkZXZpbmVfdGVzdCIIMTIzNDU2NzgyB2RlZmF1bHQ=",
-      response: "CAISmAUKLgoAEiYKENjdMjUvR0YGrT6ycxRoUYcQATIQOlZidDX8oP4f+vmjvE8T8CABKAASHQgBEAAYACAAKAA4AEIASABQAFgAYAFwAHgBgAEAGkYSENRr6+0DE/b11cxxA55CMwYaMMeITu3exSSTH+TmYJTfySIVyXSxHQ+DhZ32LCmsVelSAO3/RnCsr5hrk0sA54JzgCABGmQKEAy2S78vAUQDrjK/GesTkWoSEDliyaUTuja2N6d5MKAT4nUaIENo8Ve7AzsWctoci9w24Lo3viAt9JnyXW2G+AIDuvXeIAIoATIICAEQAxgAIAA6CAgAECoYACAAYgRVSEQxGmIKEP3Bn0gybk/goXwKTwv51vsSEHTQMgJKtYOadMKVCCA+NwQaIDhQY8sX9VMmgzDL5fuVFbQQtqxEnwB6HWKqKzuEA65pIAIoATIICAAQKhgAIAA6CAgAECoYACAAYgJTRBpiChCgnBWNFzRFk7Ax3b+YD5DnEhBslM6nTP1p3MZqVuzqWyRFGiAapEMAB/v7K8YQxFpuXDvq34rgX24H466x8Bv4VDmEAiACKAEyCAgBEAMYACAAOggIABAqGAAgAGICSEQaYgoQ5m+Y78sDQ92nZPPlS0nnUhIQrwpGj99OmpO37p4XKTadJxogLW/NjaiIg88Vo+/CqzibmimZWlXd2nElmVCuDU4+doQgAigBMggIABADGAAgADoICAAQKhgAIABiAkhEGmUKECcU7aZ6u041u1EargV68WoSEG+w+fH6+dLYJ1hlCe3Haj4aILhTXZImifKTcboXhdMkrvL1x+tsOJq2VXxsxA2L18x8IAIoATIICAAQKhgAIAA6CAgAECoYACAAYgVBVURJTyDk9ZWuBjgAGiBdAtcVWGSE4fJyZLEU4Si6o3VZpLnRrQNY6oJ8gM2pGCKAAl0JBd3RxfwOIK/5wwfTTFy9J9HvL9bUkhkDHKaovVGiccaUHtDbuOFC3IcLv0RwGkNO8PJTBSRNG5y6fDvfXMl7nyqDJAFxJZkN6gimrBClmmUSDH+NPNXEbWo5aphK6RpuiX3KKTbDPnRr6VLbp5pyP91ukHHzWBOtED4FmoTYkZXNE73Dwjl/GP+5MXWmtZ6IyRdDmQG6VKsYcJvs4KgPdmPsi/BTbvUpUzFcW4yKJeryG0K9IKDVnwuqBr1/m9ClqXUOLfkbsSu6NdKqIWFbSRwDaBTTfINIUMxabUcaX+eQowcpOh/dZui5y1cJyLomQ4ZFfE6subjP/eIgAvo6CAoGMTguMS4yQAFYAA==",
+      pssh:     "CAESEP3Bn0gybk/goXwKTwv51vsaDXdpZGV2aW5lX3Rlc3QiCDEyMzQ1Njc4MgdkZWZhdWx0",
+      response: "CAISmAUKLgoAEiYKEAV+drBU8k6ZsjsCuVMVA1IQATIQOlZidDX8oP4f+vmjvE8T8CABKAASHQgBEAAYACAAKAA4AEIASABQAFgAYAFwAHgBgAEAGkYSEDF6cQVXjcG7PpmOmfHvF3waMJuG+iumGx9AY5EwapkblVyBz8K9qvlStb63OxW5CwOVjHXUR0B/Rnmen0f5d7BkjCABGmIKEP3Bn0gybk/goXwKTwv51vsSEFeG0IyMLljwr4iwlfXLY+4aICqqO2jODZ0vt/CtXrT5f8CJmVIp3eLpNUZYD0j3j608IAIoATIICAAQKhgAIAA6CAgAECoYACAAYgJTRBplChAnFO2mertONbtRGq4FevFqEhA/YHhmaKtUsxON9Lomg7e7GiAehkKm44KyEeu6Mt3tXAc493bXo7rRqUXok0apb178ZyACKAEyCAgAECoYACAAOggIABAqGAAgAGIFQVVESU8aYgoQoJwVjRc0RZOwMd2/mA+Q5xIQf7w1bctJiq9AGdDeLMlQKhogmyO8ULGXSnJDpTuvmFSv47FkSEsMxUwsEfnQU0Y0ysMgAigBMggIARADGAAgADoICAAQKhgAIABiAkhEGmIKEOZvmO/LA0Pdp2Tz5UtJ51ISEAGPhXNkIfFasfpdbPdF04MaIPsewm3UvkM1/U3PDOVIwlHlLB2y3MMJflPyBb84ej/nIAIoATIICAAQAxgAIAA6CAgAECoYACAAYgJIRBpkChAMtku/LwFEA64yvxnrE5FqEhBEkBLE4DoGVgR7KNGuh4YNGiAlqzGfj5GEoGIEBY+eZZK09fOR770xxnsdWYdaFPLGDiACKAEyCAgBEAMYACAAOggIABAqGAAgAGIEVUhEMSDYiYKwBjgAGiAu3ZTSQypcLc1ermOWkafggihHQvKmnwnsJmTS8x79ViKAAo6gRwZ4aAzR9GPHMmst27OXvYtsV2r622JHL6Vt4ZsCqQpyHIlm4weCc3PDyTaN6QE7BmNCiDydtJsdcI+AXxToVvKLrWsYtPLsvRLOzPRFQDwICh8P98MhcA4Goa1Jwfzh/8KP0UrS76Plpy0apUXNdtTp4Wn9mE1n9wJIb5zsxUpwjHRVgmzG7hDGjjSR+iyImAHbvGUZ9SfvtB44mHuMHSGBgLltaXNa1bz6ujF7NAZP4OlqQ384bdVHtaK/IfEV9tF5zNPFfHtwkBh+yu3A1s7zA2/00+bcBggrZed4r3Q63G6/LoUtmTu3RiZsTfJf3f4LQEgWIUoWQtmGkQc6CAoGMTguMS4yQAFYAA==",
    },
    "hulu": {
-      key_id:   "21b82dc2ebb24d5aa9f8631f04726650",
-      response: "CAIS/QEKcAoAEmhZMlZyYzE4eU1XSTRNbVJqTWkxbFltSXlMVFJrTldFdFlUbG1PQzAyTXpGbU1EUTNNalkyTlRCZk9EZ3lNVGcwTURrdFpUUmpPUzAwWm1ZNExUa3pZV1V0TVRCaFkySTROREExWVdFNCABKAASHwgBEAAYACAAKAAwADgAQgBIAFAAWABgAHABeAGAAQAaYAoQIbgtwuuyTVqp+GMfBHJmUBIQ/XZ2vXuBNoybDVePqqP7BBogRCL/oBQosn2uJ7MlRtO5AqCXfBgnF1kn7rIHMorpNuYgAigBMggIABAqGAAgADoICAAQKhgAIABiACDEz5WuBjgAGiCEMFB5lSqrct9+hQV2Mu4x5XfWRVlwnIpwS4UmM7r39SKAAjAOMMYopmbBmqg5vv+taYGS8Zg9EyujwjnsYeQ6yMSzcUj8X8kgP5xSP1xK3KioD9Zc6kgb0O00GNQ5jgfyrlf4RVkC/zLoAwsVptW4pLf1zpfs/m1b6l9g2Tcj1pMZoITcTNvmAjElqtyhZh3pXd3wuA3o686fHEkwraSXPYUmdlzGWwkK/7TX1uglQs7nPlj6kIiFxGlea6ARkJTGWpUG+uI4Oj8XmJckLPashjTdYYRTElpAdFuYZjickiM+OR2KDxsC3ODgCdkSz947rRoGRAWckIJ5QKA66o04o5XLg5jDGK3EW41AykM4TkjJoNsq7Ww1LTD+69yCpK3HpDs6CAoGMTguMS4yQAFYAA==",
+      pssh:   "CAESECG4LcLrsk1aqfhjHwRyZlAaBGh1bHUqAkhE",
+      response: "CAIS/QEKcAoAEmhZMlZyYzE4eU1XSTRNbVJqTWkxbFltSXlMVFJrTldFdFlUbG1PQzAyTXpGbU1EUTNNalkyTlRCZllXWmtZVFkxT0RRdFpUZGtPQzAwTVRJd0xUZzBZemd0WldFeE9EaGlPV1l5WXpSaiABKAASHwgBEAAYACAAKAAwADgAQgBIAFAAWABgAHABeAGAAQAaYAoQIbgtwuuyTVqp+GMfBHJmUBIQRwsFpNUILk3SEEWorgPnLxogi4r+vsi+BBQzOA+oovTTTbyoOlLnc7TNgCRhzAoLOU0gAigBMggIABAqGAAgADoICAAQKhgAIABiACCgnIKwBjgAGiC1Pi70ZIHRKIPjMed9cdvUc4QUA123+BghL3g5MmNxTCKAAgrENc/eO+LlZ3iWkSBXNJj1o9H15vuUit0DbLer4M6bhQLIMfufjT3YTaT85eRihlBPradY2lvwzA1g9lDtgGdYTJK7BKc0M+Mw7+nBiAQGMOvBUwretE/KDDLLTPsGCssK0pfac9CLzXStCEvs4SMOx1I1ACpGlL1ZGHg0XZowxk8wd0HvsZBVl+JBPZD7aBCl7AD67OJdK7KDsHaIKvBax8JYfDz7gRs2k3Hu+QG9pZWzng/e8q0uQu+e+wIhnocSbsLrk57eUinMPd2YJsYda3XbRSoq1Gq6CU7+dirFZhHB2eyY+smqh3w2sjSpSmhY7JvWqdrB1MFByW6K1MA6CAoGMTguMS4yQAFYAA==",
       url:      "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
    },
+   "mubi": {
+      url:      "mubi.com/en/us/films/the-blair-witch-project",
+      pssh:     "CAESEOrVXH2YjUxsljspKoOXygoaCHVzcC1jZW5jIhg2dFZjZlppTlRHeVdPeWtxZzVmS0NnPT0qADIA",
+      response: "CAISjQIKLgoAEiYKEJ7l+da2YE9ovVv0V6tyC1QQATIQOlZidDX8oP4f+vmjvE8T8CABKAASJwgBEAEYACCAmp4BKIDGCjCA4KgBOABCAEgAUABYAGABcAB4AYABABpGEhADSujgYl54uPBYb6K621imGjAEFFQIKQvIqAwhAHRpQDZi8rCrJKftUCM+oV9T2ay9wPoANvqXs9z23tgRcPISC/cgARpiChDq1Vx9mI1MbJY7KSqDl8oKEhABCiYvRwb6ouubj5DbxisvGiDqTmrKHxoSjGFISY3T+B54CaeUnaZTv6fOKuQMhl5bZCACKAEyCAgAECoYACAAOggIABAqGAAgAGICSEQg9qCCsAY4ABog0gVLsCkFctX3RPE/sf8pV/JfMaFJkKb8b6dWA9E3ZfwigAIMZ8jz7IRI/MJsJgUNmuGksQ2lhToXEysOZxjX1jIQuCtSgDpRWVueG52P8bOGZPh06WkY/Ab21XhNQJJFbq5KME8aTNehCpGCOXzjFkt137wWWCgGs9N78TuLKs+gbfClQHE01ztjUUlwj//4M1wSCFEDh6IcEpxf1Ma5mHJQOprlacG7dgK6Si/T8wIewJFCBlm0Hb/9ZKgjh4XBEfa9BY1tvdE81Y5gXCnu8SKF/wVqu7ccLj7rXODA207wcVQJxdgEojZbtxxgR4YMAI0V7SgM8okHIeWSlhFI6Tu3Wok6PinDGQrEX0N0rD1Jr3vy+y3dSnrKHf65wEY5hxr0OggKBjE4LjEuMkABWAA=",
+   },
    "nbc": {
-      pssh:     "AAAAV3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADcIARIQ/zFt5li1T7C00hLL9vmivhoLYnV5ZHJta2V5b3MiEP8xbeZYtU+wtNISy/b5or4qAkhE",
-      response: "CAISqgEKIgoAEhDuKLHulximRa1nEqF4XYRJIAEoADgAQABI2OKVrgYSHAgBEAAYACAAKAAwADgAQgBIAFAAWABgAHAAeAEaXgoQ/zFt5li1T7C00hLL9vmivhIQvWWhoNKHv5S0JT/6Ba3eVRogSleyHHKQQEIEnhgsmng+SXUj0SPoRVaKIsVjmoSG3U8gAigBMggIABAqGAAgADoICAAQKhgAIAAg2OKVrgY4ABog/u1Nm1i3yIDII2YDnnjDnrXnszhQhQEsxpk8udsBdtIigAJ4Kutok8EW/xw5H9GFHK/ryoOSjpigd8+DnayojP93TNINnf+9cOJSuaTfMXnXkMMbuzE7If0f6t2TqH9dFgL+H95MlldYj7B7wH+JaPRXktBRUQqWHk7iSz1p7iR7b+326Gzg7lAYVEOSaG8WZJtGl7Z97YKAuqqCp5RN+SCgZ6V1emPvTqGRI2wUL29YhNitgjtPpdTQLYvLZqXBnW0/9SrkmOifWVLOKg/QBwgkoAF/BGlhlvlgv3u0WtpwIc9NFWyeKbTFG2kJw3nHK89cyDFo63PA1eEUoZsQ0ntyxEGtFbyZEagypTao+DItRAAO1gap85rM9n/AQsvagPkROggKBjE2LjQuNEABWAA=",
+      pssh:     "CAESEGRuxmA57ENyp0hP3pVB2ZoaC2J1eWRybWtleW9zIhBkbsZgOexDcqdIT96VQdmaKgJIRA==",
+      response: "CAISpwEKGAoAEhCj93lNr7YjRreQBYUorPULIAEoABIfCAEQABgAIAAoADAAOABCAEgAUABYAGAAcAB4AYABABpiChBkbsZgOexDcqdIT96VQdmaEhCnYc6PkBoDLbv1OTiG8L4bGiDWepd2Oeh/1Ifmi2qC7WySmxv6+DNSZRXPeTGDJH7vnCACKAEyCAgAECoYACAAOggIABAqGAAgAGICSEQgh/2BsAY4ABogsXHqxWzxEypKKi4seUCYpPeYx1CSifgoDTcryDEpP8AigAJtmGB+HCgsm56XVFd+vh1EG7gyDsphKbT8ZZyJkqDOYSDgDfeWEEj/WNXtcKUYp4x6rHktu/fGBAp5qL972ZLLebRazqh35X2NJYeJB3IP2c00mDt3YjOYlrDAxIQmbXLyFKTDTEEGmTyihbWbINETY3IiZcrTWRwzyNWjbtaNmE7bBju+/9Wriweziak7/42WMYYVQI7LGhLBWAK9EJXafwpVCiJSCItJ2Bc1YUvp1qCNqW4emu2Lk+SvYUSL0tpCqdwCqoqcux1j4HHM8qZm3I1TNrfQCTCllgjrgyvOVBUcOsDrLqTbLFoDPL0bgxKSiOO7ewGXJxbPtxEpTcC1OggKBjE4LjEuMkABWAA=",
       url:      "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
    },
    "paramount": {
-      pssh:     "AAAAWHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADgIARIQPeDzPBuKT86WHtqpUOLnMiIgYnFzSmhfejdvNEFSNmt0dWlfOXk4d0lIcXpFRXFiaHI4AQ==",
-      response: "CAIS6gEKGgoAEgiPtUboQP44hiABKAA4AEAASK7vla4GEhwIARAAGAAgACgAMAA4AEIASABQAFgAYAFwAHgBGkYSECuVaGTK0rYTApJ6mFPNer8aMPc9TxjCTjTqDWXn/kYKD65+Dc+Hl4EKxni4JQnycuDfX7C7nxUJItX2KsCceCFXmyABGl4KED3g8zwbik/Olh7aqVDi5zISEAIUstwuQnyfxGqNDPYCn3YaICBfgvJS4vqr4xWi2F83JUNtHFDLy/g0CCdGgv/lpFgeIAIoATIICAAQKhgAIAA6CAgAECoYACAAIK7vla4GOAAaIJoAha40+btxbvaHBn1rinfs+qbO66XznIGGgIH73gPkIoACfKJBakBqe7nt8gvYDbIt0NAkRSnT48TqordmvbgeSLUatEWga63fMSooSMeEFkHm/yJrizUzX45gsjk8r2oPuSIXEfIemAkvz2DKmsPxtxRnwipffUQePJXjEveiqVTMpSkLmuYSXHR5HT7c+rdDNWu1CekT5reM10Rfd5q0PxFdD1gvvU2O92L/g587/fx4YtlsfS6KcF9BaB2CHO700ZcMFKCopWS5Ghdkt354eH7AMdv7YJnDx4DzoK3zTDYYBEPuTHzfL4cjq/82XZEG00OgMWNGALB1uRHUF4iZURj6nQ51Fk2n3byUqqlCYSs8oTdnmLpTJtnPszvmEyeRUjoICgYxNy40LjBAAVgA",
       url:      "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
+      pssh:     "CAESED3g8zwbik/Olh7aqVDi5zIiIGJxc0poX3o3bzRBUjZrdHVpXzl5OHdJSHF6RUVxYmhyOAE=",
+      response: "CAIS6gEKGgoAEghWyDISrU4VeiABKAA4AEAASJWFgrAGEhwIARAAGAAgACgAMAA4AEIASABQAFgAYAFwAHgBGkYSEN/ElvX3FkXDyR4w43+G4GUaMOE93lxPS4KZYOzVPt/544b4VuoHqDSsoOjT2cBLiU/fFE7yOh7uRJTCJ0n5a58ZxiABGl4KED3g8zwbik/Olh7aqVDi5zISEJwUy61dEZmKI7VNwJD8+T0aIEM2ON88GycAyYxcwSohr09QliqE9+8jk5oUB7Dx7q1qIAIoATIICAAQKhgAIAA6CAgAECoYACAAIJWFgrAGOAAaIG59jg/qd9AYwhVIJCPP8+yeG/361WernKxoCq8pmYq8IoACXH6ATVLEOrnHn1k21qqPHs8Np9iiM748cffYnDJaon71c+ioRoD4xPyFrvCpy3OmkYTPEltidhQ4ruMsJw0ig5reA//6qiAYdiOiafsN6ajzeQ5dxF15BypYMMU34TvHjZLoAS+KyoHesKMoTQYX3S1Hkxc0iqxP6TzzdWrLnKpg43SWmDQ2zDAmrv0ORLM7ZPyO7o9M0KzIE3szpuslTKZq3affPmvjrvEEdIg6Nyc4inlUDbDEnuE1rjCF6ge03EwMOIzrsCJbXgTF6hrqFAXkAWty483aDESQCVdIVH/UCj6jORYF9WW6umNxHD6+RLEDPUdlMakA768+KVudGjoICgYxNy40LjBAAVgA",
    },
-   "peacock": {
-      pssh:     "AAAAOHBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAABgSEAAW4jRz6+d9k9jRpy3GkNdI49yVmwY=",
-      response: "CAISuwEKLAoAEiQ2ZDk4N2QzNy1kMmQyLTRkOTUtYTY0ZC1iM2VjZWVkMWNkNzkgASgAEh8IARAAGAAgACgAMAA4AEIASABQAFgAYABwAHgBgAEAGmIKEAAW4jRz6+d9k9jRpy3GkNcSEHlGhtD2SBRzRbwqeB/EegEaIDLzekXxkzG9+XTvZD9c/MPsfrwc0FT0ervaJcimv7IuIAIoATIICAEQKhgAIAA6CAgBECoYACAAYgJTRCCkvLivBjgAGiCAoczp3bIIL+WxzRK0kww+1zGb1azr5Zw39UEFO5AzbSKAAgDTt1Qoq7vZBDWs9uLD6/MJluS4OoSzUmeHfX2c8z4tdOdA7mhSRegZztL2kOCSuqNwB00ZZEBGGHebZoDj4cITlRDuukMgCw1VoAr6o6+tfLdEL0oHT+eA3KAKTuMvmLWTZHoHhnJ5OSuBMm/XCSzFF4yEkVBVfHmBjP/mhLlmCJI/kNi6t7Ih7Ne8b4UOn08ylRfvRCGzkvqRyA7j3OSSliWy/hQ3JaBx7Q8sp6XKEnCDp48D3S43dLFuwjl4waDpCS61Oc7+i8vRkeluM/0rZ7MeYw6IxTj6/XC0cDD/3TY4as0m5L3bO1eRFFnB/U+8dpAERD34mmmyxWFEa6c6CAoGMTguMS4yQAFYAA==",
-      url:      "peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR",
-   },
-   */
    "roku": { // 2023-11-14 this requires content_id, so PSSH is needed:
       pssh:     "CAESEL36TWzbOXAuW2gfkGF/mn4aCmludGVydHJ1c3QiASo=",
-      response: "CAISpAEKGgoAEggXX804EXjXryABKAA4AEAASO33gLAGEh4IARAAGAAgACgAMIDGCjgAQgBIAFAAWABgAHAAeAEaXgoQvfpNbNs5cC5baB+QYX+afhIQWNH3kxgpcNuOhd/wlqxHoxogJDYzbveh+2BePssYJjlq9ZkRZE8+b1zTxi43FJWSKvsgAigBMggIABAqGAAgADoICAAQKhgAIAAg7feAsAY4ABogLgq/BsLV45HlNXNGx4cmnjzTFIYgvSu+qj4iYgnfnoUigAIo2md3xlX0JIJLz/zUdut+aFaFdDyl53fCiglsF+oBO/KIn5WLglbYCFLxqO+OJqjaIjRJt4EaT5MUIDn95fKWjgtG4DstAX1iLN7OhgA/32IPrkWDpGZHHKjkgL+wsJOh/5rUCcfZ1AFl0C+mS3Rem7Jrgmah3jJv0VLx6r29e1ZBThfcrYNLErcq1+V+SIux3U1ABVvM+K27ylQWqGlfFVcucrMCjBg6+SdtNrTYpDo4orB/IsOuTQ9UjISpl+XamFJlp/RnDVJtGmcn9jm7xP0UX0uKYs7i4fqncWFDBnE/85hKq02qRfwkITpidBlRmGFC7myluQ8QGTEJ6NY+OggKBjE3LjAuMUABWAA=",
+      response: "CAISpAEKGgoAEgjX7INTgEMsMyABKAA4AEAASLuDgrAGEh4IARAAGAAgACgAMIDGCjgAQgBIAFAAWABgAHAAeAEaXgoQvfpNbNs5cC5baB+QYX+afhIQI5DiUKryEwPFVPj6j1sAKBogyKXm2gclc0YjMDLPF0Jh0UruSgpEUK6qlR3+e7zk48IgAigBMggIABAqGAAgADoICAAQKhgAIAAgu4OCsAY4ABogvFIfvRg3GuuL6G5fKT9WSYEuMQUSfrq3xI2dnhfndPcigAJ9qrQ8SKM5LHGUqwTLzf5irFBVQdjy6GO8B4X9/uhdSGGQdhUstrf1GNuzJ5KB8I9najUvp0JVfmyHAIQ5HEtThPdZkp17huho+zUjzn9nKS6h4t3BT2oIAj2TI9pYCN+qGZupuHwnVj6hYTwZ0SCePVj4BDzmd54L3aE3LHhO9QAFczZkYD7cw2+JzRzGb1Z2T+u7nzKMeivY+Why7/WA5d++JcC0U/YUUqChGa41tA8o1Ky3muIeY1C4gxTE8VH73Ofb5yABTPtySnoyUftz84ooKsuF4fqKG8O+959lPDy/kVR42XxHHiTONYnpv4WfkHr9CsfvuKF12pvE8TBoOggKBjE3LjAuMUABWAA=",
       url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
    },
+   "peacock": {
+      url:      "peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR",
+      pssh:     "EhAAFuI0c+vnfZPY0actxpDXSOPclZsG",
+      response: "CAISvwEKLAoAEiQ4NjUzNDJjYi01NjUxLTRjOGItYjA4OC0wYjE1NWI0ZDUxZDAgASgAEh8IARAAGAAgACgAMAA4AEIASABQAFgAYABwAHgBgAEAGmIKEAAW4jRz6+d9k9jRpy3GkNcSEGPegnUYmDuqpgiKv43xs5UaIHH1LpRxUgM5BN/gA8o18nXgdY2l5vkCMhUfoMq2NGEdIAIoATIICAEQKhgAIAA6CAgBECoYACAAYgJTRCCNooKwBjjj3JWbBhog1Hfr9luk+PO9YTsecyiV3JdkxN7xfOlvduubmLy57qcigAI7y6Z/lYpUTJAjpNQYdJkgWxcTbzoS1ifi27o1p8n3fLWDdTi2TrhBdhEEVca5M0ZtCUR492ZSYVPUtcnl7n4d56SVS3RwrFazI4xpsGBdUb8gpqqvmAV87XQY73EUdgG/c9Z+JQuECFEDDrFeiTvQLKwdfpqBekI3K0VA/AWq+fsnpvLkmvAQXX2TLBAIH266eGOz32Xu1r/NrKsg9CweD2/RWQpljSDwWA9l/RWslRQuTDlZdqy5kbihrOzLkQw9DJetx3rY59ENVMTrqQ+LE4Jld83bsN3onT3JulngcsH9Qh5rVtSXsShPBUqZLdhfh4HrEAV6Av5l22iz8Dx2OggKBjE4LjEuMkABWAA=",
+   },
+}
+
+func TestResponse(t *testing.T) {
+   for _, test := range tests {
+      module, err := new_module(test.pssh)
+      if err != nil {
+         t.Fatal(err)
+      }
+      signed, err := base64.StdEncoding.DecodeString(test.response)
+      if err != nil {
+         t.Fatal(err)
+      }
+      license, err := module.response(signed)
+      if err != nil {
+         t.Fatal(err)
+      }
+      key, ok := module.Key(license)
+      if !ok {
+         t.Fatal("CDM.Key")
+      }
+      fmt.Println(test.url)
+      fmt.Printf("%x\n\n", key)
+   }
 }
 
 func new_module(raw_pssh string) (*CDM, error) {
@@ -68,44 +94,4 @@ func new_module(raw_pssh string) (*CDM, error) {
       return nil, err
    }
    return protect.CDM(private_key, client_id)
-}
-
-func TestPssh(t *testing.T) {
-   for _, test := range tests {
-      var (
-         protect PSSH
-         err error
-      )
-      protect.Data, err = base64.StdEncoding.DecodeString(test.pssh)
-      if err != nil {
-         t.Fatal(err)
-      }
-      if err := protect.Consume(); err != nil {
-         t.Fatal(err)
-      }
-      fmt.Printf("%x\n", protect.key_id())
-   }
-}
-
-func TestResponse(t *testing.T) {
-   for _, test := range tests {
-      module, err := new_module(test.pssh)
-      if err != nil {
-         t.Fatal(err)
-      }
-      signed, err := base64.StdEncoding.DecodeString(test.response)
-      if err != nil {
-         t.Fatal(err)
-      }
-      license, err := module.response(signed)
-      if err != nil {
-         t.Fatal(err)
-      }
-      key, ok := module.Key(license)
-      if !ok {
-         t.Fatal("CDM.Key")
-      }
-      fmt.Println(test.url)
-      fmt.Printf("%x\n\n", key)
-   }
 }
