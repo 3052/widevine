@@ -1,11 +1,72 @@
 package widevine
 
 import (
+   "bufio"
+   "bytes"
    "fmt"
-   "log/slog"
+   "io"
    "net/http"
+   "os"
    "testing"
 )
+
+func TestRoku2(t *testing.T) {
+   file, err := os.Open("testdata/roku.bin")
+   if err != nil {
+      t.Fatal(err)
+   }
+   defer file.Close()
+   req, err := http.ReadRequest(bufio.NewReader(file))
+   if err != nil {
+      t.Fatal(err)
+   }
+   req.RequestURI = ""
+   var protect PSSH
+   protect.m = tests["roku"].pssh
+   home, err := os.UserHomeDir()
+   if err != nil {
+      t.Fatal(err)
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      t.Fatal(err)
+   }
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      t.Fatal(err)
+   }
+   module, err := protect.CDM(private_key, client_id)
+   if err != nil {
+      t.Fatal(err)
+   }
+   body, err := module.request_signed()
+   if err != nil {
+      t.Fatal(err)
+   }
+   req.Body = io.NopCloser(bytes.NewReader(body))
+   res, err := http.DefaultClient.Do(req)
+   if err != nil {
+      t.Fatal(err)
+   }
+   defer res.Body.Close()
+   var buf bytes.Buffer
+   res.Write(&buf)
+   fmt.Printf("%q\n", buf.Bytes())
+}
+
+func TestRoku(t *testing.T) {
+   test := tests["roku"]
+   module, err := new_module(test.pssh)
+   if err != nil {
+      t.Fatal(err)
+   }
+   license, err := module.License(roku{})
+   if err != nil {
+      t.Fatal(err)
+   }
+   key, ok := module.Key(license)
+   fmt.Printf("%x %v\n", key, ok)
+}
 
 type post struct{}
 
@@ -28,19 +89,4 @@ func (roku) RequestUrl() (string, bool) {
 
 func (roku) RequestHeader() (http.Header, error) {
    return http.Header{}, nil
-}
-
-func TestRoku(t *testing.T) {
-   test := tests["roku"]
-   module, err := new_module(test.pssh)
-   if err != nil {
-      t.Fatal(err)
-   }
-   slog.SetLogLoggerLevel(slog.LevelDebug)
-   license, err := module.License(roku{})
-   if err != nil {
-      t.Fatal(err)
-   }
-   key, ok := module.Key(license)
-   fmt.Printf("%x %v\n", key, ok)
 }
