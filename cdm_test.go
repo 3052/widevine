@@ -3,6 +3,7 @@ package widevine
 import (
    "bufio"
    "bytes"
+   "encoding/json"
    "errors"
    "fmt"
    "io"
@@ -11,8 +12,58 @@ import (
    "testing"
 )
 
+func TestPeacock(t *testing.T) {
+   key, err := request("peacock", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+func TestHulu(t *testing.T) {
+   key, err := request("hulu", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+func TestAmc(t *testing.T) {
+   key, err := request("amc", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+func TestParamount(t *testing.T) {
+   key, err := request("paramount", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+func TestMubi(t *testing.T) {
+   unwrap := func(b []byte) ([]byte, error) {
+      var s struct {
+         License []byte
+      }
+      err := json.Unmarshal(b, &s)
+      if err != nil {
+         return nil, err
+      }
+      return s.License, nil
+   }
+   key, err := request("mubi", unwrap)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
 func TestRoku(t *testing.T) {
-   key, err := request("roku")
+   key, err := request("roku", nil)
    if err != nil {
       t.Fatal(err)
    }
@@ -20,14 +71,16 @@ func TestRoku(t *testing.T) {
 }
 
 func TestNbc(t *testing.T) {
-   key, err := request("nbc")
+   key, err := request("nbc", nil)
    if err != nil {
       t.Fatal(err)
    }
    fmt.Printf("%x\n", key)
 }
 
-func request(name string) ([]byte, error) {
+type unwrapper func([]byte) ([]byte, error)
+
+func request(name string, unwrap unwrapper) ([]byte, error) {
    home, err := os.UserHomeDir()
    if err != nil {
       return nil, err
@@ -62,8 +115,10 @@ func request(name string) ([]byte, error) {
    }
    req.Body = io.NopCloser(bytes.NewReader(body))
    req.ContentLength = 0
+   req.Header.Del("accept-encoding")
    req.RequestURI = ""
-   //req.Header.Set("content-type", "application/x-protobuffer")
+   req.URL.Host = req.Host
+   req.URL.Scheme = "https"
    res, err := http.DefaultClient.Do(req)
    if err != nil {
       return nil, err
@@ -77,6 +132,12 @@ func request(name string) ([]byte, error) {
    body, err = io.ReadAll(res.Body)
    if err != nil {
       return nil, err
+   }
+   if unwrap != nil {
+      body, err = unwrap(body)
+      if err != nil {
+         return nil, err
+      }
    }
    license, err := module.response(body)
    if err != nil {
