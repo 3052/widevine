@@ -25,7 +25,7 @@ func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
          continue
       }
       if !bytes.Equal(id, c.key_id) {
-         continue
+         // continue
       }
       iv, ok := <-container.GetBytes(2)
       if !ok {
@@ -39,6 +39,24 @@ func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
       return unpad(key), true
    }
    return nil, false
+}
+
+func (c CDM) request_signed() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   var signed protobuf.Message // SignedMessage
+   signed.AddBytes(2, c.license_request)
+   signed.AddBytes(3, signature)
+   return signed.Encode(), nil
 }
 
 // wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
@@ -94,24 +112,6 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    }
    slog.Debug("license", "response", base64.StdEncoding.EncodeToString(signed))
    return c.response(signed)
-}
-
-func (c CDM) request_signed() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   var signed protobuf.Message // SignedMessage
-   signed.AddBytes(2, c.license_request)
-   signed.AddBytes(3, signature)
-   return signed.Encode(), nil
 }
 
 func (c *CDM) response(signed []byte) (*LicenseMessage, error) {

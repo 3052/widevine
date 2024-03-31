@@ -7,6 +7,29 @@ import (
    "net/http"
 )
 
+func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
+   var module CDM
+   // private_key
+   block, _ := pem.Decode(private_key)
+   var err error
+   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return nil, err
+   }
+   // key_id
+   module.key_id = p.key_id()
+   // license_request
+   var request protobuf.Message               // LicenseRequest
+   request.AddBytes(1, client_id)             // client_id
+   request.Add(2, func(m *protobuf.Message) { // content_id
+      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddBytes(1, p.Data) // pssh_data
+      })
+   })
+   module.license_request = request.Encode()
+   return &module, nil
+}
+
 type no_operation struct{}
 
 func (no_operation) Read(buf []byte) (int, error) {
@@ -32,29 +55,6 @@ func unpad(data []byte) []byte {
       }
    }
    return data
-}
-
-func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error) {
-   var module CDM
-   // private_key
-   block, _ := pem.Decode(private_key)
-   var err error
-   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return nil, err
-   }
-   // key_id
-   module.key_id = p.key_id()
-   // license_request
-   var request protobuf.Message               // LicenseRequest
-   request.AddBytes(1, client_id)             // client_id
-   request.Add(2, func(m *protobuf.Message) { // content_id
-      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, p.Data) // pssh_data
-      })
-   })
-   module.license_request = request.Encode()
-   return &module, nil
 }
 
 // some sites use content_id, in which case you need PSSH
