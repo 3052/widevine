@@ -1,8 +1,8 @@
 package widevine
 
 import (
-   "154.pages.dev/protobuf"
    "encoding/base64"
+   "encoding/hex"
    "fmt"
    "os"
    "testing"
@@ -50,9 +50,30 @@ var tests = map[string]struct {
    },
 }
 
+func (c *CDM) test(raw_key_id string) error {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      return err
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      return err
+   }
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      return err
+   }
+   key_id, err := hex.DecodeString(raw_key_id)
+   if err != nil {
+      return err
+   }
+   return c.New(private_key, client_id, key_id)
+}
+
 func TestResponse(t *testing.T) {
    for _, test := range tests {
-      module, err := new_module(test.key_id)
+      var module CDM
+      err := module.test(test.key_id)
       if err != nil {
          t.Fatal(err)
       }
@@ -71,25 +92,4 @@ func TestResponse(t *testing.T) {
       fmt.Println(test.url)
       fmt.Printf("%x\n\n", key)
    }
-}
-
-func new_module(key_id protobuf.Message) (*CDM, error) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      return nil, err
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      return nil, err
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      return nil, err
-   }
-   var protect PSSH
-   protect.Data = pssh.Encode()
-   if err := protect.Consume(); err != nil {
-      return nil, err
-   }
-   return protect.CDM(private_key, client_id)
 }

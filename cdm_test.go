@@ -13,18 +13,6 @@ import (
 )
 
 func request(name string, unwrap unwrapper) ([]byte, error) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      return nil, err
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      return nil, err
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      return nil, err
-   }
    file, err := os.Open("testdata/" + name + ".bin")
    if err != nil {
       return nil, err
@@ -34,11 +22,8 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   var protect PSSH
-   protect.Data = tests[name].pssh.Encode()
-   protect.m = tests[name].pssh
-   module, err := protect.CDM(private_key, client_id)
-   if err != nil {
+   var module CDM
+   if err := module.test(tests[name].key_id); err != nil {
       return nil, err
    }
    body, err := module.request_signed()
@@ -82,6 +67,7 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    res.Write(os.Stdout)
    return key, nil
 }
+
 func TestPeacock(t *testing.T) {
    key, err := request("peacock", nil)
    if err != nil {

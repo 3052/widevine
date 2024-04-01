@@ -7,23 +7,6 @@ import (
    "net/http"
 )
 
-type Poster interface {
-   RequestUrl() (string, bool)
-   RequestHeader() (http.Header, error)
-   RequestBody([]byte) ([]byte, error)
-   ResponseBody([]byte) ([]byte, error)
-}
-
-type no_operation struct{}
-
-func (no_operation) Read(buf []byte) (int, error) {
-   return len(buf), nil
-}
-
-type LicenseMessage struct {
-   m protobuf.Message
-}
-
 func unpad(data []byte) []byte {
    if len(data) >= 1 {
       pad := data[len(data)-1]
@@ -61,4 +44,21 @@ func (c *CDM) New(private_key, client_id, key_id []byte) error {
    })
    c.license_request = request.Encode()
    return nil
+}
+
+type LicenseMessage struct {
+   m protobuf.Message
+}
+
+type Poster interface {
+   RequestUrl() (string, bool)
+   RequestHeader() (http.Header, error)
+   RequestBody([]byte) ([]byte, error)
+   ResponseBody([]byte) ([]byte, error)
+}
+
+type no_operation struct{}
+
+func (no_operation) Read(buf []byte) (int, error) {
+   return len(buf), nil
 }
