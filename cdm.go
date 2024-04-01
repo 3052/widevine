@@ -19,9 +19,9 @@ import (
 // wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
 type CDM struct {
    block           cipher.Block
-   key_id          []byte
-   license_request []byte
    private_key     *rsa.PrivateKey
+   license_request []byte
+   key_id          []byte
 }
 
 func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
