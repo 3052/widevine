@@ -3,10 +3,12 @@ package widevine
 import (
    "bufio"
    "bytes"
+   "encoding/base64"
    "encoding/json"
    "errors"
    "fmt"
    "io"
+   "log/slog"
    "net/http"
    "os"
    "testing"
@@ -31,11 +33,11 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
       return nil, err
    }
    req.Body = io.NopCloser(bytes.NewReader(body))
-   req.ContentLength = 0
    req.Header.Del("accept-encoding")
    req.RequestURI = ""
    req.URL.Host = req.Host
    req.URL.Scheme = "https"
+   req.ContentLength = int64(len(body))
    res, err := http.DefaultClient.Do(req)
    if err != nil {
       return nil, err
@@ -56,6 +58,7 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
          return nil, err
       }
    }
+   slog.Info("license", "response", base64.StdEncoding.EncodeToString(body))
    license, err := module.response(body)
    if err != nil {
       return nil, err
@@ -66,14 +69,6 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    }
    res.Write(os.Stdout)
    return key, nil
-}
-
-func TestPeacock(t *testing.T) {
-   key, err := request("peacock", nil)
-   if err != nil {
-      t.Fatal(err)
-   }
-   fmt.Printf("%x\n", key)
 }
 
 func TestHulu(t *testing.T) {
@@ -100,6 +95,41 @@ func TestParamount(t *testing.T) {
    fmt.Printf("%x\n", key)
 }
 
+func TestRoku(t *testing.T) {
+   key, err := request("roku", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+func TestNbc(t *testing.T) {
+   key, err := request("nbc", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+type unwrapper func([]byte) ([]byte, error)
+func TestStan(t *testing.T) {
+   unwrap := func(b []byte) ([]byte, error) {
+      var s struct {
+         License []byte
+      }
+      err := json.Unmarshal(b, &s)
+      if err != nil {
+         return nil, err
+      }
+      return s.License, nil
+   }
+   key, err := request("stan", unwrap)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
 func TestMubi(t *testing.T) {
    unwrap := func(b []byte) ([]byte, error) {
       var s struct {
@@ -118,21 +148,11 @@ func TestMubi(t *testing.T) {
    fmt.Printf("%x\n", key)
 }
 
-func TestRoku(t *testing.T) {
-   key, err := request("roku", nil)
+func TestPeacock(t *testing.T) {
+   key, err := request("peacock", nil)
    if err != nil {
       t.Fatal(err)
    }
    fmt.Printf("%x\n", key)
 }
-
-func TestNbc(t *testing.T) {
-   key, err := request("nbc", nil)
-   if err != nil {
-      t.Fatal(err)
-   }
-   fmt.Printf("%x\n", key)
-}
-
-type unwrapper func([]byte) ([]byte, error)
 
