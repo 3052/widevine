@@ -112,6 +112,7 @@ func TestNbc(t *testing.T) {
 }
 
 type unwrapper func([]byte) ([]byte, error)
+
 func TestStan(t *testing.T) {
    unwrap := func(b []byte) ([]byte, error) {
       var s struct {
@@ -155,4 +156,3 @@ func TestPeacock(t *testing.T) {
    }
    fmt.Printf("%x\n", key)
 }
-

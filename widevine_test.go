@@ -38,8 +38,8 @@ var tests = map[string]struct {
       url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
    },
    "stan": {
-      url: "stan.com.au/watch/a-knights-tale-2001",
-      key_id: "94eb4c43cb6a428f8f882b062ce08bbb",
+      key_id: "0b5c271e61c244a8ab81e8363a66aa35",
+      url: "play.stan.com.au/programs/1768588",
    },
 }
 

@@ -7,6 +7,16 @@ import (
    "net/http"
 )
 
+func unpad(data []byte) []byte {
+   if len(data) >= 1 {
+      pad := data[len(data)-1]
+      if len(data) >= int(pad) {
+         data = data[:len(data)-int(pad)]
+      }
+   }
+   return data
+}
+
 // 2024-3-31: content ID is optional with all servers except Roku. with Roku,
 // you can omit the PSSH completely, since its already embedded in the request
 // URL. however if you do provide a key ID, you also have to provide a one byte
@@ -34,16 +44,6 @@ func (c *CDM) New(private_key, client_id, key_id []byte) error {
    })
    c.license_request = request.Encode()
    return nil
-}
-
-func unpad(data []byte) []byte {
-   if len(data) >= 1 {
-      pad := data[len(data)-1]
-      if len(data) >= int(pad) {
-         data = data[:len(data)-int(pad)]
-      }
-   }
-   return data
 }
 
 type LicenseMessage struct {
