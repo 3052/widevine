@@ -14,7 +14,7 @@
   <body>
     <nav>
         154.pages.dev/widevine<span class="navbar-right">
-          v1.3.5 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
+          v1.3.7 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
       </nav>
     <main><h2 id="pkg-overview">package widevine</h2>
 <pre class="chroma"><span class="kn">import</span> <span class="s">&#34;154.pages.dev/widevine&#34;</span></pre>
@@ -25,17 +25,11 @@
       <ul>
           <li><a href="#CDM.Key">func (c CDM) Key(m *LicenseMessage) ([]byte, bool)</a></li>
           <li><a href="#CDM.License">func (c *CDM) License(p Poster) (*LicenseMessage, error)</a></li>
+          <li><a href="#CDM.New">func (c *CDM) New(private_key, client_id, key_id []byte) error</a></li>
           </ul>
       </li>
   <li>
       <a href="#LicenseMessage">type LicenseMessage</a>
-      </li>
-  <li>
-      <a href="#PSSH">type PSSH</a>
-      <ul>
-          <li><a href="#PSSH.CDM">func (p PSSH) CDM(private_key, client_id []byte) (*CDM, error)</a></li>
-          <li><a href="#PSSH.Consume">func (p *PSSH) Consume() error</a></li>
-          </ul>
       </li>
   <li>
       <a href="#Poster">type Poster</a>
@@ -50,21 +44,17 @@
   <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <a href="#CDM"><span class="nx">CDM</span></a><span class="p">)</span> <span class="nf">Key</span><span class="p">(</span><span class="nx">m</span> <span class="o">*</span><a href="#LicenseMessage"><span class="nx">LicenseMessage</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span></pre>
   <h4 id="CDM.License">func (*CDM) License</h4>
   <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#CDM"><span class="nx">CDM</span></a><span class="p">)</span> <span class="nf">License</span><span class="p">(</span><span class="nx">p</span> <a href="#Poster"><span class="nx">Poster</span></a><span class="p">)</span> <span class="p">(</span><span class="o">*</span><a href="#LicenseMessage"><span class="nx">LicenseMessage</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
-  <h3 id="LicenseMessage">type LicenseMessage</h3>
+  <h4 id="CDM.New">func (*CDM) New</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#CDM"><span class="nx">CDM</span></a><span class="p">)</span> <span class="nf">New</span><span class="p">(</span><span class="nx">private_key</span><span class="p">,</span> <span class="nx">client_id</span><span class="p">,</span> <span class="nx">key_id</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
+  <p>2024-3-31: content ID is optional with all servers except Roku. with Roku,
+you can omit the PSSH completely, since its already embedded in the request
+URL. however if you do provide a key ID, you also have to provide a one byte
+content ID. any byte should work, but they use `*` so lets go with that
+<h3 id="LicenseMessage">type LicenseMessage</h3>
     <pre class="chroma"><span class="kd">type</span> <span class="nx">LicenseMessage</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="c1">// contains filtered or unexported fields
 </span><span class="c1"></span><span class="p">}</span></pre>
-    <h3 id="PSSH">type PSSH</h3>
-    <pre class="chroma"><span class="kd">type</span> <span class="nx">PSSH</span> <span class="kd">struct</span> <span class="p">{</span>
-	<span id="PSSH.Data"><span class="nx">Data</span></span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a>
-	<span class="c1">// contains filtered or unexported fields
-</span><span class="c1"></span><span class="p">}</span></pre>
-    <p>some sites use content_id, in which case you need PSSH
-<h4 id="PSSH.CDM">func (PSSH) CDM</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <a href="#PSSH"><span class="nx">PSSH</span></a><span class="p">)</span> <span class="nf">CDM</span><span class="p">(</span><span class="nx">private_key</span><span class="p">,</span> <span class="nx">client_id</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">(</span><span class="o">*</span><a href="#CDM"><span class="nx">CDM</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
-  <h4 id="PSSH.Consume">func (*PSSH) Consume</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="o">*</span><a href="#PSSH"><span class="nx">PSSH</span></a><span class="p">)</span> <span class="nf">Consume</span><span class="p">()</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
-  <h3 id="Poster">type Poster</h3>
+    <h3 id="Poster">type Poster</h3>
     <pre class="chroma"><span class="kd">type</span> <span class="nx">Poster</span> <span class="kd">interface</span> <span class="p">{</span>
 	<span id="Poster.RequestUrl"><span class="nf">RequestUrl</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">)</span>
 	<span id="Poster.RequestHeader"><span class="nf">RequestHeader</span></span><span class="p">()</span> <span class="p">(</span><a href="https://pkg.go.dev/net/http"><span class="nx">http</span></a><span class="p">.</span><a href="https://pkg.go.dev/net/http#Header"><span class="nx">Header</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span>

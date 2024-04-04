@@ -3,12 +3,10 @@ package widevine
 import (
    "bufio"
    "bytes"
-   "encoding/base64"
    "encoding/json"
    "errors"
    "fmt"
    "io"
-   "log/slog"
    "net/http"
    "os"
    "testing"
@@ -58,7 +56,6 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
          return nil, err
       }
    }
-   slog.Info("license", "response", base64.StdEncoding.EncodeToString(body))
    license, err := module.response(body)
    if err != nil {
       return nil, err

@@ -8,11 +8,9 @@ import (
    "crypto/cipher"
    "crypto/rsa"
    "crypto/sha1"
-   "encoding/base64"
    "errors"
    "github.com/chmike/cmac-go"
    "io"
-   "log/slog"
    "net/http"
 )
 
@@ -92,7 +90,6 @@ func (c *CDM) License(p Poster) (*LicenseMessage, error) {
    if err != nil {
       return nil, err
    }
-   slog.Debug("license", "response", base64.StdEncoding.EncodeToString(signed))
    return c.response(signed)
 }
 
