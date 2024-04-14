@@ -107,7 +107,8 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
       return nil, err
    }
    var module CDM
-   if err := module.test(tests[name].key_id); err != nil {
+   err = module.test(tests[name].key_id)
+   if err != nil {
       return nil, err
    }
    body, err := module.request_signed()
