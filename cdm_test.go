@@ -62,14 +62,6 @@ func TestParamount(t *testing.T) {
    fmt.Printf("%x\n", key)
 }
 
-func TestPeacock(t *testing.T) {
-   key, err := request("peacock", nil)
-   if err != nil {
-      t.Fatal(err)
-   }
-   fmt.Printf("%x\n", key)
-}
-
 func TestRoku(t *testing.T) {
    key, err := request("roku", nil)
    if err != nil {

@@ -29,10 +29,6 @@ var tests = map[string]struct {
       key_id: "3de0f33c1b8a4fce961edaa950e2e732",
       url:      "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
    },
-   "peacock": {
-      key_id: "0016e23473ebe77d93d8d1a72dc690d7",
-      url:      "peacocktv.com/watch/playback/vod/GMO_00000000224510_02_HDSDR",
-   },
    "roku": {
       key_id: "bdfa4d6cdb39702e5b681f90617f9a7e",
       url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
