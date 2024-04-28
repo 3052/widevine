@@ -1,11 +1,18 @@
 package widevine
 
 import (
+   "encoding/base64"
    "encoding/hex"
    "os"
 )
 
-func test_cdm(key_id, pssh string) (*CDM, error) {
+type tester struct {
+   key_id string
+   pssh string
+   url      string
+}
+
+func (t tester) cdm() (*CDM, error) {
    home, err := os.UserHomeDir()
    if err != nil {
       return nil, err
@@ -18,25 +25,21 @@ func test_cdm(key_id, pssh string) (*CDM, error) {
    if err != nil {
       return nil, err
    }
-   if pssh != "" {
-      data, err := base64.StdEncoding.DecodeString(pssh)
+   if t.pssh != "" {
+      data, err := base64.StdEncoding.DecodeString(t.pssh)
       if err != nil {
          return nil, err
       }
       return PSSH(data).CDM(client_id, private_key)
    }
-   data, err := hex.DecodeString(key_id)
+   data, err := hex.DecodeString(t.key_id)
    if err != nil {
       return nil, err
    }
    return KeyId(data).CDM(client_id, private_key)
 }
 
-var tests = map[string]struct {
-   key_id string
-   pssh string
-   url      string
-}{
+var tests = map[string]tester{
    "amc": {
       url:      "amcplus.com/movies/blackberry--1065021",
    },
