@@ -41,27 +41,35 @@ func (t tester) cdm() (*CDM, error) {
 
 var tests = map[string]tester{
    "amc": {
-      url:      "amcplus.com/movies/blackberry--1065021",
+      url:      "amcplus.com/movies/blue-is-the-warmest-color--1027047",
+      pssh: "CAESEK3zMvstBUFBn1RFkJBR01YaDXdpZGV2aW5lX3Rlc3QiCDEyMzQ1Njc4MgdkZWZhdWx0",
    },
    "ctv": {
       url:      "ctv.ca/movies/the-girl-with-the-dragon-tattoo-2011",
-   },
-   "hulu": {
-      url:      "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
-   },
-   "mubi": {
-      url:      "mubi.com/en/us/films/the-blair-witch-project",
-   },
-   "nbc": {
-      url:      "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
-   },
-   "paramount": {
-      url:      "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
+      pssh: "CAESEMsJVx7ryz9yhyAmV/a596YaCWJlbGxtZWRpYSISZmYtZDAxM2NhN2EtMjY0MjY1",
    },
    "roku": {
       url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
+      pssh: "CAESEL36TWzbOXAuW2gfkGF/mn4aCmludGVydHJ1c3QiASo=",
+   },
+   "mubi": {
+      url:      "mubi.com/films/yukis-sun",
+      pssh: "CAESEO/Df05STk0/lAms0btFCf4aCHVzcC1jZW5jIhg3OE4vVGxKT1RUK1VDYXpSdTBVSi9nPT0qADIA",
+   },
+   "hulu": {
+      url:      "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
+      pssh: "CAESECG4LcLrsk1aqfhjHwRyZlAaBGh1bHUqAkhE",
+   },
+   "nbc": {
+      url: "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
+      pssh: "CAESEGRuxmA57ENyp0hP3pVB2ZoaC2J1eWRybWtleW9zIhBkbsZgOexDcqdIT96VQdmaKgJIRA==",
+   },
+   "paramount": {
+      url: "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
+      pssh: "CAESED3g8zwbik/Olh7aqVDi5zIiIGJxc0poX3o3bzRBUjZrdHVpXzl5OHdJSHF6RUVxYmhyOAE=",
    },
    "stan": {
       url: "play.stan.com.au/programs/1768588",
+      key_id: "0b5c271e61c244a8ab81e8363a66aa35",
    },
 }
