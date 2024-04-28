@@ -17,12 +17,16 @@ import (
 // wikipedia.org/wiki/Encrypted_Media_Extensions#Content_Decryption_Modules
 type CDM struct {
    block           cipher.Block
-   private_key     *rsa.PrivateKey
+   data data
    license_request []byte
-   key_id          []byte
+   private_key     *rsa.PrivateKey
 }
 
-func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
+func (c CDM) Key(m *LicenseMessage) ([]byte, error) {
+   key_id, err := c.data.key_id()
+   if err != nil {
+      return nil, err
+   }
    for container := range m.m.Get(3) { // KeyContainer key
       // this field is: optional bytes id = 1;
       // but CONTENT keys should always have it
@@ -30,7 +34,7 @@ func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
       if !ok {
          continue
       }
-      if !bytes.Equal(id, c.key_id) {
+      if !bytes.Equal(id, key_id) {
          continue
       }
       iv, ok := <-container.GetBytes(2)
@@ -42,9 +46,9 @@ func (c CDM) Key(m *LicenseMessage) ([]byte, bool) {
          continue
       }
       cipher.NewCBCDecrypter(c.block, iv).CryptBlocks(key, key)
-      return unpad(key), true
+      return unpad(key), nil
    }
-   return nil, false
+   return nil, errors.New("CDM.Key")
 }
 
 func (c *CDM) License(p Poster) (*LicenseMessage, error) {

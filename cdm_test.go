@@ -12,6 +12,14 @@ import (
    "testing"
 )
 
+func TestCtv(t *testing.T) {
+   key, err := request("ctv", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
 func TestAmc(t *testing.T) {
    key, err := request("amc", nil)
    if err != nil {
@@ -137,9 +145,9 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   key, ok := module.Key(license)
-   if !ok {
-      return nil, errors.New("CDM.Key")
+   key, err := module.Key(license)
+   if err != nil {
+      return nil, err
    }
    res.Write(os.Stdout)
    return key, nil

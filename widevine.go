@@ -17,37 +17,64 @@ func unpad(data []byte) []byte {
    return data
 }
 
-// 2024-3-31: content ID is optional with all servers except Roku. with Roku,
-// you can omit the PSSH completely, since its already embedded in the request
-// URL. however if you do provide a key ID, you also have to provide a one byte
-// content ID. any byte should work, but they use `*` so lets go with that
-func (c *CDM) New(private_key, client_id, key_id []byte) error {
+func new_cdm(d data, client_id, private_key []byte) (*CDM, error) {
+   module := CDM{data: d}
    // private_key
    block, _ := pem.Decode(private_key)
    var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
    if err != nil {
-      return err
+      return nil, err
    }
-   // key_id
-   c.key_id = key_id
    // license_request
    var request protobuf.Message               // LicenseRequest
    request.AddBytes(1, client_id)             // client_id
    request.Add(2, func(m *protobuf.Message) { // content_id
       m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.Add(1, func(m *protobuf.Message) { // pssh_data
-            m.AddBytes(2, key_id)
-            m.AddBytes(4, []byte{'*'}) // content_id
-         })
+         m.AddBytes(1, d.pssh())
       })
    })
-   c.license_request = request.Encode()
-   return nil
+   module.license_request = request.Encode()
+   return &module, nil
+}
+
+type KeyId []byte
+
+func (k KeyId) CDM(client_id, private_key []byte) (*CDM, error) {
+   return new_cdm(k, client_id, private_key)
+}
+
+func (k KeyId) key_id() ([]byte, error) {
+   return k, nil
+}
+
+func (k KeyId) pssh() []byte {
+   var m protobuf.Message
+   m.AddBytes(2, []byte(k))
+   return m.Encode()
 }
 
 type LicenseMessage struct {
    m protobuf.Message
+}
+
+type PSSH []byte
+
+func (p PSSH) CDM(client_id, private_key []byte) (*CDM, error) {
+   return new_cdm(p, client_id, private_key)
+}
+
+func (p PSSH) key_id() ([]byte, error) {
+   var m protobuf.Message
+   err := m.Consume(p)
+   if err != nil {
+      return nil, err
+   }
+   return <-m.GetBytes(2), nil
+}
+
+func (p PSSH) pssh() []byte {
+   return p
 }
 
 type Poster interface {
@@ -55,6 +82,11 @@ type Poster interface {
    RequestHeader() (http.Header, error)
    RequestBody([]byte) ([]byte, error)
    ResponseBody([]byte) ([]byte, error)
+}
+
+type data interface {
+   key_id() ([]byte, error)
+   pssh() []byte
 }
 
 type no_operation struct{}

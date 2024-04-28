@@ -5,56 +5,60 @@ import (
    "os"
 )
 
-var tests = map[string]struct {
-   key_id string
-   url      string
-}{
-   "amc": {
-      key_id: "fdc19f48326e4fe0a17c0a4f0bf9d6fb",
-      url:      "amcplus.com/movies/blackberry--1065021",
-   },
-   "hulu": {
-      key_id: "21b82dc2ebb24d5aa9f8631f04726650",
-      url:      "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
-   },
-   "mubi": {
-      key_id: "ead55c7d988d4c6c963b292a8397ca0a",
-      url:      "mubi.com/en/us/films/the-blair-witch-project",
-   },
-   "nbc": {
-      key_id: "646ec66039ec4372a7484fde9541d99a",
-      url:      "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
-   },
-   "paramount": {
-      key_id: "3de0f33c1b8a4fce961edaa950e2e732",
-      url:      "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
-   },
-   "roku": {
-      key_id: "bdfa4d6cdb39702e5b681f90617f9a7e",
-      url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
-   },
-   "stan": {
-      key_id: "0b5c271e61c244a8ab81e8363a66aa35",
-      url: "play.stan.com.au/programs/1768588",
-   },
-}
-
-func (c *CDM) test(raw_key_id string) error {
+func test_cdm(key_id, pssh string) (*CDM, error) {
    home, err := os.UserHomeDir()
    if err != nil {
-      return err
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      return err
+      return nil, err
    }
    client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
    if err != nil {
-      return err
+      return nil, err
    }
-   key_id, err := hex.DecodeString(raw_key_id)
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
    if err != nil {
-      return err
+      return nil, err
    }
-   return c.New(private_key, client_id, key_id)
+   if pssh != "" {
+      data, err := base64.StdEncoding.DecodeString(pssh)
+      if err != nil {
+         return nil, err
+      }
+      return PSSH(data).CDM(client_id, private_key)
+   }
+   data, err := hex.DecodeString(key_id)
+   if err != nil {
+      return nil, err
+   }
+   return KeyId(data).CDM(client_id, private_key)
+}
+
+var tests = map[string]struct {
+   key_id string
+   pssh string
+   url      string
+}{
+   "amc": {
+      url:      "amcplus.com/movies/blackberry--1065021",
+   },
+   "ctv": {
+      url:      "ctv.ca/movies/the-girl-with-the-dragon-tattoo-2011",
+   },
+   "hulu": {
+      url:      "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
+   },
+   "mubi": {
+      url:      "mubi.com/en/us/films/the-blair-witch-project",
+   },
+   "nbc": {
+      url:      "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
+   },
+   "paramount": {
+      url:      "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
+   },
+   "roku": {
+      url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
+   },
+   "stan": {
+      url: "play.stan.com.au/programs/1768588",
+   },
 }
