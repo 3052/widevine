@@ -6,12 +6,6 @@ import (
    "os"
 )
 
-type tester struct {
-   key_id string
-   pssh string
-   url      string
-}
-
 func (t tester) cdm() (*CDM, error) {
    home, err := os.UserHomeDir()
    if err != nil {
@@ -30,13 +24,19 @@ func (t tester) cdm() (*CDM, error) {
       if err != nil {
          return nil, err
       }
-      return PSSH(data).CDM(client_id, private_key)
+      return new_cdm(PSSH(data), client_id, private_key)
    }
    data, err := hex.DecodeString(t.key_id)
    if err != nil {
       return nil, err
    }
-   return KeyId(data).CDM(client_id, private_key)
+   return new_cdm(KeyId(data), client_id, private_key)
+}
+
+type tester struct {
+   key_id string
+   pssh string
+   url      string
 }
 
 var tests = map[string]tester{
