@@ -17,27 +17,6 @@ func unpad(data []byte) []byte {
    return data
 }
 
-func new_cdm(d data, client_id, private_key []byte) (*CDM, error) {
-   module := CDM{data: d}
-   // private_key
-   block, _ := pem.Decode(private_key)
-   var err error
-   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return nil, err
-   }
-   // license_request
-   var request protobuf.Message               // LicenseRequest
-   request.AddBytes(1, client_id)             // client_id
-   request.Add(2, func(m *protobuf.Message) { // content_id
-      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, d.pssh())
-      })
-   })
-   module.license_request = request.Encode()
-   return &module, nil
-}
-
 type KeyId []byte
 
 func (k KeyId) CDM(client_id, private_key []byte) (*CDM, error) {
@@ -84,13 +63,34 @@ type Poster interface {
    ResponseBody([]byte) ([]byte, error)
 }
 
-type data interface {
-   key_id() ([]byte, error)
-   pssh() []byte
-}
-
 type no_operation struct{}
 
 func (no_operation) Read(buf []byte) (int, error) {
    return len(buf), nil
+}
+
+func new_cdm(d data, client_id, private_key []byte) (*CDM, error) {
+   module := CDM{data: d}
+   // private_key
+   block, _ := pem.Decode(private_key)
+   var err error
+   module.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return nil, err
+   }
+   // license_request
+   var request protobuf.Message               // LicenseRequest
+   request.AddBytes(1, client_id)             // client_id
+   request.Add(2, func(m *protobuf.Message) { // content_id
+      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddBytes(1, d.pssh())
+      })
+   })
+   module.license_request = request.Encode()
+   return &module, nil
+}
+
+type data interface {
+   key_id() ([]byte, error)
+   pssh() []byte
 }
