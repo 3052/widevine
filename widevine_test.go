@@ -19,18 +19,31 @@ func (t tester) cdm() (*CDM, error) {
    if err != nil {
       return nil, err
    }
-   if t.pssh != "" {
-      data, err := base64.StdEncoding.DecodeString(t.pssh)
-      if err != nil {
-         return nil, err
-      }
-      return new_cdm(PSSH(data), client_id, private_key)
-   }
-   data, err := hex.DecodeString(t.key_id)
+   data, err := t.data()
    if err != nil {
       return nil, err
    }
-   return new_cdm(KeyId(data), client_id, private_key)
+   var module CDM
+   err = module.New(data, client_id, private_key)
+   if err != nil {
+      return nil, err
+   }
+   return &module, nil
+}
+
+func (t tester) data() (Data, error) {
+   if t.pssh != "" {
+      b, err := base64.StdEncoding.DecodeString(t.pssh)
+      if err != nil {
+         return nil, err
+      }
+      return PSSH(b), nil
+   }
+   b, err := hex.DecodeString(t.key_id)
+   if err != nil {
+      return nil, err
+   }
+   return KeyId(b), nil
 }
 
 type tester struct {
