@@ -5,115 +5,10 @@ import (
    "bytes"
    "encoding/base64"
    "encoding/hex"
-   "errors"
    "io"
    "net/http"
    "os"
 )
-
-func request(name string, unwrap unwrapper) ([]byte, error) {
-   file, err := os.Open("testdata/" + name + ".bin")
-   if err != nil {
-      return nil, err
-   }
-   defer file.Close()
-   req, err := http.ReadRequest(bufio.NewReader(file))
-   if err != nil {
-      return nil, err
-   }
-   module, err := tests[name].cdm()
-   if err != nil {
-      return nil, err
-   }
-   body, err := module.request_signed()
-   if err != nil {
-      return nil, err
-   }
-   req.Body = io.NopCloser(bytes.NewReader(body))
-   req.Header.Del("accept-encoding")
-   req.RequestURI = ""
-   req.URL.Host = req.Host
-   req.URL.Scheme = "https"
-   req.ContentLength = int64(len(body))
-   res, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      res.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   body, err = io.ReadAll(res.Body)
-   if err != nil {
-      return nil, err
-   }
-   if unwrap != nil {
-      body, err = unwrap(body)
-      if err != nil {
-         return nil, err
-      }
-   }
-   license, err := module.response(body)
-   if err != nil {
-      return nil, err
-   }
-   key, err := module.Key(license)
-   if err != nil {
-      return nil, err
-   }
-   res.Write(os.Stdout)
-   return key, nil
-}
-
-type unwrapper func([]byte) ([]byte, error)
-
-func (t tester) cdm() (*CDM, error) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      return nil, err
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      return nil, err
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      return nil, err
-   }
-   data, err := t.data()
-   if err != nil {
-      return nil, err
-   }
-   var module CDM
-   err = module.New(data, client_id, private_key)
-   if err != nil {
-      return nil, err
-   }
-   return &module, nil
-}
-
-func (t tester) data() (Data, error) {
-   if t.pssh != "" {
-      b, err := base64.StdEncoding.DecodeString(t.pssh)
-      if err != nil {
-         return nil, err
-      }
-      return PSSH(b), nil
-   }
-   b, err := hex.DecodeString(t.key_id)
-   if err != nil {
-      return nil, err
-   }
-   return KeyId(b), nil
-}
-
-type tester struct {
-   key_id string
-   pssh string
-   url      string
-}
 
 var tests = map[string]tester{
    "amc": {
@@ -149,3 +44,96 @@ var tests = map[string]tester{
       key_id: "0b5c271e61c244a8ab81e8363a66aa35",
    },
 }
+
+type unwrapper func([]byte) ([]byte, error)
+
+type tester struct {
+   key_id string
+   pssh string
+   url      string
+}
+
+func (t tester) cdm() (*CDM, error) {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      return nil, err
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      return nil, err
+   }
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      return nil, err
+   }
+   pssh, err := func() ([]byte, error) {
+      if t.pssh != "" {
+         return base64.StdEncoding.DecodeString(t.pssh)
+      }
+      b, err := hex.DecodeString(t.key_id)
+      if err != nil {
+         return nil, err
+      }
+      return PSSH(b), nil
+   }()
+   if err != nil {
+      return nil, err
+   }
+   var module CDM
+   err = module.New(private_key, client_id, pssh)
+   if err != nil {
+      return nil, err
+   }
+   return &module, nil
+}
+
+///////
+
+func request(name string, unwrap unwrapper) ([]byte, error) {
+   file, err := os.Open("testdata/" + name + ".bin")
+   if err != nil {
+      return nil, err
+   }
+   defer file.Close()
+   req, err := http.ReadRequest(bufio.NewReader(file))
+   if err != nil {
+      return nil, err
+   }
+   test := tests[name]
+   module, err := test.cdm()
+   if err != nil {
+      return nil, err
+   }
+   body, err := module.sign_request()
+   if err != nil {
+      return nil, err
+   }
+   req.Body = io.NopCloser(bytes.NewReader(body))
+   req.Header.Del("accept-encoding")
+   req.RequestURI = ""
+   req.URL.Host = req.Host
+   req.URL.Scheme = "https"
+   req.ContentLength = int64(len(body))
+   res, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer res.Body.Close()
+   body, err = io.ReadAll(res.Body)
+   if err != nil {
+      return nil, err
+   }
+   if unwrap != nil {
+      body, err = unwrap(body)
+      if err != nil {
+         return nil, err
+      }
+   }
+   key, err := module.decrypt(body, key_id)
+   if err != nil {
+      return nil, err
+   }
+   res.Write(os.Stdout)
+   return key, nil
+}
+

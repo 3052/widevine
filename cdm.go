@@ -86,7 +86,7 @@ func (c *CDM) New(private_key, client_id, pssh []byte) error {
    return nil
 }
 
-func (c CDM) sign() ([]byte, error) {
+func (c CDM) sign_request() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
       no_operation{},
@@ -111,11 +111,11 @@ type CDM struct {
 
 func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
    address, _ := post.RequestUrl()
-   signed_request, err := c.sign()
+   signed_request, err := c.sign_request()
    if err != nil {
       return nil, err
    }
-   wrapped_request, err := post.RequestBody(signed_request)
+   wrapped_request, err := post.WrapRequest(signed_request)
    if err != nil {
       return nil, err
    }
@@ -136,7 +136,7 @@ func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   license_response, err := post.ResponseBody(wrapped_response)
+   license_response, err := post.UnwrapResponse(wrapped_response)
    if err != nil {
       return nil, err
    }
