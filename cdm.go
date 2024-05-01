@@ -22,7 +22,10 @@ type CDM struct {
 }
 
 func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
-   address, _ := post.RequestUrl()
+   address, ok := post.RequestUrl()
+   if !ok {
+      return nil, errors.New("Poster.RequestUrl")
+   }
    signed_request, err := c.sign_request()
    if err != nil {
       return nil, err
@@ -44,6 +47,11 @@ func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
       return nil, err
    }
    defer res.Body.Close()
+   if res.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      res.Write(&b)
+      return nil, errors.New(b.String())
+   }
    wrapped_response, err := io.ReadAll(res.Body)
    if err != nil {
       return nil, err
@@ -75,7 +83,10 @@ func (c *CDM) New(private_key, client_id, pssh []byte) error {
 
 func (c CDM) decrypt(license_response, key_id []byte) ([]byte, error) {
    var message protobuf.Message // SignedMessage
-   message.Consume(license_response)
+   err := message.Consume(license_response)
+   if err != nil {
+      return nil, err
+   }
    session_key, err := rsa.DecryptOAEP(
       sha1.New(), nil, c.private_key, <-message.GetBytes(4), nil,
    )
@@ -92,7 +103,10 @@ func (c CDM) decrypt(license_response, key_id []byte) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   hash.Write(text)
+   _, err = hash.Write(text)
+   if err != nil {
+      return nil, err
+   }
    block, err := aes.NewCipher(hash.Sum(nil))
    if err != nil {
       return nil, err

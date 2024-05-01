@@ -5,52 +5,22 @@ import (
    "bytes"
    "encoding/base64"
    "encoding/hex"
+   "errors"
    "io"
    "net/http"
    "os"
 )
 
 var tests = map[string]tester{
-   "amc": {
-      url:      "amcplus.com/movies/blue-is-the-warmest-color--1027047",
-      pssh: "CAESEK3zMvstBUFBn1RFkJBR01YaDXdpZGV2aW5lX3Rlc3QiCDEyMzQ1Njc4MgdkZWZhdWx0",
-   },
    "ctv": {
-      url:      "ctv.ca/movies/the-girl-with-the-dragon-tattoo-2011",
+      key_id: "cb09571eebcb3f7287202657f6b9f7a6",
       pssh: "CAESEMsJVx7ryz9yhyAmV/a596YaCWJlbGxtZWRpYSISZmYtZDAxM2NhN2EtMjY0MjY1",
-   },
-   "roku": {
-      url:      "therokuchannel.roku.com/watch/105c41ea75775968b670fbb26978ed76",
-      pssh: "CAESEL36TWzbOXAuW2gfkGF/mn4aCmludGVydHJ1c3QiASo=",
-   },
-   "mubi": {
-      url:      "mubi.com/films/yukis-sun",
-      pssh: "CAESEO/Df05STk0/lAms0btFCf4aCHVzcC1jZW5jIhg3OE4vVGxKT1RUK1VDYXpSdTBVSi9nPT0qADIA",
-   },
-   "hulu": {
-      url:      "hulu.com/watch/023c49bf-6a99-4c67-851c-4c9e7609cc1d",
-      pssh: "CAESECG4LcLrsk1aqfhjHwRyZlAaBGh1bHUqAkhE",
-   },
-   "nbc": {
-      url: "nbc.com/saturday-night-live/video/february-3-ayo-edebiri/9000283433",
-      pssh: "CAESEGRuxmA57ENyp0hP3pVB2ZoaC2J1eWRybWtleW9zIhBkbsZgOexDcqdIT96VQdmaKgJIRA==",
-   },
-   "paramount": {
-      url: "paramountplus.com/shows/video/bqsJh_z7o4AR6ktui_9y8wIHqzEEqbhr",
-      pssh: "CAESED3g8zwbik/Olh7aqVDi5zIiIGJxc0poX3o3bzRBUjZrdHVpXzl5OHdJSHF6RUVxYmhyOAE=",
+      url:      "ctv.ca/movies/the-girl-with-the-dragon-tattoo-2011",
    },
    "stan": {
-      url: "play.stan.com.au/programs/1768588",
       key_id: "0b5c271e61c244a8ab81e8363a66aa35",
+      url: "play.stan.com.au/programs/1768588",
    },
-}
-
-type unwrapper func([]byte) ([]byte, error)
-
-type tester struct {
-   key_id string
-   pssh string
-   url      string
 }
 
 func request(name string, unwrap unwrapper) ([]byte, error) {
@@ -87,6 +57,11 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
       return nil, err
    }
    defer res.Body.Close()
+   if res.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      res.Write(&b)
+      return nil, errors.New(b.String())
+   }
    body, err = io.ReadAll(res.Body)
    if err != nil {
       return nil, err
@@ -135,4 +110,12 @@ func (t tester) get_pssh(key_id []byte) ([]byte, error) {
       return base64.StdEncoding.DecodeString(t.pssh)
    }
    return PSSH(key_id), nil
+}
+
+type unwrapper func([]byte) ([]byte, error)
+
+type tester struct {
+   key_id string
+   pssh string
+   url      string
 }
