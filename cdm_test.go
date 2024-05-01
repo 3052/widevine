@@ -1,74 +1,10 @@
 package widevine
 
 import (
-   "bufio"
-   "bytes"
    "encoding/json"
-   "errors"
    "fmt"
-   "io"
-   "net/http"
-   "os"
    "testing"
 )
-
-func request(name string, unwrap unwrapper) ([]byte, error) {
-   file, err := os.Open("testdata/" + name + ".bin")
-   if err != nil {
-      return nil, err
-   }
-   defer file.Close()
-   req, err := http.ReadRequest(bufio.NewReader(file))
-   if err != nil {
-      return nil, err
-   }
-   module, err := tests[name].cdm()
-   if err != nil {
-      return nil, err
-   }
-   body, err := module.request_signed()
-   if err != nil {
-      return nil, err
-   }
-   req.Body = io.NopCloser(bytes.NewReader(body))
-   req.Header.Del("accept-encoding")
-   req.RequestURI = ""
-   req.URL.Host = req.Host
-   req.URL.Scheme = "https"
-   req.ContentLength = int64(len(body))
-   res, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      res.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   body, err = io.ReadAll(res.Body)
-   if err != nil {
-      return nil, err
-   }
-   if unwrap != nil {
-      body, err = unwrap(body)
-      if err != nil {
-         return nil, err
-      }
-   }
-   license, err := module.response(body)
-   if err != nil {
-      return nil, err
-   }
-   key, err := module.Key(license)
-   if err != nil {
-      return nil, err
-   }
-   res.Write(os.Stdout)
-   return key, nil
-}
-
-type unwrapper func([]byte) ([]byte, error)
 
 func TestAmc(t *testing.T) {
    key, err := request("amc", nil)
