@@ -53,42 +53,6 @@ type tester struct {
    url      string
 }
 
-func (t tester) cdm() (*CDM, error) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      return nil, err
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      return nil, err
-   }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
-   if err != nil {
-      return nil, err
-   }
-   pssh, err := func() ([]byte, error) {
-      if t.pssh != "" {
-         return base64.StdEncoding.DecodeString(t.pssh)
-      }
-      b, err := hex.DecodeString(t.key_id)
-      if err != nil {
-         return nil, err
-      }
-      return PSSH(b), nil
-   }()
-   if err != nil {
-      return nil, err
-   }
-   var module CDM
-   err = module.New(private_key, client_id, pssh)
-   if err != nil {
-      return nil, err
-   }
-   return &module, nil
-}
-
-///////
-
 func request(name string, unwrap unwrapper) ([]byte, error) {
    file, err := os.Open("testdata/" + name + ".bin")
    if err != nil {
@@ -100,7 +64,11 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
       return nil, err
    }
    test := tests[name]
-   module, err := test.cdm()
+   key_id, err := hex.DecodeString(test.key_id)
+   if err != nil {
+      return nil, err
+   }
+   module, err := test.cdm(key_id)
    if err != nil {
       return nil, err
    }
@@ -137,3 +105,34 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    return key, nil
 }
 
+func (t tester) cdm(key_id []byte) (*CDM, error) {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      return nil, err
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      return nil, err
+   }
+   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   if err != nil {
+      return nil, err
+   }
+   pssh, err := t.get_pssh(key_id)
+   if err != nil {
+      return nil, err
+   }
+   var module CDM
+   err = module.New(private_key, client_id, pssh)
+   if err != nil {
+      return nil, err
+   }
+   return &module, nil
+}
+
+func (t tester) get_pssh(key_id []byte) ([]byte, error) {
+   if t.pssh != "" {
+      return base64.StdEncoding.DecodeString(t.pssh)
+   }
+   return PSSH(key_id), nil
+}

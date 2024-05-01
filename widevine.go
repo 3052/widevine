@@ -5,13 +5,6 @@ import (
    "net/http"
 )
 
-type Poster interface {
-   RequestUrl() (string, bool)
-   RequestHeader() (http.Header, error)
-   WrapRequest([]byte) ([]byte, error)
-   UnwrapResponse([]byte) ([]byte, error)
-}
-
 func PSSH(key_id []byte) []byte {
    var m protobuf.Message
    m.AddBytes(2, key_id)
@@ -26,6 +19,13 @@ func unpad(data []byte) []byte {
       }
    }
    return data
+}
+
+type Poster interface {
+   RequestUrl() (string, bool)
+   RequestHeader() (http.Header, error)
+   WrapRequest([]byte) ([]byte, error)
+   UnwrapResponse([]byte) ([]byte, error)
 }
 
 type no_operation struct{}
