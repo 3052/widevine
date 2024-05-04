@@ -5,18 +5,8 @@
 >
 > The Dark Knight Rises (2012)
 
-first Widevine commit was
-[May 21 2022](//github.com/gucio321/mech/commit/9d3dff51)
-
-## what is a CDM?
-
-the way it works, is you need a key to decrypt the media. to get that key, you
-make a request to a license server, and they give you the key back. however the
-key returned from the license server, is **itself encrypted**, so before you can
-use the key, you have to decrypt it. that's what the CDM is for. without the
-CDM, you cant decrypt the key, and you cant then use the decrypted key to
-decrypt some media. there's **a lot** more detail to it, but thats the high
-level view of whats going on.
+- https://github.com/search?q=L3+CDM
+- https://integration.widevine.com/diagnostics
 
 ## where did proto file come from?
 
@@ -31,17 +21,19 @@ Widevine_DRM_Architecture_Overview.pdf
 
 https://github.com/github/dmca/blob/master/2020/11/2020-11-09-Google.md
 
-## PSSH
+## FoxRefire/wvg
 
-https://integration.widevine.com/diagnostics
+https://github.com/FoxRefire/wvg
 
-## where to download L3 CDM?
+## hyugogirubato/KeyDive
 
-I can't host those here for legal reasons, but you should be able to download
-them [from here](//github.com/Jnzzi/4464_L3-CDM) or
-[from search](//github.com/search?q=L3+CDM)
+https://github.com/hyugogirubato/KeyDive
 
-## how to dump L3 CDM?
+## Jnzzi/4464\_L3-CDM
+
+<https://github.com/Jnzzi/4464_L3-CDM>
+
+## wvdumper/dumper
 
 install [Android Studio][1]. then create Android virtual device:
 
