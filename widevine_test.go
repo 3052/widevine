@@ -109,7 +109,7 @@ func (t tester) get_pssh(key_id []byte) ([]byte, error) {
    if t.pssh != "" {
       return base64.StdEncoding.DecodeString(t.pssh)
    }
-   return PSSH(key_id), nil
+   return PSSH(key_id, nil), nil
 }
 
 type unwrapper func([]byte) ([]byte, error)
