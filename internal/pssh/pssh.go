@@ -66,6 +66,7 @@ func main() {
       fmt.Println(prepend(data, 0))
       fmt.Println(prepend(data, 1))
       fmt.Println(prepend(data, 2))
+      fmt.Printf("%q\n", data)
       fmt.Println(double_escape(data))
    } else {
       flag.Usage()

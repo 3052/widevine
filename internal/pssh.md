@@ -1,29 +1,38 @@
 # pssh
 
-## AMC+
+1. MPD PSSH
+2. MPD key ID
+3. init PSSH
+4. init key ID
 
-needs key ID. found in MPD and init
+## one step
 
-## criterion
+we cant do it in one step, because CTV only has PSSH in the init file, and
+Rakuten only has PSSH in the MPD
 
-needs key ID. found in MPD
+## two steps
 
-## ctv
+1. MPD PSSH
+2. init PSSH
 
-needs content ID
+the above fails because Stan only offers key ID
 
-## rakuten
+1. MPD key ID
+2. init key ID
 
-needs content ID. decoded:
+the above fails because Rakuten needs content ID
 
-~~~
-cf34a03bbb4aa899df42c3cf7a6cb925-mc-0-137-0-0
-~~~
+## three steps
 
-is returned by `/v3/avod/streamings` and MPD. encoded:
+1. init PSSH
+2. MPD PSSH
+3. MPD key ID
 
-~~~
-NmMzRhMDNiYmI0YWE4OTlkZjQyYzNjZjdhNmNiOTI1LW1jLTAtMTM3LTAtMA
-~~~
+the above fails because Stan does not offer Widevine PSSH at all, and key ID
+only in init file.
 
-is returned by MPD.
+1. MPD PSSH
+2. init PSSH
+3. init key ID
+
+the above works
