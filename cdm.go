@@ -16,71 +16,6 @@ import (
    "net/http"
 )
 
-type CDM struct {
-   license_request []byte
-   private_key *rsa.PrivateKey
-}
-
-func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
-   address, ok := post.RequestUrl()
-   if !ok {
-      return nil, errors.New("Poster.RequestUrl")
-   }
-   signed_request, err := c.sign_request()
-   if err != nil {
-      return nil, err
-   }
-   wrapped_request, err := post.WrapRequest(signed_request)
-   if err != nil {
-      return nil, err
-   }
-   req, err := http.NewRequest("POST", address, bytes.NewReader(wrapped_request))
-   if err != nil {
-      return nil, err
-   }
-   req.Header, err = post.RequestHeader()
-   if err != nil {
-      return nil, err
-   }
-   res, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      res.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   wrapped_response, err := io.ReadAll(res.Body)
-   if err != nil {
-      return nil, err
-   }
-   license_response, err := post.UnwrapResponse(wrapped_response)
-   if err != nil {
-      return nil, err
-   }
-   return c.decrypt(license_response, key_id)
-}
-
-func (c *CDM) New(private_key, client_id, pssh []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return err
-   }
-   var request protobuf.Message               // LicenseRequest
-   request.AddBytes(1, client_id)             // client_id
-   request.Add(2, func(m *protobuf.Message) { // content_id
-      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, pssh)
-      })
-   })
-   c.license_request = request.Encode()
-   return nil
-}
-
 func (c CDM) decrypt(license_response, key_id []byte) ([]byte, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(license_response)
@@ -155,4 +90,68 @@ func (c CDM) sign_request() ([]byte, error) {
    signed.AddBytes(2, c.license_request)
    signed.AddBytes(3, signature)
    return signed.Encode(), nil
+}
+type CDM struct {
+   license_request []byte
+   private_key *rsa.PrivateKey
+}
+
+func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
+   address, ok := post.RequestUrl()
+   if !ok {
+      return nil, errors.New("Poster.RequestUrl")
+   }
+   signed_request, err := c.sign_request()
+   if err != nil {
+      return nil, err
+   }
+   wrapped_request, err := post.WrapRequest(signed_request)
+   if err != nil {
+      return nil, err
+   }
+   req, err := http.NewRequest("POST", address, bytes.NewReader(wrapped_request))
+   if err != nil {
+      return nil, err
+   }
+   req.Header, err = post.RequestHeader()
+   if err != nil {
+      return nil, err
+   }
+   res, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer res.Body.Close()
+   if res.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      res.Write(&b)
+      return nil, errors.New(b.String())
+   }
+   wrapped_response, err := io.ReadAll(res.Body)
+   if err != nil {
+      return nil, err
+   }
+   license_response, err := post.UnwrapResponse(wrapped_response)
+   if err != nil {
+      return nil, err
+   }
+   return c.decrypt(license_response, key_id)
+}
+
+func (c *CDM) New(private_key, client_id, pssh []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return err
+   }
+   var request protobuf.Message               // LicenseRequest
+   request.AddBytes(1, client_id)             // client_id
+   request.Add(2, func(m *protobuf.Message) { // content_id
+      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
+         m.AddBytes(1, pssh)
+      })
+   })
+   c.license_request = request.Encode()
+   return nil
 }
