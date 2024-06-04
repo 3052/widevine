@@ -86,11 +86,16 @@ func (c CDM) sign_request() ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   var signed protobuf.Message // SignedMessage
+   // SignedMessage
+   var signed protobuf.Message
+   // kktv.me
+   // type: LICENSE_REQUEST
+   signed.AddVarint(1, 1)
    signed.AddBytes(2, c.license_request)
    signed.AddBytes(3, signature)
    return signed.Encode(), nil
 }
+
 type CDM struct {
    license_request []byte
    private_key *rsa.PrivateKey
