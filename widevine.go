@@ -5,13 +5,18 @@ import (
    "net/http"
 )
 
-func PSSH(key_id, content_id []byte) []byte {
+type PSSH struct {
+   ContentId []byte
+   KeyId []byte
+}
+
+func (p PSSH) Encode() []byte {
    var m protobuf.Message
-   if key_id != nil {
-      m.AddBytes(2, key_id)
+   if p.KeyId != nil {
+      m.AddBytes(2, p.KeyId)
    }
-   if content_id != nil {
-      m.AddBytes(4, content_id)
+   if p.ContentId != nil {
+      m.AddBytes(4, p.ContentId)
    }
    return m.Encode()
 }

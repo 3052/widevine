@@ -11,6 +11,13 @@ import (
    "os"
 )
 
+func (t tester) get_pssh(key_id []byte) ([]byte, error) {
+   if t.pssh != "" {
+      return base64.StdEncoding.DecodeString(t.pssh)
+   }
+   return PSSH{KeyId: key_id}.Encode(), nil
+}
+
 var tests = map[string]tester{
    "ctv": {
       key_id: "cb09571eebcb3f7287202657f6b9f7a6",
@@ -103,13 +110,6 @@ func (t tester) cdm(key_id []byte) (*CDM, error) {
       return nil, err
    }
    return &module, nil
-}
-
-func (t tester) get_pssh(key_id []byte) ([]byte, error) {
-   if t.pssh != "" {
-      return base64.StdEncoding.DecodeString(t.pssh)
-   }
-   return PSSH(key_id, nil), nil
 }
 
 type unwrapper func([]byte) ([]byte, error)
