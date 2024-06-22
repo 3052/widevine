@@ -122,17 +122,17 @@ func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   res, err := http.DefaultClient.Do(req)
+   resp, err := http.DefaultClient.Do(req)
    if err != nil {
       return nil, err
    }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
+   defer resp.Body.Close()
+   if resp.StatusCode != http.StatusOK {
       var b bytes.Buffer
-      res.Write(&b)
+      resp.Write(&b)
       return nil, errors.New(b.String())
    }
-   wrapped_response, err := io.ReadAll(res.Body)
+   wrapped_response, err := io.ReadAll(resp.Body)
    if err != nil {
       return nil, err
    }
