@@ -5,6 +5,16 @@ import (
    "net/http"
 )
 
+func unpad(data []byte) []byte {
+   if len(data) >= 1 {
+      pad := data[len(data)-1]
+      if len(data) >= int(pad) {
+         data = data[:len(data)-int(pad)]
+      }
+   }
+   return data
+}
+
 type PSSH struct {
    ContentId []byte
    KeyId []byte
@@ -19,16 +29,6 @@ func (p PSSH) Encode() []byte {
       m.AddBytes(4, p.ContentId)
    }
    return m.Encode()
-}
-
-func unpad(data []byte) []byte {
-   if len(data) >= 1 {
-      pad := data[len(data)-1]
-      if len(data) >= int(pad) {
-         data = data[:len(data)-int(pad)]
-      }
-   }
-   return data
 }
 
 type Poster interface {
