@@ -5,17 +5,46 @@ import (
    "bytes"
    "encoding/base64"
    "encoding/hex"
+   "encoding/json"
    "errors"
+   "fmt"
    "io"
    "net/http"
    "os"
+   "testing"
 )
+
+func TestCtv(t *testing.T) {
+   key, err := request("ctv", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+func TestStan(t *testing.T) {
+   unwrap := func(b []byte) ([]byte, error) {
+      var s struct {
+         License []byte
+      }
+      err := json.Unmarshal(b, &s)
+      if err != nil {
+         return nil, err
+      }
+      return s.License, nil
+   }
+   key, err := request("stan", unwrap)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
 
 func (t tester) get_pssh(key_id []byte) ([]byte, error) {
    if t.pssh != "" {
       return base64.StdEncoding.DecodeString(t.pssh)
    }
-   return PSSH{KeyId: key_id}.Encode(), nil
+   return Pssh{KeyId: key_id}.Encode(), nil
 }
 
 var tests = map[string]tester{
@@ -79,7 +108,7 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
          return nil, err
       }
    }
-   key, err := module.decrypt(body, key_id)
+   key, err := module.Decrypt(body, key_id)
    if err != nil {
       return nil, err
    }
