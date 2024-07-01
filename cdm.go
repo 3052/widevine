@@ -16,7 +16,7 @@ import (
    "net/http"
 )
 
-func (c CDM) decrypt(license_response, key_id []byte) ([]byte, error) {
+func (c Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(license_response)
    if err != nil {
@@ -71,10 +71,10 @@ func (c CDM) decrypt(license_response, key_id []byte) ([]byte, error) {
       cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
       return unpad(key), nil
    }
-   return nil, errors.New("CDM.decrypt")
+   return nil, errors.New("Cdm.decrypt")
 }
 
-func (c CDM) sign_request() ([]byte, error) {
+func (c Cdm) sign_request() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
       no_operation{},
@@ -96,12 +96,12 @@ func (c CDM) sign_request() ([]byte, error) {
    return signed.Encode(), nil
 }
 
-type CDM struct {
+type Cdm struct {
    license_request []byte
    private_key *rsa.PrivateKey
 }
 
-func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
+func (c Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
    address, ok := post.RequestUrl()
    if !ok {
       return nil, errors.New("Poster.RequestUrl")
@@ -143,7 +143,7 @@ func (c CDM) Key(post Poster, key_id []byte) ([]byte, error) {
    return c.decrypt(license_response, key_id)
 }
 
-func (c *CDM) New(private_key, client_id, pssh []byte) error {
+func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
    c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)

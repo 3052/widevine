@@ -87,7 +87,7 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    return key, nil
 }
 
-func (t tester) cdm(key_id []byte) (*CDM, error) {
+func (t tester) cdm(key_id []byte) (*Cdm, error) {
    home, err := os.UserHomeDir()
    if err != nil {
       return nil, err
@@ -104,7 +104,7 @@ func (t tester) cdm(key_id []byte) (*CDM, error) {
    if err != nil {
       return nil, err
    }
-   var module CDM
+   var module Cdm
    err = module.New(private_key, client_id, pssh)
    if err != nil {
       return nil, err
