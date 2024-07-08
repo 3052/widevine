@@ -1,44 +1,9 @@
 package widevine
 
 import (
-   "bufio"
-   "bytes"
    "encoding/base64"
-   "encoding/hex"
-   "encoding/json"
-   "errors"
-   "fmt"
-   "io"
-   "net/http"
    "os"
-   "testing"
 )
-
-func TestCtv(t *testing.T) {
-   key, err := request("ctv", nil)
-   if err != nil {
-      t.Fatal(err)
-   }
-   fmt.Printf("%x\n", key)
-}
-
-func TestStan(t *testing.T) {
-   unwrap := func(b []byte) ([]byte, error) {
-      var s struct {
-         License []byte
-      }
-      err := json.Unmarshal(b, &s)
-      if err != nil {
-         return nil, err
-      }
-      return s.License, nil
-   }
-   key, err := request("stan", unwrap)
-   if err != nil {
-      t.Fatal(err)
-   }
-   fmt.Printf("%x\n", key)
-}
 
 func (t tester) get_pssh(key_id []byte) ([]byte, error) {
    if t.pssh != "" {
@@ -53,67 +18,6 @@ var tests = map[string]tester{
       pssh: "CAESEMsJVx7ryz9yhyAmV/a596YaCWJlbGxtZWRpYSISZmYtZDAxM2NhN2EtMjY0MjY1",
       url:      "ctv.ca/movies/the-girl-with-the-dragon-tattoo-2011",
    },
-   "stan": {
-      key_id: "0b5c271e61c244a8ab81e8363a66aa35",
-      url: "play.stan.com.au/programs/1768588",
-   },
-}
-
-func request(name string, unwrap unwrapper) ([]byte, error) {
-   file, err := os.Open("testdata/" + name + ".bin")
-   if err != nil {
-      return nil, err
-   }
-   defer file.Close()
-   req, err := http.ReadRequest(bufio.NewReader(file))
-   if err != nil {
-      return nil, err
-   }
-   test := tests[name]
-   key_id, err := hex.DecodeString(test.key_id)
-   if err != nil {
-      return nil, err
-   }
-   module, err := test.cdm(key_id)
-   if err != nil {
-      return nil, err
-   }
-   body, err := module.sign_request()
-   if err != nil {
-      return nil, err
-   }
-   req.Body = io.NopCloser(bytes.NewReader(body))
-   req.Header.Del("accept-encoding")
-   req.RequestURI = ""
-   req.URL.Host = req.Host
-   req.URL.Scheme = "https"
-   req.ContentLength = int64(len(body))
-   resp, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer resp.Body.Close()
-   if resp.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      resp.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   body, err = io.ReadAll(resp.Body)
-   if err != nil {
-      return nil, err
-   }
-   if unwrap != nil {
-      body, err = unwrap(body)
-      if err != nil {
-         return nil, err
-      }
-   }
-   key, err := module.Decrypt(body, key_id)
-   if err != nil {
-      return nil, err
-   }
-   resp.Write(os.Stdout)
-   return key, nil
 }
 
 func (t tester) cdm(key_id []byte) (*Cdm, error) {
