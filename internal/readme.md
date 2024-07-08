@@ -12,27 +12,12 @@ Rakuten only has PSSH in the MPD
 
 ## two steps
 
-1. MPD PSSH
-2. init PSSH
-
-the above fails because Stan only offers key ID
-
 1. MPD key ID
 2. init key ID
 
 the above fails because Rakuten needs content ID
 
-## three steps
-
-1. init PSSH
-2. MPD PSSH
-3. MPD key ID
-
-the above fails because Stan does not offer Widevine PSSH at all, and key ID
-only in init file.
-
 1. MPD PSSH
 2. init PSSH
-3. init key ID
 
 the above works

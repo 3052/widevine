@@ -88,17 +88,17 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    req.URL.Host = req.Host
    req.URL.Scheme = "https"
    req.ContentLength = int64(len(body))
-   res, err := http.DefaultClient.Do(req)
+   resp, err := http.DefaultClient.Do(req)
    if err != nil {
       return nil, err
    }
-   defer res.Body.Close()
-   if res.StatusCode != http.StatusOK {
+   defer resp.Body.Close()
+   if resp.StatusCode != http.StatusOK {
       var b bytes.Buffer
-      res.Write(&b)
+      resp.Write(&b)
       return nil, errors.New(b.String())
    }
-   body, err = io.ReadAll(res.Body)
+   body, err = io.ReadAll(resp.Body)
    if err != nil {
       return nil, err
    }
@@ -112,7 +112,7 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   res.Write(os.Stdout)
+   resp.Write(os.Stdout)
    return key, nil
 }
 
