@@ -69,7 +69,7 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
          return nil, err
       }
    }
-   key, err := module.Decrypt(body, key_id)
+   key, err := module.decrypt(body, key_id)
    if err != nil {
       return nil, err
    }

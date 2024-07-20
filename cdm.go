@@ -16,7 +16,7 @@ import (
    "net/http"
 )
 
-func (c Cdm) Decrypt(license_response, key_id []byte) ([]byte, error) {
+func (c Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(license_response)
    if err != nil {
@@ -71,7 +71,7 @@ func (c Cdm) Decrypt(license_response, key_id []byte) ([]byte, error) {
       cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
       return unpad(key), nil
    }
-   return nil, errors.New("Cdm.Decrypt")
+   return nil, errors.New("Cdm.decrypt")
 }
 
 type Cdm struct {
@@ -118,7 +118,7 @@ func (c Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   return c.Decrypt(license_response, key_id)
+   return c.decrypt(license_response, key_id)
 }
 
 func (c Cdm) sign_request() ([]byte, error) {
