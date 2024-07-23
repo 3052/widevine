@@ -37,6 +37,7 @@ func dash(src string) string {
    dst = slices.Insert(dst, 23, '-')
    return string(dst)
 }
+
 func main() {
    base64_id := flag.String("b", "", "base64 ID")
    hex_id := flag.String("h", "", "hex ID")
