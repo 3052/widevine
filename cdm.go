@@ -16,7 +16,7 @@ import (
    "net/http"
 )
 
-func (c Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
+func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    var message protobuf.Message // SignedMessage
    err := message.Consume(license_response)
    if err != nil {
