@@ -79,7 +79,7 @@ type Cdm struct {
    private_key *rsa.PrivateKey
 }
 
-func (c Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
+func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
    address, ok := post.RequestUrl()
    if !ok {
       return nil, errors.New("Poster.RequestUrl")
