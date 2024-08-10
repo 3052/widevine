@@ -121,7 +121,7 @@ func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
    return c.decrypt(license_response, key_id)
 }
 
-func (c Cdm) sign_request() ([]byte, error) {
+func (c *Cdm) sign_request() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
       no_operation{},
