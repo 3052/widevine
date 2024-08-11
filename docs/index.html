@@ -14,7 +14,7 @@
   <body>
     <nav>
         154.pages.dev/widevine<span class="navbar-right">
-          v1.4.5 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
+          v1.4.6 | <a href="">Root</a> | <a href="#pkg-index">Index</a></span>
       </nav>
     <main><h2 id="pkg-overview">package widevine</h2>
 <pre class="chroma"><span class="kn">import</span> <span class="s">&#34;154.pages.dev/widevine&#34;</span></pre>
@@ -23,7 +23,7 @@
   <li>
       <a href="#Cdm">type Cdm</a>
       <ul>
-          <li><a href="#Cdm.Key">func (c Cdm) Key(post Poster, key_id []byte) ([]byte, error)</a></li>
+          <li><a href="#Cdm.Key">func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error)</a></li>
           <li><a href="#Cdm.New">func (c *Cdm) New(private_key, client_id, pssh []byte) error</a></li>
           </ul>
       </li>
@@ -41,8 +41,8 @@
     <pre class="chroma"><span class="kd">type</span> <span class="nx">Cdm</span> <span class="kd">struct</span> <span class="p">{</span>
 	<span class="c1">// contains filtered or unexported fields
 </span><span class="c1"></span><span class="p">}</span></pre>
-    <h4 id="Cdm.Key">func (Cdm) Key</h4>
-  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <a href="#Cdm"><span class="nx">Cdm</span></a><span class="p">)</span> <span class="nf">Key</span><span class="p">(</span><span class="nx">post</span> <a href="#Poster"><span class="nx">Poster</span></a><span class="p">,</span> <span class="nx">key_id</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+    <h4 id="Cdm.Key">func (*Cdm) Key</h4>
+  <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#Cdm"><span class="nx">Cdm</span></a><span class="p">)</span> <span class="nf">Key</span><span class="p">(</span><span class="nx">post</span> <a href="#Poster"><span class="nx">Poster</span></a><span class="p">,</span> <span class="nx">key_id</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <span class="p">([]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">,</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
   <h4 id="Cdm.New">func (*Cdm) New</h4>
   <pre class="chroma"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><a href="#Cdm"><span class="nx">Cdm</span></a><span class="p">)</span> <span class="nf">New</span><span class="p">(</span><span class="nx">private_key</span><span class="p">,</span> <span class="nx">client_id</span><span class="p">,</span> <span class="nx">pssh</span> <span class="p">[]</span><a href="https://pkg.go.dev/builtin#byte"><span class="kt">byte</span></a><span class="p">)</span> <a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
   <h3 id="Poster">type Poster</h3>
