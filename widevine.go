@@ -20,15 +20,15 @@ type Pssh struct {
    KeyId []byte
 }
 
-func (p Pssh) Encode() []byte {
-   var m protobuf.Message
+func (p Pssh) Marshal() []byte {
+   message := protobuf.Message{}
    if p.KeyId != nil {
-      m.AddBytes(2, p.KeyId)
+      message.AddBytes(2, p.KeyId)
    }
    if p.ContentId != nil {
-      m.AddBytes(4, p.ContentId)
+      message.AddBytes(4, p.ContentId)
    }
-   return m.Encode()
+   return message.Marshal()
 }
 
 type Poster interface {

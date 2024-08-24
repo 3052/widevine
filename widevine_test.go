@@ -9,7 +9,7 @@ func (t tester) get_pssh(key_id []byte) ([]byte, error) {
    if t.pssh != "" {
       return base64.StdEncoding.DecodeString(t.pssh)
    }
-   return Pssh{KeyId: key_id}.Encode(), nil
+   return Pssh{KeyId: key_id}.Marshal(), nil
 }
 
 var tests = map[string]tester{

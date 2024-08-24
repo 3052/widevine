@@ -16,14 +16,57 @@ import (
    "net/http"
 )
 
-func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
-   var message protobuf.Message // SignedMessage
-   err := message.Consume(license_response)
+func (c *Cdm) New(private_key, client_id, pssh []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return err
+   }
+   request := protobuf.Message{}
+   request.AddBytes(1, client_id)             // client_id
+   request.Add(2, func(m protobuf.Message) { // content_id
+      m.Add(1, func(m protobuf.Message) { // widevine_pssh_data
+         m.AddBytes(1, pssh)
+      })
+   })
+   c.license_request = request.Marshal()
+   return nil
+}
+
+func (c *Cdm) sign_request() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
    if err != nil {
       return nil, err
    }
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, <-message.GetBytes(4), nil,
+   // SignedMessage
+   signed := protobuf.Message{}
+   // kktv.me
+   // type: LICENSE_REQUEST
+   signed.AddVarint(1, 1)
+   signed.AddBytes(2, c.license_request)
+   signed.AddBytes(3, signature)
+   return signed.Marshal(), nil
+}
+
+func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
+   message := protobuf.Message{} // SignedMessage
+   if err := message.Unmarshal(license_response); err != nil {
+      return nil, err
+   }
+   session_key, ok := message.GetBytes(4)()
+   if !ok {
+      return nil, errors.New("session_key")
+   }
+   decrypted_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, session_key, nil,
    )
    if err != nil {
       return nil, err
@@ -34,12 +77,11 @@ func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    text = append(text, 0)
    text = append(text, c.license_request...)
    text = append(text, 0, 0, 0, 0x80)
-   hash, err := cmac.New(aes.NewCipher, session_key)
+   hash, err := cmac.New(aes.NewCipher, decrypted_key)
    if err != nil {
       return nil, err
    }
-   _, err = hash.Write(text)
-   if err != nil {
+   if _, err = hash.Write(text); err != nil {
       return nil, err
    }
    block, err := aes.NewCipher(hash.Sum(nil))
@@ -49,29 +91,36 @@ func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    // this is listed as: optional bytes msg = 2;
    // but assuming the type is: LICENSE = 2;
    // the result is actually: optional License msg = 2;
-   license := <-message.Get(2)
-   for container := range license.Get(3) { // KeyContainer key
+   license, ok := message.Get(2)()
+   if !ok {
+      return nil, errors.New("license")
+   }
+   containers := license.Get(3) // KeyContainer key
+   for {
+      container, ok := containers()
+      if !ok {
+         return nil, errors.New("KeyContainer")
+      }
       // this field is: optional bytes id = 1;
       // but CONTENT keys should always have it
-      id, ok := <-container.GetBytes(1)
+      id, ok := container.GetBytes(1)()
       if !ok {
          continue
       }
       if !bytes.Equal(id, key_id) {
          continue
       }
-      iv, ok := <-container.GetBytes(2)
+      iv, ok := container.GetBytes(2)()
       if !ok {
          continue
       }
-      key, ok := <-container.GetBytes(3)
+      key, ok := container.GetBytes(3)()
       if !ok {
          continue
       }
       cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
       return unpad(key), nil
    }
-   return nil, errors.New("Cdm.decrypt")
 }
 
 type Cdm struct {
@@ -119,44 +168,4 @@ func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
       return nil, err
    }
    return c.decrypt(license_response, key_id)
-}
-
-func (c *Cdm) sign_request() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   // SignedMessage
-   var signed protobuf.Message
-   // kktv.me
-   // type: LICENSE_REQUEST
-   signed.AddVarint(1, 1)
-   signed.AddBytes(2, c.license_request)
-   signed.AddBytes(3, signature)
-   return signed.Encode(), nil
-}
-
-func (c *Cdm) New(private_key, client_id, pssh []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return err
-   }
-   var request protobuf.Message               // LicenseRequest
-   request.AddBytes(1, client_id)             // client_id
-   request.Add(2, func(m *protobuf.Message) { // content_id
-      m.Add(1, func(m *protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, pssh)
-      })
-   })
-   c.license_request = request.Encode()
-   return nil
 }
