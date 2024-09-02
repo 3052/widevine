@@ -1,5 +1,5 @@
-154.pages.dev/protobuf v1.2.8 h1:pC2Wi6NbuIzlIRIeJxvVi80Y3DwTvn+z0GWchxnD6RY=
-154.pages.dev/protobuf v1.2.8/go.mod h1:gSoe3mxfCz4Noa6ERjJVEvDGZwQRjYsYpo8jk+UjZaQ=
+154.pages.dev/protobuf v1.2.9 h1:4e4hdmUugHAX9wZFcvw2qRCxVIkQpH+JpCpztpT8GLA=
+154.pages.dev/protobuf v1.2.9/go.mod h1:gSoe3mxfCz4Noa6ERjJVEvDGZwQRjYsYpo8jk+UjZaQ=
 github.com/chmike/cmac-go v1.1.0 h1:aF73ZAEx9N2WdQc93DOJ2fMsBDAGqUtuenjMJMb3kEI=
 github.com/chmike/cmac-go v1.1.0/go.mod h1:wcIN7NRqWSKGuORzd4dReBkoBDE9ZBqfyTVxyDxGeUw=
 google.golang.org/protobuf v1.34.2 h1:6xV6lTsCfpGD21XK49h7MhtcApnLqkfYgPcdHftf6hg=
