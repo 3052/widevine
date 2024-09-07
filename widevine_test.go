@@ -2,8 +2,28 @@ package widevine
 
 import (
    "encoding/base64"
+   "fmt"
    "os"
+   "reflect"
+   "testing"
 )
+
+func TestSize(t *testing.T) {
+   size := reflect.TypeOf(&struct{}{}).Size()
+   for _, test := range size_tests {
+      if reflect.TypeOf(test).Size() > size {
+         fmt.Printf("*%T\n", test)
+      } else {
+         fmt.Printf("%T\n", test)
+      }
+   }
+}
+
+var size_tests = []any{
+   Cdm{},
+   Pssh{},
+   no_operation{},
+}
 
 func (t tester) get_pssh(key_id []byte) ([]byte, error) {
    if t.pssh != "" {
