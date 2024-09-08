@@ -39,16 +39,16 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   body, err := module.sign_request()
+   data, err := module.sign_request()
    if err != nil {
       return nil, err
    }
-   req.Body = io.NopCloser(bytes.NewReader(body))
+   req.Body = io.NopCloser(bytes.NewReader(data))
    req.Header.Del("accept-encoding")
    req.RequestURI = ""
    req.URL.Host = req.Host
    req.URL.Scheme = "https"
-   req.ContentLength = int64(len(body))
+   req.ContentLength = int64(len(data))
    resp, err := http.DefaultClient.Do(req)
    if err != nil {
       return nil, err
@@ -59,17 +59,17 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
       resp.Write(&b)
       return nil, errors.New(b.String())
    }
-   body, err = io.ReadAll(resp.Body)
+   data, err = io.ReadAll(resp.Body)
    if err != nil {
       return nil, err
    }
    if unwrap != nil {
-      body, err = unwrap(body)
+      data, err = unwrap(data)
       if err != nil {
          return nil, err
       }
    }
-   key, err := module.decrypt(body, key_id)
+   key, err := module.decrypt(data, key_id)
    if err != nil {
       return nil, err
    }
