@@ -23,14 +23,14 @@ func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    if err != nil {
       return err
    }
-   request := protobuf.Message{}
-   request.AddBytes(1, client_id)             // client_id
-   request.Add(2, func(m protobuf.Message) { // content_id
-      m.Add(1, func(m protobuf.Message) { // widevine_pssh_data
-         m.AddBytes(1, pssh)
-      })
-   })
-   c.license_request = request.Marshal()
+   c.license_request = protobuf.Message{
+      1: {protobuf.Bytes(client_id)},
+      2: {protobuf.Message{ // content_id
+         1: {protobuf.Message{ // widevine_pssh_data
+            1: {protobuf.Bytes(pssh)},
+         }},
+      }},
+   }.Marshal()
    return nil
 }
 
