@@ -34,28 +34,6 @@ func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    return nil
 }
 
-func (c *Cdm) sign_request() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   // SignedMessage
-   signed := protobuf.Message{}
-   // kktv.me
-   // type: LICENSE_REQUEST
-   signed.AddVarint(1, 1)
-   signed.AddBytes(2, c.license_request)
-   signed.AddBytes(3, signature)
-   return signed.Marshal(), nil
-}
-
 func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    message := protobuf.Message{} // SignedMessage
    if err := message.Unmarshal(license_response); err != nil {
@@ -168,4 +146,26 @@ func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
       return nil, err
    }
    return c.decrypt(license_response, key_id)
+}
+
+func (c *Cdm) sign_request() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   // SignedMessage
+   signed := protobuf.Message{}
+   // kktv.me
+   // type: LICENSE_REQUEST
+   signed.AddVarint(1, 1)
+   signed.AddBytes(2, c.license_request)
+   signed.AddBytes(3, signature)
+   return signed.Marshal(), nil
 }
