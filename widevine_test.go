@@ -9,12 +9,13 @@ import (
 )
 
 func TestSize(t *testing.T) {
-   size := reflect.TypeOf(&struct{}{}).Size()
+   a := reflect.TypeOf(&struct{}{}).Size()
    for _, test := range size_tests {
-      if reflect.TypeOf(test).Size() > size {
-         fmt.Printf("*%T\n", test)
+      b := reflect.TypeOf(test).Size()
+      if b > a {
+         fmt.Printf("%v *%T\n", b, test)
       } else {
-         fmt.Printf("%T\n", test)
+         fmt.Printf("%v %T\n", b, test)
       }
    }
 }
