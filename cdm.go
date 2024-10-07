@@ -16,24 +16,6 @@ import (
    "net/http"
 )
 
-func (c *Cdm) New(private_key, client_id, pssh []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return err
-   }
-   c.license_request = protobuf.Message{
-      1: {protobuf.Bytes(client_id)},
-      2: {protobuf.Message{ // content_id
-         1: {protobuf.Message{ // widevine_pssh_data
-            1: {protobuf.Bytes(pssh)},
-         }},
-      }},
-   }.Marshal()
-   return nil
-}
-
 func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    message := protobuf.Message{} // SignedMessage
    if err := message.Unmarshal(license_response); err != nil {
@@ -168,4 +150,22 @@ func (c *Cdm) sign_request() ([]byte, error) {
    signed.AddBytes(2, c.license_request)
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
+}
+
+func (c *Cdm) New(private_key, client_id, pssh []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return err
+   }
+   c.license_request = protobuf.Message{
+      1: {protobuf.Bytes(client_id)},
+      2: {protobuf.Message{ // content_id
+         1: {protobuf.Message{ // widevine_pssh_data
+            1: {protobuf.Bytes(pssh)},
+         }},
+      }},
+   }.Marshal()
+   return nil
 }
