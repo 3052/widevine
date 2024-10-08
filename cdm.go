@@ -1,7 +1,7 @@
 package widevine
 
 import (
-   "154.pages.dev/protobuf"
+   "41.neocities.org/protobuf"
    "bytes"
    "crypto"
    "crypto/aes"
@@ -18,7 +18,8 @@ import (
 
 func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    message := protobuf.Message{} // SignedMessage
-   if err := message.Unmarshal(license_response); err != nil {
+   err := message.Unmarshal(license_response)
+   if err != nil {
       return nil, err
    }
    session_key, ok := message.GetBytes(4)()

@@ -1,9 +1,20 @@
 package widevine
 
 import (
-   "154.pages.dev/protobuf"
+   "41.neocities.org/protobuf"
    "net/http"
 )
+
+func (p Pssh) Marshal() []byte {
+   message := protobuf.Message{}
+   if p.KeyId != nil {
+      message.AddBytes(2, p.KeyId)
+   }
+   if p.ContentId != nil {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
+}
 
 func unpad(data []byte) []byte {
    if len(data) >= 1 {
@@ -31,15 +42,4 @@ type no_operation struct{}
 
 func (no_operation) Read(buf []byte) (int, error) {
    return len(buf), nil
-}
-
-func (p Pssh) Marshal() []byte {
-   message := protobuf.Message{}
-   if p.KeyId != nil {
-      message.AddBytes(2, p.KeyId)
-   }
-   if p.ContentId != nil {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
 }
