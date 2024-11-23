@@ -16,14 +16,14 @@ func (p Pssh) Marshal() []byte {
    return message.Marshal()
 }
 
-func unpad(data []byte) []byte {
-   if len(data) >= 1 {
-      pad := data[len(data)-1]
-      if len(data) >= int(pad) {
-         data = data[:len(data)-int(pad)]
+func unpad(b []byte) []byte {
+   if len(b) >= 1 {
+      pad := b[len(b)-1]
+      if len(b) >= int(pad) {
+         b = b[:len(b)-int(pad)]
       }
    }
-   return data
+   return b
 }
 
 type Pssh struct {
@@ -40,6 +40,6 @@ type Poster interface {
 
 type no_operation struct{}
 
-func (no_operation) Read(buf []byte) (int, error) {
-   return len(buf), nil
+func (no_operation) Read(b []byte) (int, error) {
+   return len(b), nil
 }
