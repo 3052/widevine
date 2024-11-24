@@ -16,79 +16,6 @@ import (
    "net/http"
 )
 
-func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
-   message := protobuf.Message{} // SignedMessage
-   err := message.Unmarshal(license_response)
-   if err != nil {
-      return nil, err
-   }
-   session_key, ok := message.GetBytes(4)()
-   if !ok {
-      return nil, errors.New("session_key")
-   }
-   decrypted_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, session_key, nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   var text []byte
-   text = append(text, 1)
-   text = append(text, "ENCRYPTION"...)
-   text = append(text, 0)
-   text = append(text, c.license_request...)
-   text = append(text, 0, 0, 0, 0x80)
-   hash, err := cmac.New(aes.NewCipher, decrypted_key)
-   if err != nil {
-      return nil, err
-   }
-   if _, err = hash.Write(text); err != nil {
-      return nil, err
-   }
-   block, err := aes.NewCipher(hash.Sum(nil))
-   if err != nil {
-      return nil, err
-   }
-   // this is listed as: optional bytes msg = 2;
-   // but assuming the type is: LICENSE = 2;
-   // the result is actually: optional License msg = 2;
-   license, ok := message.Get(2)()
-   if !ok {
-      return nil, errors.New("license")
-   }
-   containers := license.Get(3) // KeyContainer key
-   for {
-      container, ok := containers()
-      if !ok {
-         return nil, errors.New("KeyContainer")
-      }
-      // this field is: optional bytes id = 1;
-      // but CONTENT keys should always have it
-      id, ok := container.GetBytes(1)()
-      if !ok {
-         continue
-      }
-      if !bytes.Equal(id, key_id) {
-         continue
-      }
-      iv, ok := container.GetBytes(2)()
-      if !ok {
-         continue
-      }
-      key, ok := container.GetBytes(3)()
-      if !ok {
-         continue
-      }
-      cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
-      return unpad(key), nil
-   }
-}
-
-type Cdm struct {
-   license_request []byte
-   private_key *rsa.PrivateKey
-}
-
 func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
    address, ok := post.RequestUrl()
    if !ok {
@@ -169,4 +96,77 @@ func (c *Cdm) New(private_key, client_id, pssh []byte) error {
       }},
    }.Marshal()
    return nil
+}
+
+func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
+   message := protobuf.Message{} // SignedMessage
+   err := message.Unmarshal(license_response)
+   if err != nil {
+      return nil, err
+   }
+   session_key, ok := message.GetBytes(4)()
+   if !ok {
+      return nil, errors.New("session_key")
+   }
+   decrypted_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, session_key, nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   var text []byte
+   text = append(text, 1)
+   text = append(text, "ENCRYPTION"...)
+   text = append(text, 0)
+   text = append(text, c.license_request...)
+   text = append(text, 0, 0, 0, 0x80)
+   hash, err := cmac.New(aes.NewCipher, decrypted_key)
+   if err != nil {
+      return nil, err
+   }
+   if _, err = hash.Write(text); err != nil {
+      return nil, err
+   }
+   block, err := aes.NewCipher(hash.Sum(nil))
+   if err != nil {
+      return nil, err
+   }
+   // this is listed as: optional bytes msg = 2;
+   // but assuming the type is: LICENSE = 2;
+   // the result is actually: optional License msg = 2;
+   license, ok := message.Get(2)()
+   if !ok {
+      return nil, errors.New("license")
+   }
+   containers := license.Get(3) // KeyContainer key
+   for {
+      container, ok := containers()
+      if !ok {
+         return nil, errors.New("KeyContainer")
+      }
+      // this field is: optional bytes id = 1;
+      // but CONTENT keys should always have it
+      id, ok := container.GetBytes(1)()
+      if !ok {
+         continue
+      }
+      if !bytes.Equal(id, key_id) {
+         continue
+      }
+      iv, ok := container.GetBytes(2)()
+      if !ok {
+         continue
+      }
+      key, ok := container.GetBytes(3)()
+      if !ok {
+         continue
+      }
+      cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
+      return unpad(key), nil
+   }
+}
+
+type Cdm struct {
+   license_request []byte
+   private_key *rsa.PrivateKey
 }
