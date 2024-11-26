@@ -1,36 +1,80 @@
 package widevine
 
 import (
-   "encoding/base64"
+   "bufio"
+   "bytes"
+   "encoding/hex"
+   "errors"
    "fmt"
+   "io"
+   "net/http"
    "os"
-   "reflect"
    "testing"
 )
 
-func TestSize(t *testing.T) {
-   a := reflect.TypeOf(&struct{}{}).Size()
-   for _, test := range size_tests {
-      b := reflect.TypeOf(test).Size()
-      if b > a {
-         fmt.Printf("%v *%T\n", b, test)
-      } else {
-         fmt.Printf("%v %T\n", b, test)
+func TestCtv(t *testing.T) {
+   key, err := request("ctv", nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+func request(name string, unwrap unwrapper) ([]byte, error) {
+   file, err := os.Open("testdata/" + name + ".bin")
+   if err != nil {
+      return nil, err
+   }
+   defer file.Close()
+   req, err := http.ReadRequest(bufio.NewReader(file))
+   if err != nil {
+      return nil, err
+   }
+   test := tests[name]
+   key_id, err := hex.DecodeString(test.key_id)
+   if err != nil {
+      return nil, err
+   }
+   module, err := test.cdm(key_id)
+   if err != nil {
+      return nil, err
+   }
+   data, err := module.sign_request()
+   if err != nil {
+      return nil, err
+   }
+   req.Body = io.NopCloser(bytes.NewReader(data))
+   req.Header.Del("accept-encoding")
+   req.RequestURI = ""
+   req.URL.Host = req.Host
+   req.URL.Scheme = "https"
+   req.ContentLength = int64(len(data))
+   resp, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer resp.Body.Close()
+   if resp.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      resp.Write(&b)
+      return nil, errors.New(b.String())
+   }
+   data, err = io.ReadAll(resp.Body)
+   if err != nil {
+      return nil, err
+   }
+   if unwrap != nil {
+      data, err = unwrap(data)
+      if err != nil {
+         return nil, err
       }
    }
-}
-
-var size_tests = []any{
-   Cdm{},
-   Pssh{},
-   no_operation{},
-}
-
-func (t tester) get_pssh(key_id []byte) ([]byte, error) {
-   if t.pssh != "" {
-      return base64.StdEncoding.DecodeString(t.pssh)
+   key, err := module.decrypt(data, key_id)
+   if err != nil {
+      return nil, err
    }
-   return Pssh{KeyId: key_id}.Marshal(), nil
+   resp.Write(os.Stdout)
+   return key, nil
 }
 
 var tests = map[string]tester{
@@ -67,9 +111,3 @@ func (t tester) cdm(key_id []byte) (*Cdm, error) {
 }
 
 type unwrapper func([]byte) ([]byte, error)
-
-type tester struct {
-   key_id string
-   pssh string
-   url      string
-}
