@@ -16,88 +16,6 @@ import (
    "net/http"
 )
 
-func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
-   address, ok := post.RequestUrl()
-   if !ok {
-      return nil, errors.New("Poster.RequestUrl")
-   }
-   signed_request, err := c.sign_request()
-   if err != nil {
-      return nil, err
-   }
-   wrapped_request, err := post.WrapRequest(signed_request)
-   if err != nil {
-      return nil, err
-   }
-   req, err := http.NewRequest("POST", address, bytes.NewReader(wrapped_request))
-   if err != nil {
-      return nil, err
-   }
-   req.Header, err = post.RequestHeader()
-   if err != nil {
-      return nil, err
-   }
-   resp, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer resp.Body.Close()
-   if resp.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      resp.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   wrapped_response, err := io.ReadAll(resp.Body)
-   if err != nil {
-      return nil, err
-   }
-   license_response, err := post.UnwrapResponse(wrapped_response)
-   if err != nil {
-      return nil, err
-   }
-   return c.decrypt(license_response, key_id)
-}
-
-func (c *Cdm) sign_request() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      no_operation{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   // SignedMessage
-   signed := protobuf.Message{}
-   // kktv.me
-   // type: LICENSE_REQUEST
-   signed.AddVarint(1, 1)
-   signed.AddBytes(2, c.license_request)
-   signed.AddBytes(3, signature)
-   return signed.Marshal(), nil
-}
-
-func (c *Cdm) New(private_key, client_id, pssh []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      return err
-   }
-   c.license_request = protobuf.Message{
-      1: {protobuf.Bytes(client_id)},
-      2: {protobuf.Message{ // content_id
-         1: {protobuf.Message{ // widevine_pssh_data
-            1: {protobuf.Bytes(pssh)},
-         }},
-      }},
-   }.Marshal()
-   return nil
-}
-
 func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    message := protobuf.Message{} // SignedMessage
    err := message.Unmarshal(license_response)
@@ -192,4 +110,85 @@ type no_operation struct{}
 
 func (no_operation) Read(b []byte) (int, error) {
    return len(b), nil
+}
+func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
+   address, ok := post.RequestUrl()
+   if !ok {
+      return nil, errors.New("Poster.RequestUrl")
+   }
+   signed_request, err := c.sign_request()
+   if err != nil {
+      return nil, err
+   }
+   wrapped_request, err := post.WrapRequest(signed_request)
+   if err != nil {
+      return nil, err
+   }
+   req, err := http.NewRequest("POST", address, bytes.NewReader(wrapped_request))
+   if err != nil {
+      return nil, err
+   }
+   req.Header, err = post.RequestHeader()
+   if err != nil {
+      return nil, err
+   }
+   resp, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer resp.Body.Close()
+   if resp.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      resp.Write(&b)
+      return nil, errors.New(b.String())
+   }
+   wrapped_response, err := io.ReadAll(resp.Body)
+   if err != nil {
+      return nil, err
+   }
+   license_response, err := post.UnwrapResponse(wrapped_response)
+   if err != nil {
+      return nil, err
+   }
+   return c.decrypt(license_response, key_id)
+}
+
+func (c *Cdm) sign_request() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      no_operation{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   // SignedMessage
+   signed := protobuf.Message{}
+   // kktv.me
+   // type: LICENSE_REQUEST
+   signed.AddVarint(1, 1)
+   signed.AddBytes(2, c.license_request)
+   signed.AddBytes(3, signature)
+   return signed.Marshal(), nil
+}
+
+func (c *Cdm) New(private_key, client_id, pssh []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      return err
+   }
+   c.license_request = protobuf.Message{
+      1: {protobuf.Bytes(client_id)},
+      2: {protobuf.Message{ // content_id
+         1: {protobuf.Message{ // widevine_pssh_data
+            1: {protobuf.Bytes(pssh)},
+         }},
+      }},
+   }.Marshal()
+   return nil
 }
