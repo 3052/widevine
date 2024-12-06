@@ -20,7 +20,7 @@ func TestSize(t *testing.T) {
 }
 
 var size_tests = []any{
-   Cdm{},
+   Module{},
    Pssh{},
    no_operation{},
 }

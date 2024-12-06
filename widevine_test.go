@@ -35,11 +35,11 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
    if err != nil {
       return nil, err
    }
-   module, err := test.cdm(key_id)
+   cdm, err := test.module(key_id)
    if err != nil {
       return nil, err
    }
-   data, err := module.sign_request()
+   data, err := cdm.sign_request()
    if err != nil {
       return nil, err
    }
@@ -69,7 +69,7 @@ func request(name string, unwrap unwrapper) ([]byte, error) {
          return nil, err
       }
    }
-   key, err := module.decrypt(data, key_id)
+   key, err := cdm.decrypt(data, key_id)
    if err != nil {
       return nil, err
    }
@@ -85,7 +85,7 @@ var tests = map[string]tester{
    },
 }
 
-func (t tester) cdm(key_id []byte) (*Cdm, error) {
+func (t tester) module(key_id []byte) (*Module, error) {
    home, err := os.UserHomeDir()
    if err != nil {
       return nil, err
@@ -102,12 +102,12 @@ func (t tester) cdm(key_id []byte) (*Cdm, error) {
    if err != nil {
       return nil, err
    }
-   var module Cdm
-   err = module.New(private_key, client_id, pssh)
+   var cdm Module
+   err = cdm.New(private_key, client_id, pssh)
    if err != nil {
       return nil, err
    }
-   return &module, nil
+   return &cdm, nil
 }
 
 type unwrapper func([]byte) ([]byte, error)

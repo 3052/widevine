@@ -1,0 +1,13 @@
+{
+   "html": {
+      "output": "../41.neocities.org"
+   },
+   "modules": {
+      "widevine": {
+         "archive_ref_prefix": "tags/",
+         "ref": "v1.4.9",
+         "type": "github",
+         "url": "https://github.com/3052/widevine"
+      }
+   }
+}

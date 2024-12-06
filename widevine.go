@@ -16,7 +16,49 @@ import (
    "net/http"
 )
 
-func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
+func (m *Module) Key(c Client, key_id []byte) ([]byte, error) {
+   address, ok := c.RequestUrl()
+   if !ok {
+      return nil, errors.New("Client.RequestUrl")
+   }
+   signed_request, err := m.sign_request()
+   if err != nil {
+      return nil, err
+   }
+   wrapped_request, err := c.WrapRequest(signed_request)
+   if err != nil {
+      return nil, err
+   }
+   req, err := http.NewRequest("POST", address, bytes.NewReader(wrapped_request))
+   if err != nil {
+      return nil, err
+   }
+   req.Header, err = c.RequestHeader()
+   if err != nil {
+      return nil, err
+   }
+   resp, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return nil, err
+   }
+   defer resp.Body.Close()
+   if resp.StatusCode != http.StatusOK {
+      var b bytes.Buffer
+      resp.Write(&b)
+      return nil, errors.New(b.String())
+   }
+   wrapped_response, err := io.ReadAll(resp.Body)
+   if err != nil {
+      return nil, err
+   }
+   license_response, err := c.UnwrapResponse(wrapped_response)
+   if err != nil {
+      return nil, err
+   }
+   return m.decrypt(license_response, key_id)
+}
+
+func (m *Module) decrypt(license_response, key_id []byte) ([]byte, error) {
    message := protobuf.Message{} // SignedMessage
    err := message.Unmarshal(license_response)
    if err != nil {
@@ -27,7 +69,7 @@ func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
       return nil, errors.New("session_key")
    }
    decrypted_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, session_key, nil,
+      sha1.New(), nil, m.private_key, session_key, nil,
    )
    if err != nil {
       return nil, err
@@ -36,7 +78,7 @@ func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    text = append(text, 1)
    text = append(text, "ENCRYPTION"...)
    text = append(text, 0)
-   text = append(text, c.license_request...)
+   text = append(text, m.license_request...)
    text = append(text, 0, 0, 0, 0x80)
    hash, err := cmac.New(aes.NewCipher, decrypted_key)
    if err != nil {
@@ -84,7 +126,7 @@ func (c *Cdm) decrypt(license_response, key_id []byte) ([]byte, error) {
    }
 }
 
-type Cdm struct {
+type Module struct {
    license_request []byte
    private_key *rsa.PrivateKey
 }
@@ -99,7 +141,7 @@ func unpad(b []byte) []byte {
    return b
 }
 
-type Poster interface {
+type Client interface {
    RequestUrl() (string, bool)
    RequestHeader() (http.Header, error)
    WrapRequest([]byte) ([]byte, error)
@@ -111,53 +153,12 @@ type no_operation struct{}
 func (no_operation) Read(b []byte) (int, error) {
    return len(b), nil
 }
-func (c *Cdm) Key(post Poster, key_id []byte) ([]byte, error) {
-   address, ok := post.RequestUrl()
-   if !ok {
-      return nil, errors.New("Poster.RequestUrl")
-   }
-   signed_request, err := c.sign_request()
-   if err != nil {
-      return nil, err
-   }
-   wrapped_request, err := post.WrapRequest(signed_request)
-   if err != nil {
-      return nil, err
-   }
-   req, err := http.NewRequest("POST", address, bytes.NewReader(wrapped_request))
-   if err != nil {
-      return nil, err
-   }
-   req.Header, err = post.RequestHeader()
-   if err != nil {
-      return nil, err
-   }
-   resp, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return nil, err
-   }
-   defer resp.Body.Close()
-   if resp.StatusCode != http.StatusOK {
-      var b bytes.Buffer
-      resp.Write(&b)
-      return nil, errors.New(b.String())
-   }
-   wrapped_response, err := io.ReadAll(resp.Body)
-   if err != nil {
-      return nil, err
-   }
-   license_response, err := post.UnwrapResponse(wrapped_response)
-   if err != nil {
-      return nil, err
-   }
-   return c.decrypt(license_response, key_id)
-}
 
-func (c *Cdm) sign_request() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
+func (m *Module) sign_request() ([]byte, error) {
+   hash := sha1.Sum(m.license_request)
    signature, err := rsa.SignPSS(
       no_operation{},
-      c.private_key,
+      m.private_key,
       crypto.SHA1,
       hash[:],
       &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
@@ -170,19 +171,19 @@ func (c *Cdm) sign_request() ([]byte, error) {
    // kktv.me
    // type: LICENSE_REQUEST
    signed.AddVarint(1, 1)
-   signed.AddBytes(2, c.license_request)
+   signed.AddBytes(2, m.license_request)
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
 }
 
-func (c *Cdm) New(private_key, client_id, pssh []byte) error {
+func (m *Module) New(private_key, client_id, pssh []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   m.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
    if err != nil {
       return err
    }
-   c.license_request = protobuf.Message{
+   m.license_request = protobuf.Message{
       1: {protobuf.Bytes(client_id)},
       2: {protobuf.Message{ // content_id
          1: {protobuf.Message{ // widevine_pssh_data
