@@ -16,6 +16,74 @@ import (
    "net/http"
 )
 
+func (m *Module) decrypt(license_response, key_id []byte) ([]byte, error) {
+   message := protobuf.Message{} // SignedMessage
+   err := message.Unmarshal(license_response)
+   if err != nil {
+      return nil, err
+   }
+   session_key, ok := message.GetBytes(4)()
+   if !ok {
+      return nil, errors.New("session_key")
+   }
+   session_key, err = rsa.DecryptOAEP(
+      sha1.New(), nil, m.private_key, session_key, nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   hash, err := cmac.New(aes.NewCipher, session_key)
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, m.license_request...)
+   data = append(data, 0, 0, 0, 128) // hash.Size()
+   if _, err = hash.Write(data); err != nil {
+      return nil, err
+   }
+   block, err := aes.NewCipher(hash.Sum(nil))
+   if err != nil {
+      return nil, err
+   }
+   // this is listed as: optional bytes msg = 2;
+   // but assuming the type is: LICENSE = 2;
+   // the result is actually: optional License msg = 2;
+   license, ok := message.Get(2)()
+   if !ok {
+      return nil, errors.New("license")
+   }
+   containers := license.Get(3) // KeyContainer key
+   for {
+      container, ok := containers()
+      if !ok {
+         return nil, errors.New("KeyContainer")
+      }
+      // this field is: optional bytes id = 1;
+      // but CONTENT keys should always have it
+      id, ok := container.GetBytes(1)()
+      if !ok {
+         continue
+      }
+      if !bytes.Equal(id, key_id) {
+         continue
+      }
+      iv, ok := container.GetBytes(2)()
+      if !ok {
+         continue
+      }
+      key, ok := container.GetBytes(3)()
+      if !ok {
+         continue
+      }
+      cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
+      return unpad(key), nil
+   }
+}
+
 func (m *Module) Key(c Client, key_id []byte) ([]byte, error) {
    address, ok := c.RequestUrl()
    if !ok {
@@ -56,74 +124,6 @@ func (m *Module) Key(c Client, key_id []byte) ([]byte, error) {
       return nil, err
    }
    return m.decrypt(license_response, key_id)
-}
-
-func (m *Module) decrypt(license_response, key_id []byte) ([]byte, error) {
-   message := protobuf.Message{} // SignedMessage
-   err := message.Unmarshal(license_response)
-   if err != nil {
-      return nil, err
-   }
-   session_key, ok := message.GetBytes(4)()
-   if !ok {
-      return nil, errors.New("session_key")
-   }
-   decrypted_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, m.private_key, session_key, nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   var text []byte
-   text = append(text, 1)
-   text = append(text, "ENCRYPTION"...)
-   text = append(text, 0)
-   text = append(text, m.license_request...)
-   text = append(text, 0, 0, 0, 0x80)
-   hash, err := cmac.New(aes.NewCipher, decrypted_key)
-   if err != nil {
-      return nil, err
-   }
-   if _, err = hash.Write(text); err != nil {
-      return nil, err
-   }
-   block, err := aes.NewCipher(hash.Sum(nil))
-   if err != nil {
-      return nil, err
-   }
-   // this is listed as: optional bytes msg = 2;
-   // but assuming the type is: LICENSE = 2;
-   // the result is actually: optional License msg = 2;
-   license, ok := message.Get(2)()
-   if !ok {
-      return nil, errors.New("license")
-   }
-   containers := license.Get(3) // KeyContainer key
-   for {
-      container, ok := containers()
-      if !ok {
-         return nil, errors.New("KeyContainer")
-      }
-      // this field is: optional bytes id = 1;
-      // but CONTENT keys should always have it
-      id, ok := container.GetBytes(1)()
-      if !ok {
-         continue
-      }
-      if !bytes.Equal(id, key_id) {
-         continue
-      }
-      iv, ok := container.GetBytes(2)()
-      if !ok {
-         continue
-      }
-      key, ok := container.GetBytes(3)()
-      if !ok {
-         continue
-      }
-      cipher.NewCBCDecrypter(block, iv).CryptBlocks(key, key)
-      return unpad(key), nil
-   }
 }
 
 type Module struct {
