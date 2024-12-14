@@ -10,6 +10,12 @@ Widevine implementation
 - https://github.com/search?q=L3+CDM
 - https://integration.widevine.com/diagnostics
 
+## bounty
+
+I am offering bounty of 1000 USD for information about the Widevine L1 provision
+process. contact me privately if you know about this - I also offer a finders fee
+if you know someone with information
+
 ## where did proto file come from?
 
 <https://github.com/rlaphoenix/pywidevine/blob/master/pywidevine/license_protocol.proto>
