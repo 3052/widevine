@@ -22,23 +22,12 @@ func unpad(b []byte) []byte {
    return b
 }
 
-type Pssh struct {
-   ContentId []byte
-   KeyId []byte
+type Cdm struct {
+   license_request []byte
+   private_key *rsa.PrivateKey
 }
 
-func (p Pssh) Marshal() []byte {
-   message := protobuf.Message{}
-   if p.KeyId != nil {
-      message.AddBytes(2, p.KeyId)
-   }
-   if p.ContentId != nil {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
-}
-
-func (c *client) New(private_key, client_id, pssh []byte) error {
+func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
    c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -56,15 +45,9 @@ func (c *client) New(private_key, client_id, pssh []byte) error {
    return nil
 }
 
-type client struct {
-   license_request []byte
-   private_key *rsa.PrivateKey
-}
-
-func (c *client) block(session_key []byte) (cipher.Block, error) {
-   var err error
-   session_key, err = rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, session_key, nil,
+func (c *Cdm) Block(message SignedMessage) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, message.session_key(), nil,
    )
    if err != nil {
       return nil, err
@@ -86,7 +69,7 @@ func (c *client) block(session_key []byte) (cipher.Block, error) {
    return aes.NewCipher(hash.Sum(nil))
 }
 
-func (c *client) request_body(client_id, pssh []byte) ([]byte, error) {
+func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
       rand{},
@@ -108,40 +91,56 @@ func (c *client) request_body(client_id, pssh []byte) ([]byte, error) {
    return signed.Marshal(), nil
 }
 
-func (k key_container) decrypt(block cipher.Block) []byte {
+func (p *PsshData) Marshal() []byte {
+   message := protobuf.Message{}
+   if p.KeyId != nil {
+      message.AddBytes(2, p.KeyId)
+   }
+   if p.ContentId != nil {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
+}
+
+type PsshData struct {
+   ContentId []byte
+   KeyId []byte
+}
+
+func (k KeyContainer) Decrypt(block cipher.Block) []byte {
    key := k.key()
    cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
    return unpad(key)
 }
 
-func (k key_container) id() []byte {
+func (k KeyContainer) Id() []byte {
    value, _ := k.message.GetBytes(1)()
    return value
 }
 
-func (k key_container) iv() []byte {
+func (k KeyContainer) iv() []byte {
    value, _ := k.message.GetBytes(2)()
    return value
 }
 
-func (k key_container) key() []byte {
+func (k KeyContainer) key() []byte {
    value, _ := k.message.GetBytes(3)()
    return value
 }
 
-type key_container struct {
+type KeyContainer struct {
    message protobuf.Message
 }
 
-func (l license) key_container() func() (key_container, bool) {
+func (l License) Container() func() (KeyContainer, bool) {
    values := l.message.Get(3)
-   return func() (key_container, bool) {
+   return func() (KeyContainer, bool) {
       value, ok := values()
-      return key_container{value}, ok
+      return KeyContainer{value}, ok
    }
 }
 
-type license struct {
+type License struct {
    message protobuf.Message
 }
 
@@ -151,21 +150,21 @@ func (rand) Read(b []byte) (int, error) {
    return len(b), nil
 }
 
-func (s *signed_message) unmarshal(data []byte) error {
+func (s *SignedMessage) Unmarshal(data []byte) error {
    s.message = protobuf.Message{}
    return s.message.Unmarshal(data)
 }
 
-func (s signed_message) license() license {
+func (s SignedMessage) License() License {
    value, _ := s.message.Get(2)()
-   return license{value}
+   return License{value}
 }
 
-type signed_message struct {
+type SignedMessage struct {
    message protobuf.Message
 }
 
-func (s signed_message) session_key() []byte {
+func (s SignedMessage) session_key() []byte {
    value, _ := s.message.GetBytes(4)()
    return value
 }
