@@ -3,6 +3,7 @@ package widevine
 import (
    "bufio"
    "bytes"
+   "encoding/base64"
    "encoding/hex"
    "errors"
    "fmt"
@@ -11,6 +12,19 @@ import (
    "os"
    "testing"
 )
+
+func (t tester) get_pssh(key_id []byte) ([]byte, error) {
+   if t.pssh != "" {
+      return base64.StdEncoding.DecodeString(t.pssh)
+   }
+   return Pssh{KeyId: key_id}.Marshal(), nil
+}
+
+type tester struct {
+   key_id string
+   pssh string
+   url      string
+}
 
 func TestCtv(t *testing.T) {
    key, err := request("ctv", nil)
