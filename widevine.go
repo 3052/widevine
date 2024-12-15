@@ -12,6 +12,12 @@ import (
    "github.com/chmike/cmac-go"
 )
 
+func (k KeyContainer) Decrypt(block cipher.Block) []byte {
+   key := k.key()
+   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
+   return unpad(key)
+}
+
 func unpad(b []byte) []byte {
    if len(b) >= 1 {
       pad := b[len(b)-1]
@@ -22,23 +28,12 @@ func unpad(b []byte) []byte {
    return b
 }
 
-type Pssh struct {
-   ContentId []byte
-   KeyId []byte
+type Cdm struct {
+   license_request []byte
+   private_key *rsa.PrivateKey
 }
 
-func (p Pssh) Marshal() []byte {
-   message := protobuf.Message{}
-   if p.KeyId != nil {
-      message.AddBytes(2, p.KeyId)
-   }
-   if p.ContentId != nil {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
-}
-
-func (c *client) New(private_key, client_id, pssh []byte) error {
+func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
    c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -56,37 +51,7 @@ func (c *client) New(private_key, client_id, pssh []byte) error {
    return nil
 }
 
-type client struct {
-   license_request []byte
-   private_key *rsa.PrivateKey
-}
-
-func (c *client) block(session_key []byte) (cipher.Block, error) {
-   var err error
-   session_key, err = rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, session_key, nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   hash, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   var data []byte
-   data = append(data, 1)
-   data = append(data, "ENCRYPTION"...)
-   data = append(data, 0)
-   data = append(data, c.license_request...)
-   data = append(data, 0, 0, 0, 128) // hash.Size()
-   _, err = hash.Write(data)
-   if err != nil {
-      return nil, err
-   }
-   return aes.NewCipher(hash.Sum(nil))
-}
-
-func (c *client) request_body(client_id, pssh []byte) ([]byte, error) {
+func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
       rand{},
@@ -108,40 +73,38 @@ func (c *client) request_body(client_id, pssh []byte) ([]byte, error) {
    return signed.Marshal(), nil
 }
 
-func (k key_container) decrypt(block cipher.Block) []byte {
-   key := k.key()
-   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
-   return unpad(key)
+func (p *PsshData) Marshal() []byte {
+   message := protobuf.Message{}
+   if p.KeyId != nil {
+      message.AddBytes(2, p.KeyId)
+   }
+   if p.ContentId != nil {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
 }
 
-func (k key_container) id() []byte {
+type PsshData struct {
+   ContentId []byte
+   KeyId []byte
+}
+
+func (k KeyContainer) Id() []byte {
    value, _ := k.message.GetBytes(1)()
    return value
 }
 
-func (k key_container) iv() []byte {
+func (k KeyContainer) iv() []byte {
    value, _ := k.message.GetBytes(2)()
    return value
 }
 
-func (k key_container) key() []byte {
+func (k KeyContainer) key() []byte {
    value, _ := k.message.GetBytes(3)()
    return value
 }
 
-type key_container struct {
-   message protobuf.Message
-}
-
-func (l license) key_container() func() (key_container, bool) {
-   values := l.message.Get(3)
-   return func() (key_container, bool) {
-      value, ok := values()
-      return key_container{value}, ok
-   }
-}
-
-type license struct {
+type KeyContainer struct {
    message protobuf.Message
 }
 
@@ -151,21 +114,49 @@ func (rand) Read(b []byte) (int, error) {
    return len(b), nil
 }
 
-func (s *signed_message) unmarshal(data []byte) error {
-   s.message = protobuf.Message{}
-   return s.message.Unmarshal(data)
+func (r *ResponseBody) Unmarshal(data []byte) error {
+   r.message = protobuf.Message{}
+   return r.message.Unmarshal(data)
 }
 
-func (s signed_message) license() license {
-   value, _ := s.message.Get(2)()
-   return license{value}
-}
-
-type signed_message struct {
+type ResponseBody struct {
    message protobuf.Message
 }
 
-func (s signed_message) session_key() []byte {
-   value, _ := s.message.GetBytes(4)()
+func (r ResponseBody) session_key() []byte {
+   value, _ := r.message.GetBytes(4)()
    return value
+}
+
+func (r ResponseBody) Container() func() (KeyContainer, bool) {
+   value, _ := r.message.Get(2)()
+   values := value.Get(3)
+   return func() (KeyContainer, bool) {
+      value, ok := values()
+      return KeyContainer{value}, ok
+   }
+}
+
+func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, body.session_key(), nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   hash, err := cmac.New(aes.NewCipher, session_key)
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, c.license_request...)
+   data = append(data, 0, 0, 0, 128) // hash.Size()
+   _, err = hash.Write(data)
+   if err != nil {
+      return nil, err
+   }
+   return aes.NewCipher(hash.Sum(nil))
 }
