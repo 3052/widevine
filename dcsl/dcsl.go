@@ -6,36 +6,40 @@ import (
    "encoding/base64"
    "encoding/hex"
    "encoding/json"
+   "flag"
+   "fmt"
    "net/http"
+   "os"
    "strconv"
 )
 
-func (c *client_info) String() string {
-   data := []byte("drmVersion = ")
-   data = append(data, c.DrmVersion...)
-   data = append(data, "\nhdcpSupport = "...)
-   data = append(data, c.HdcpSupport...)
-   data = append(data, "\nmanufacturer = "...)
-   data = append(data, c.Manufacturer...)
-   data = append(data, "\nmodel = "...)
-   data = append(data, c.Model...)
-   data = append(data, "\nsecLevel = "...)
-   data = strconv.AppendInt(data, c.SecLevel, 10)
-   data = append(data, "\nvmpStatus = "...)
-   data = append(data, c.VmpStatus...)
-   data = append(data, "\nvrConstraintSupport = "...)
-   data = strconv.AppendBool(data, c.VrConstraintSupport)
-   return string(data)
-}
-
-type client_info struct {
-   DrmVersion          string
-   HdcpSupport         string
-   Manufacturer        string
-   Model               string
-   SecLevel            int64
-   VmpStatus           string
-   VrConstraintSupport bool
+func main() {
+   var f struct {
+      client_id string
+      private_key string
+   }
+   flag.StringVar(&f.client_id, "c", "", "client ID")
+   flag.StringVar(&f.private_key, "p", "", "private key")
+   flag.Parse()
+   if f.client_id != "" {
+      client_id, err := os.ReadFile(f.client_id)
+      if err != nil {
+         panic(err)
+      }
+      private_key, err := os.ReadFile(f.private_key)
+      if err != nil {
+         panic(err)
+      }
+      var today drm_today
+      err = today.New(private_key, client_id)
+      if err != nil {
+         panic(err)
+      }
+      info, code := today()
+      fmt.Print(&info, "\n", code, "\n")
+   } else {
+      flag.Usage()
+   }
 }
 
 func (r resp_code) String() string {

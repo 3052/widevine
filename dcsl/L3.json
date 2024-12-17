@@ -1,0 +1,9 @@
+{
+  "drmVersion": "v4.0.0-android",
+  "hdcpSupport": "HDCP_NONE",
+  "manufacturer": "Generic Field Provisioning",
+  "model": "Android KLP x86",
+  "secLevel": 3,
+  "vmpStatus": "PLATFORM_NO_VERIFICATION",
+  "vrConstraintSupport": false
+}
