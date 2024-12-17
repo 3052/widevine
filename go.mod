@@ -7,4 +7,4 @@ require (
 	github.com/chmike/cmac-go v1.1.0
 )
 
-require google.golang.org/protobuf v1.35.2 // indirect
+require google.golang.org/protobuf v1.36.0 // indirect
