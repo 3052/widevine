@@ -47,15 +47,7 @@ func TestPluto(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   resp, err := http.Post(
-      "https://service-concierge.clusters.pluto.tv/v1/wv/alt", "",
-      bytes.NewReader(data),
-   )
-   if err != nil {
-      t.Fatal(err)
-   }
-   defer resp.Body.Close()
-   data, err = io.ReadAll(resp.Body)
+   data, err = pluto(data)
    if err != nil {
       t.Fatal(err)
    }
@@ -78,4 +70,16 @@ func TestPluto(t *testing.T) {
          fmt.Printf("%x\n", container.Decrypt(block))
       }
    }
+}
+
+func pluto(data []byte) ([]byte, error) {
+   resp, err := http.Post(
+      "https://service-concierge.clusters.pluto.tv/v1/wv/alt", "",
+      bytes.NewReader(data),
+   )
+   if err != nil {
+      return nil, err
+   }
+   defer resp.Body.Close()
+   return io.ReadAll(resp.Body)
 }
