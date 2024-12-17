@@ -1,0 +1,8 @@
+{
+  "hdcpSupport": "HDCP_V2_2",
+  "manufacturer": "CHANGHONG",
+  "model": "NF5.3",
+  "secLevel": 1,
+  "vmpStatus": "PLATFORM_UNVERIFIED",
+  "vrConstraintSupport": false
+}

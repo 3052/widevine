@@ -12,25 +12,20 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (k KeyContainer) Decrypt(block cipher.Block) []byte {
-   key := k.key()
-   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
-   return unpad(key)
+type Wrapper interface {
+   Wrap([]byte) ([]byte, error)
 }
 
-func unpad(b []byte) []byte {
-   if len(b) >= 1 {
-      pad := b[len(b)-1]
-      if len(b) >= int(pad) {
-         b = b[:len(b)-int(pad)]
-      }
+// keep value pointer for convenience
+func (p PsshData) Marshal() []byte {
+   message := protobuf.Message{}
+   if p.KeyId != nil {
+      message.AddBytes(2, p.KeyId)
    }
-   return b
-}
-
-type Cdm struct {
-   license_request []byte
-   private_key *rsa.PrivateKey
+   if p.ContentId != nil {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
 }
 
 func (c *Cdm) New(private_key, client_id, pssh []byte) error {
@@ -38,7 +33,12 @@ func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    var err error
    c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
    if err != nil {
-      return err
+      // L1
+      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+      if err != nil {
+         return err
+      }
+      c.private_key = key.(*rsa.PrivateKey)
    }
    c.license_request = protobuf.Message{
       1: {protobuf.Bytes(client_id)},
@@ -71,17 +71,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    signed.AddBytes(2, c.license_request)
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
-}
-
-func (p *PsshData) Marshal() []byte {
-   message := protobuf.Message{}
-   if p.KeyId != nil {
-      message.AddBytes(2, p.KeyId)
-   }
-   if p.ContentId != nil {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
 }
 
 type PsshData struct {
@@ -159,4 +148,24 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
       return nil, err
    }
    return aes.NewCipher(hash.Sum(nil))
+}
+func (k KeyContainer) Decrypt(block cipher.Block) []byte {
+   key := k.key()
+   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
+   return unpad(key)
+}
+
+func unpad(b []byte) []byte {
+   if len(b) >= 1 {
+      pad := b[len(b)-1]
+      if len(b) >= int(pad) {
+         b = b[:len(b)-int(pad)]
+      }
+   }
+   return b
+}
+
+type Cdm struct {
+   license_request []byte
+   private_key *rsa.PrivateKey
 }

@@ -3,6 +3,7 @@ package widevine
 import (
    "bytes"
    "encoding/base64"
+   "errors"
    "fmt"
    "io"
    "net/http"
@@ -33,46 +34,59 @@ func TestPluto(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   var pssh PsshData
-   pssh.KeyId, err = base64.StdEncoding.DecodeString(test.key_id)
+   key, err := decrypt(private_key, client_id, pluto{})
    if err != nil {
       t.Fatal(err)
+   }
+   fmt.Printf("%x\n", key)
+}
+
+type pluto struct{}
+
+func decrypt(private_key, client_id []byte, wrap Wrapper) ([]byte, error) {
+   var (
+      pssh PsshData
+      err error
+   )
+   pssh.KeyId, err = base64.StdEncoding.DecodeString(test.key_id)
+   if err != nil {
+      return nil, err
    }
    var module Cdm
    err = module.New(private_key, client_id, pssh.Marshal())
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
    data, err := module.RequestBody()
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
-   data, err = pluto(data)
+   data, err = wrap.Wrap(data)
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
    var body ResponseBody
    err = body.Unmarshal(data)
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
    block, err := module.Block(body)
    if err != nil {
-      t.Fatal(err)
+      return nil, err
    }
    containers := body.Container()
    for {
       container, ok := containers()
       if !ok {
-         break
+         return nil, errors.New("ResponseBody.Container")
       }
       if bytes.Equal(container.Id(), pssh.KeyId) {
-         fmt.Printf("%x\n", container.Decrypt(block))
+         return container.Decrypt(block), nil
       }
    }
 }
 
-func pluto(data []byte) ([]byte, error) {
+func (pluto) Wrap(data []byte) ([]byte, error) {
    resp, err := http.Post(
       "https://service-concierge.clusters.pluto.tv/v1/wv/alt", "",
       bytes.NewReader(data),
