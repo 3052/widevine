@@ -117,13 +117,19 @@ func (r ResponseBody) session_key() []byte {
    return value
 }
 
-func (r ResponseBody) Container() func() (KeyContainer, bool) {
-   value, _ := r.message.Get(2)()
-   values := value.Get(3)
-   return func() (KeyContainer, bool) {
-      value, ok := values()
-      return KeyContainer{value}, ok
+func unpad(b []byte) []byte {
+   if len(b) >= 1 {
+      pad := b[len(b)-1]
+      if len(b) >= int(pad) {
+         b = b[:len(b)-int(pad)]
+      }
    }
+   return b
+}
+
+type Cdm struct {
+   license_request []byte
+   private_key *rsa.PrivateKey
 }
 
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
@@ -149,23 +155,20 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    }
    return aes.NewCipher(hash.Sum(nil))
 }
+
+///
+
+func (r ResponseBody) Container() func() (KeyContainer, bool) {
+   value, _ := r.message.Get(2)()
+   values := value.Get(3)
+   return func() (KeyContainer, bool) {
+      value, ok := values()
+      return KeyContainer{value}, ok
+   }
+}
+
 func (k KeyContainer) Decrypt(block cipher.Block) []byte {
    key := k.key()
    cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
    return unpad(key)
-}
-
-func unpad(b []byte) []byte {
-   if len(b) >= 1 {
-      pad := b[len(b)-1]
-      if len(b) >= int(pad) {
-         b = b[:len(b)-int(pad)]
-      }
-   }
-   return b
-}
-
-type Cdm struct {
-   license_request []byte
-   private_key *rsa.PrivateKey
 }
