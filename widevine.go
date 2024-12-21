@@ -156,8 +156,6 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    return aes.NewCipher(hash.Sum(nil))
 }
 
-///
-
 func (r ResponseBody) Container() func() (KeyContainer, bool) {
    value, _ := r.message.Get(2)()
    values := value.Get(3)

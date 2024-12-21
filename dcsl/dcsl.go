@@ -13,7 +13,15 @@ import (
    "strconv"
 )
 
+type transport struct{}
+
+func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
+   fmt.Println(req.URL)
+   return http.DefaultTransport.RoundTrip(req)
+}
+
 func main() {
+   http.DefaultClient.Transport = transport{}
    var f struct {
       client_id string
       private_key string
