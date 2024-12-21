@@ -13,6 +13,65 @@ import (
    "strconv"
 )
 
+func (d *drm_today) New(private_key, client_id []byte) error {
+   var (
+      pssh widevine.PsshData
+      err error
+   )
+   pssh.KeyId, err = hex.DecodeString(key_id)
+   if err != nil {
+      return err
+   }
+   var module widevine.Cdm
+   err = module.New(private_key, client_id, pssh.Marshal())
+   if err != nil {
+      return err
+   }
+   data, err := module.RequestBody()
+   if err != nil {
+      return err
+   }
+   req, err := http.NewRequest(
+      "POST", "https://lic.staging.drmtoday.com/license-proxy-widevine/cenc",
+      bytes.NewReader(data),
+   )
+   if err != nil {
+      return err
+   }
+   data, err = json.Marshal(map[string]string{
+      "merchant": "client_dev",
+      "userId":   "purchase",
+   })
+   if err != nil {
+      return err
+   }
+   req.Header.Set("dt-custom-data", base64.StdEncoding.EncodeToString(data))
+   resp, err := http.DefaultClient.Do(req)
+   if err != nil {
+      return err
+   }
+   defer resp.Body.Close()
+   data, err = base64.StdEncoding.DecodeString(
+      resp.Header.Get("x-dt-client-info"),
+   )
+   if err != nil {
+      return err
+   }
+   var info client_info
+   err = json.Unmarshal(data, &info)
+   if err != nil {
+      return err
+   }
+   code, err := strconv.Atoi(resp.Header.Get("x-dt-resp-code"))
+   if err != nil {
+      return err
+   }
+   *d = func() (client_info, resp_code) {
+      return info, resp_code(code)
+   }
+   return nil
+}
+
 type transport struct{}
 
 func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -88,62 +147,3 @@ var codes = map[resp_code]string{
 const key_id = "6f6b1b9884f83d0b866a1bd8aca390d2"
 
 type drm_today func() (client_info, resp_code)
-
-func (d *drm_today) New(private_key, client_id []byte) error {
-   var (
-      pssh widevine.PsshData
-      err error
-   )
-   pssh.KeyId, err = hex.DecodeString(key_id)
-   if err != nil {
-      return err
-   }
-   var module widevine.Cdm
-   err = module.New(private_key, client_id, pssh.Marshal())
-   if err != nil {
-      return err
-   }
-   data, err := module.RequestBody()
-   if err != nil {
-      return err
-   }
-   req, err := http.NewRequest(
-      "POST", "https://lic.staging.drmtoday.com/license-proxy-widevine/cenc",
-      bytes.NewReader(data),
-   )
-   if err != nil {
-      return err
-   }
-   data, err = json.Marshal(map[string]string{
-      "merchant": "client_dev",
-      "userId":   "purchase",
-   })
-   if err != nil {
-      return err
-   }
-   req.Header.Set("dt-custom-data", base64.StdEncoding.EncodeToString(data))
-   resp, err := http.DefaultClient.Do(req)
-   if err != nil {
-      return err
-   }
-   defer resp.Body.Close()
-   data, err = base64.StdEncoding.DecodeString(
-      resp.Header.Get("x-dt-client-info"),
-   )
-   if err != nil {
-      return err
-   }
-   var info client_info
-   err = json.Unmarshal(data, &info)
-   if err != nil {
-      return err
-   }
-   code, err := strconv.Atoi(resp.Header.Get("x-dt-resp-code"))
-   if err != nil {
-      return err
-   }
-   *d = func() (client_info, resp_code) {
-      return info, resp_code(code)
-   }
-   return nil
-}
