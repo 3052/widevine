@@ -20,15 +20,6 @@ if you know someone with information
 
 <https://github.com/rlaphoenix/pywidevine/blob/master/pywidevine/license_protocol.proto>
 
-other interesting files:
-
-~~~
-WidevineModularDRMSecurityIntegrationGuideforCENC.pdf
-Widevine_DRM_Architecture_Overview.pdf
-~~~
-
-https://github.com/github/dmca/blob/master/2020/11/2020-11-09-Google.md
-
 ## FoxRefire/wvg
 
 https://github.com/FoxRefire/wvg
