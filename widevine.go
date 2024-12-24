@@ -16,18 +16,6 @@ type Wrapper interface {
    Wrap([]byte) ([]byte, error)
 }
 
-// keep value pointer for convenience
-func (p PsshData) Marshal() []byte {
-   message := protobuf.Message{}
-   if p.KeyId != nil {
-      message.AddBytes(2, p.KeyId)
-   }
-   if p.ContentId != nil {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
-}
-
 func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
@@ -71,11 +59,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    signed.AddBytes(2, c.license_request)
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
-}
-
-type PsshData struct {
-   ContentId []byte
-   KeyId []byte
 }
 
 func (k KeyContainer) Id() []byte {
@@ -169,4 +152,21 @@ func (k KeyContainer) Decrypt(block cipher.Block) []byte {
    key := k.key()
    cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
    return unpad(key)
+}
+
+type PsshData struct {
+   ContentId []byte
+   KeyIds [][]byte
+}
+
+// keep value receiver for convenience
+func (p PsshData) Marshal() []byte {
+   message := protobuf.Message{}
+   for _, key_id := range p.KeyIds {
+      message.AddBytes(2, key_id)
+   }
+   if len(p.ContentId) >= 1 {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
 }
