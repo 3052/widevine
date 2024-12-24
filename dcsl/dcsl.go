@@ -13,15 +13,16 @@ import (
    "strconv"
 )
 
+// content.players.castlabs.com/demos/drm-agent/manifest.mpd
+const raw_key_id = "6f6b1b9884f83d0b866a1bd8aca390d2"
+
 func (d *drm_today) New(private_key, client_id []byte) error {
-   var (
-      pssh widevine.PsshData
-      err error
-   )
-   pssh.KeyId, err = hex.DecodeString(key_id)
+   key_id, err := hex.DecodeString(raw_key_id)
    if err != nil {
       return err
    }
+   var pssh widevine.PsshData
+   pssh.KeyIds = [][]byte{key_id}
    var module widevine.Cdm
    err = module.New(private_key, client_id, pssh.Marshal())
    if err != nil {
@@ -143,7 +144,38 @@ var codes = map[resp_code]string{
    90001: "License delivery prohibited in your region",
 }
 
-// content.players.castlabs.com/demos/drm-agent/manifest.mpd
-const key_id = "6f6b1b9884f83d0b866a1bd8aca390d2"
-
 type drm_today func() (client_info, resp_code)
+
+type client_info struct {
+   DrmVersion          *string
+   HdcpSupport         string
+   Manufacturer        string
+   Model               string
+   SecLevel            int64
+   VmpStatus           string
+   VrConstraintSupport bool
+}
+
+func (c *client_info) String() string {
+   var data []byte
+   if c.DrmVersion != nil {
+      data = append(data, "drmVersion = "...)
+      data = append(data, *c.DrmVersion...)
+   }
+   if data != nil {
+      data = append(data, '\n')
+   }
+   data = append(data, "hdcpSupport = "...)
+   data = append(data, c.HdcpSupport...)
+   data = append(data, "\nmanufacturer = "...)
+   data = append(data, c.Manufacturer...)
+   data = append(data, "\nmodel = "...)
+   data = append(data, c.Model...)
+   data = append(data, "\nsecLevel = "...)
+   data = strconv.AppendInt(data, c.SecLevel, 10)
+   data = append(data, "\nvmpStatus = "...)
+   data = append(data, c.VmpStatus...)
+   data = append(data, "\nvrConstraintSupport = "...)
+   data = strconv.AppendBool(data, c.VrConstraintSupport)
+   return string(data)
+}
