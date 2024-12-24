@@ -16,18 +16,6 @@ type Wrapper interface {
    Wrap([]byte) ([]byte, error)
 }
 
-// keep value pointer for convenience
-func (p PsshData) Marshal() []byte {
-   message := protobuf.Message{}
-   if p.KeyId != nil {
-      message.AddBytes(2, p.KeyId)
-   }
-   if p.ContentId != nil {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
-}
-
 func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
@@ -71,30 +59,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    signed.AddBytes(2, c.license_request)
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
-}
-
-type PsshData struct {
-   ContentId []byte
-   KeyId []byte
-}
-
-func (k KeyContainer) Id() []byte {
-   value, _ := k.message.GetBytes(1)()
-   return value
-}
-
-func (k KeyContainer) iv() []byte {
-   value, _ := k.message.GetBytes(2)()
-   return value
-}
-
-func (k KeyContainer) key() []byte {
-   value, _ := k.message.GetBytes(3)()
-   return value
-}
-
-type KeyContainer struct {
-   message protobuf.Message
 }
 
 type rand struct{}
@@ -156,6 +120,16 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    return aes.NewCipher(hash.Sum(nil))
 }
 
+func (k KeyContainer) Id() []byte {
+   value, _ := k.message.GetBytes(1)()
+   return value
+}
+
+func (k KeyContainer) iv() []byte {
+   value, _ := k.message.GetBytes(2)()
+   return value
+}
+
 func (r ResponseBody) Container() func() (KeyContainer, bool) {
    value, _ := r.message.Get(2)()
    values := value.Get(3)
@@ -165,8 +139,28 @@ func (r ResponseBody) Container() func() (KeyContainer, bool) {
    }
 }
 
-func (k KeyContainer) Decrypt(block cipher.Block) []byte {
-   key := k.key()
+type KeyContainer struct {
+   message protobuf.Message
+}
+
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   key, _ := k.message.GetBytes(3)()
    cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
    return unpad(key)
+}
+
+type PsshData struct {
+   ContentId []byte
+   KeyIds [][]byte
+}
+
+func (p *PsshData) Marshal() []byte {
+   message := protobuf.Message{}
+   for _, key_id := range p.KeyIds {
+      message.AddBytes(2, key_id)
+   }
+   if len(p.ContentId) >= 1 {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
 }

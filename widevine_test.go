@@ -11,6 +11,59 @@ import (
    "testing"
 )
 
+func decrypt(private_key, client_id []byte, wrap Wrapper) ([]byte, error) {
+   key_id, err := base64.StdEncoding.DecodeString(test.key_id)
+   if err != nil {
+      return nil, err
+   }
+   var pssh PsshData
+   pssh.KeyIds = [][]byte{key_id}
+   var module Cdm
+   err = module.New(private_key, client_id, pssh.Marshal())
+   if err != nil {
+      return nil, err
+   }
+   data, err := module.RequestBody()
+   if err != nil {
+      return nil, err
+   }
+   data, err = wrap.Wrap(data)
+   if err != nil {
+      return nil, err
+   }
+   var body ResponseBody
+   err = body.Unmarshal(data)
+   if err != nil {
+      return nil, err
+   }
+   block, err := module.Block(body)
+   if err != nil {
+      return nil, err
+   }
+   containers := body.Container()
+   for {
+      container, ok := containers()
+      if !ok {
+         return nil, errors.New("ResponseBody.Container")
+      }
+      if bytes.Equal(container.Id(), key_id) {
+         return container.Key(block), nil
+      }
+   }
+}
+
+func (pluto) Wrap(data []byte) ([]byte, error) {
+   resp, err := http.Post(
+      "https://service-concierge.clusters.pluto.tv/v1/wv/alt", "",
+      bytes.NewReader(data),
+   )
+   if err != nil {
+      return nil, err
+   }
+   defer resp.Body.Close()
+   return io.ReadAll(resp.Body)
+}
+
 var test = struct{
    id     string
    key_id string
@@ -43,57 +96,3 @@ func TestPluto(t *testing.T) {
 
 type pluto struct{}
 
-func decrypt(private_key, client_id []byte, wrap Wrapper) ([]byte, error) {
-   var (
-      pssh PsshData
-      err error
-   )
-   pssh.KeyId, err = base64.StdEncoding.DecodeString(test.key_id)
-   if err != nil {
-      return nil, err
-   }
-   var module Cdm
-   err = module.New(private_key, client_id, pssh.Marshal())
-   if err != nil {
-      return nil, err
-   }
-   data, err := module.RequestBody()
-   if err != nil {
-      return nil, err
-   }
-   data, err = wrap.Wrap(data)
-   if err != nil {
-      return nil, err
-   }
-   var body ResponseBody
-   err = body.Unmarshal(data)
-   if err != nil {
-      return nil, err
-   }
-   block, err := module.Block(body)
-   if err != nil {
-      return nil, err
-   }
-   containers := body.Container()
-   for {
-      container, ok := containers()
-      if !ok {
-         return nil, errors.New("ResponseBody.Container")
-      }
-      if bytes.Equal(container.Id(), pssh.KeyId) {
-         return container.Decrypt(block), nil
-      }
-   }
-}
-
-func (pluto) Wrap(data []byte) ([]byte, error) {
-   resp, err := http.Post(
-      "https://service-concierge.clusters.pluto.tv/v1/wv/alt", "",
-      bytes.NewReader(data),
-   )
-   if err != nil {
-      return nil, err
-   }
-   defer resp.Body.Close()
-   return io.ReadAll(resp.Body)
-}
