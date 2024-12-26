@@ -13,38 +13,6 @@ import (
    "strconv"
 )
 
-func main() {
-   http.DefaultClient.Transport = transport{}
-   var f struct {
-      client_id string
-      private_key string
-   }
-   flag.StringVar(&f.client_id, "c", "", "client ID")
-   flag.StringVar(&f.private_key, "p", "", "private key")
-   flag.Parse()
-   if f.client_id != "" {
-      client_id, err := os.ReadFile(f.client_id)
-      if err != nil {
-         panic(err)
-      }
-      private_key, err := os.ReadFile(f.private_key)
-      if err != nil {
-         panic(err)
-      }
-      var today drm_today
-      err = today.New(private_key, client_id)
-      if err != nil {
-         panic(err)
-      }
-      info, code := today()
-      fmt.Print(&info, "\n", code, "\n")
-   } else {
-      flag.Usage()
-   }
-}
-
-type drm_today func() (client_info, resp_code)
-
 func (d *drm_today) New(private_key, client_id []byte) error {
    key_id, err := hex.DecodeString(raw_key_id)
    if err != nil {
@@ -87,8 +55,7 @@ func (d *drm_today) New(private_key, client_id []byte) error {
    if err != nil {
       return err
    }
-   var info client_info
-   err = json.Unmarshal(data, &info)
+   err = json.Unmarshal(data, &d.client_info)
    if err != nil {
       return err
    }
@@ -96,8 +63,40 @@ func (d *drm_today) New(private_key, client_id []byte) error {
    if err != nil {
       return err
    }
-   *d = func() (client_info, resp_code) {
-      return info, resp_code(code)
-   }
+   d.resp_code = resp_code(code)
    return nil
+}
+
+func main() {
+   http.DefaultClient.Transport = transport{}
+   var f struct {
+      client_id string
+      private_key string
+   }
+   flag.StringVar(&f.client_id, "c", "", "client ID")
+   flag.StringVar(&f.private_key, "p", "", "private key")
+   flag.Parse()
+   if f.client_id != "" {
+      client_id, err := os.ReadFile(f.client_id)
+      if err != nil {
+         panic(err)
+      }
+      private_key, err := os.ReadFile(f.private_key)
+      if err != nil {
+         panic(err)
+      }
+      var today drm_today
+      err = today.New(private_key, client_id)
+      if err != nil {
+         panic(err)
+      }
+      fmt.Print(today.client_info, "\n", today.resp_code, "\n")
+   } else {
+      flag.Usage()
+   }
+}
+
+type drm_today struct {
+   client_info client_info
+   resp_code resp_code
 }

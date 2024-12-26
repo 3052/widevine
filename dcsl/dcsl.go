@@ -1,15 +1,8 @@
 package main
 
 import (
-   "41.neocities.org/widevine"
-   "bytes"
-   "encoding/base64"
-   "encoding/hex"
-   "encoding/json"
-   "flag"
    "fmt"
    "net/http"
-   "os"
    "strconv"
 )
 
