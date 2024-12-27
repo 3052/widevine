@@ -1,14 +1,12 @@
 package main
 
 import (
+   "encoding/json"
    "flag"
    "fmt"
    "net/http"
    "os"
 )
-
-// demo.unified-streaming.com/k8s/features
-const content_id = "fkj3ljaSdfalkr3j"
 
 func main() {
    http.DefaultClient.Transport = transport{}
@@ -33,11 +31,19 @@ func main() {
       if err != nil {
          panic(err)
       }
-      fmt.Printf("%+v\n", license)
+      encode := json.NewEncoder(os.Stdout)
+      encode.SetIndent("", " ")
+      err = encode.Encode(license)
+      if err != nil {
+         panic(err)
+      }
    } else {
       flag.Usage()
    }
 }
+
+// demo.unified-streaming.com/k8s/features
+const content_id = "fkj3ljaSdfalkr3j"
 
 type transport struct{}
 

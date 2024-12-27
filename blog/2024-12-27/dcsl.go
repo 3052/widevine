@@ -7,10 +7,20 @@ import (
    "net/http"
 )
 
+/*
+L1-pass
+*/
 type get_license struct {
-   ClientCapabilities struct {
-      AntiRollbackUsageTable bool `json:"anti_rollback_usage_table"`
-   } `json:"client_capabilities"`
+   Status string
+   StatusMessage string `json:"status_message"`
+   Make string
+   Model string
+   SecurityLevel int `json:"security_level"`
+   InternalStatus int `json:"internal_status"`
+   ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
+   Platform string
+   Soc string
+   SystemId int `json:"system_id"`
 }
 
 func (g *get_license) New(private_key, client_id []byte) error {
