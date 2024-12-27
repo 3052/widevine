@@ -6,7 +6,6 @@ import (
    "encoding/base64"
    "encoding/hex"
    "encoding/json"
-   "fmt"
    "net/http"
    "strconv"
 )
@@ -72,13 +71,6 @@ type drm_today struct {
 
 // content.players.castlabs.com/demos/drm-agent/manifest.mpd
 const raw_key_id = "6f6b1b9884f83d0b866a1bd8aca390d2"
-
-type transport struct{}
-
-func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
-   fmt.Println(req.URL)
-   return http.DefaultTransport.RoundTrip(req)
-}
 
 type client_info struct {
    DrmVersion          *string
