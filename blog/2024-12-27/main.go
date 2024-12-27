@@ -1,7 +1,6 @@
 package main
 
 import (
-   "41.neocities.org/widevine"
    "flag"
    "fmt"
    "net/http"
@@ -29,11 +28,12 @@ func main() {
       if err != nil {
          panic(err)
       }
-      data, err := post(private_key, client_id)
+      var license get_license
+      err = license.New(private_key, client_id)
       if err != nil {
          panic(err)
       }
-      os.Stdout.Write(data)
+      fmt.Printf("%+v\n", license)
    } else {
       flag.Usage()
    }
@@ -44,21 +44,4 @@ type transport struct{}
 func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
    fmt.Println(req.URL)
    return http.DefaultTransport.RoundTrip(req)
-}
-
-type wrapper struct{}
-
-func post(private_key, client_id []byte) ([]byte, error) {
-   var pssh widevine.PsshData
-   pssh.ContentId = []byte(content_id)
-   var module widevine.Cdm
-   err := module.New(private_key, client_id, pssh.Marshal())
-   if err != nil {
-      return nil, err
-   }
-   data, err := module.RequestBody()
-   if err != nil {
-      return nil, err
-   }
-   return wrapper{}.Wrap(data)
 }
