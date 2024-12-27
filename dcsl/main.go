@@ -7,13 +7,6 @@ import (
    "os"
 )
 
-type transport struct{}
-
-func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
-   fmt.Println(req.URL)
-   return http.DefaultTransport.RoundTrip(req)
-}
-
 func main() {
    http.DefaultClient.Transport = transport{}
    var f struct {
@@ -32,13 +25,23 @@ func main() {
       if err != nil {
          panic(err)
       }
-      var today drm_today
-      err = today.New(private_key, client_id)
+      var license get_license
+      err = license.New(private_key, client_id)
       if err != nil {
          panic(err)
       }
-      fmt.Print(&today.client_info, "\n", today.resp_code, "\n")
+      fmt.Println(&license)
    } else {
       flag.Usage()
    }
+}
+
+// demo.unified-streaming.com/k8s/features
+const content_id = "fkj3ljaSdfalkr3j"
+
+type transport struct{}
+
+func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
+   fmt.Println(req.URL)
+   return http.DefaultTransport.RoundTrip(req)
 }
