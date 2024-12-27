@@ -90,7 +90,7 @@ func main() {
       if err != nil {
          panic(err)
       }
-      fmt.Print(today.client_info, "\n", today.resp_code, "\n")
+      fmt.Print(&today.client_info, "\n", today.resp_code, "\n")
    } else {
       flag.Usage()
    }
