@@ -6,10 +6,8 @@ import (
    "encoding/base64"
    "encoding/hex"
    "encoding/json"
-   "flag"
    "fmt"
    "net/http"
-   "os"
    "strconv"
 )
 
@@ -67,39 +65,11 @@ func (d *drm_today) New(private_key, client_id []byte) error {
    return nil
 }
 
-func main() {
-   http.DefaultClient.Transport = transport{}
-   var f struct {
-      client_id string
-      private_key string
-   }
-   flag.StringVar(&f.client_id, "c", "", "client ID")
-   flag.StringVar(&f.private_key, "p", "", "private key")
-   flag.Parse()
-   if f.client_id != "" {
-      client_id, err := os.ReadFile(f.client_id)
-      if err != nil {
-         panic(err)
-      }
-      private_key, err := os.ReadFile(f.private_key)
-      if err != nil {
-         panic(err)
-      }
-      var today drm_today
-      err = today.New(private_key, client_id)
-      if err != nil {
-         panic(err)
-      }
-      fmt.Print(&today.client_info, "\n", today.resp_code, "\n")
-   } else {
-      flag.Usage()
-   }
-}
-
 type drm_today struct {
    client_info client_info
    resp_code resp_code
 }
+
 // content.players.castlabs.com/demos/drm-agent/manifest.mpd
 const raw_key_id = "6f6b1b9884f83d0b866a1bd8aca390d2"
 
