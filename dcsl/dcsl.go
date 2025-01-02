@@ -11,6 +11,20 @@ import (
    "strconv"
 )
 
+type get_license struct {
+   ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
+   InternalStatus int64 `json:"internal_status"`
+   Make string
+   Model string
+   OemCryptoApiVersion int64 `json:"oem_crypto_api_version"`
+   Platform string
+   SecurityLevel int64 `json:"security_level"`
+   Soc string
+   Status string
+   StatusMessage string `json:"status_message"`
+   SystemId int64 `json:"system_id"`
+}
+
 func main() {
    http.DefaultClient.Transport = transport{}
    var f struct {
@@ -49,6 +63,7 @@ func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
    fmt.Println(req.URL)
    return http.DefaultTransport.RoundTrip(req)
 }
+
 func (g *get_license) String() string {
    b := []byte("client max hdcp version = ")
    b = append(b, g.ClientMaxHdcpVersion...)
@@ -75,20 +90,6 @@ func (g *get_license) String() string {
    b = append(b, "\nsystem id = "...)
    b = strconv.AppendInt(b, g.SystemId, 10)
    return string(b)
-}
-
-type get_license struct {
-   ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
-   InternalStatus int64 `json:"internal_status"`
-   Make string
-   Model string
-   OemCryptoApiVersion int64 `json:"oem_crypto_api_version"`
-   Platform string
-   SecurityLevel int64 `json:"security_level"`
-   Soc string
-   Status string
-   StatusMessage string `json:"status_message"`
-   SystemId int64 `json:"system_id"`
 }
 
 func (g *get_license) New(private_key, client_id []byte) error {
