@@ -120,35 +120,6 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    return aes.NewCipher(hash.Sum(nil))
 }
 
-func (k KeyContainer) Id() []byte {
-   value, _ := k.message.GetBytes(1)()
-   return value
-}
-
-func (k KeyContainer) iv() []byte {
-   value, _ := k.message.GetBytes(2)()
-   return value
-}
-
-func (r ResponseBody) Container() func() (KeyContainer, bool) {
-   value, _ := r.message.Get(2)()
-   values := value.Get(3)
-   return func() (KeyContainer, bool) {
-      value, ok := values()
-      return KeyContainer{value}, ok
-   }
-}
-
-type KeyContainer struct {
-   message protobuf.Message
-}
-
-func (k KeyContainer) Key(block cipher.Block) []byte {
-   key, _ := k.message.GetBytes(3)()
-   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
-   return unpad(key)
-}
-
 type PsshData struct {
    ContentId []byte
    KeyIds [][]byte
@@ -163,4 +134,33 @@ func (p *PsshData) Marshal() []byte {
       message.AddBytes(4, p.ContentId)
    }
    return message.Marshal()
+}
+
+func (r ResponseBody) Container() func() (KeyContainer, bool) {
+   value, _ := r.message.Get(2)()
+   values := value.Get(3)
+   return func() (KeyContainer, bool) {
+      value, ok := values()
+      return KeyContainer{value}, ok
+   }
+}
+
+func (k KeyContainer) Id() []byte {
+   value, _ := k.Message.GetBytes(1)()
+   return value
+}
+
+func (k KeyContainer) iv() []byte {
+   value, _ := k.Message.GetBytes(2)()
+   return value
+}
+
+type KeyContainer struct {
+   Message protobuf.Message
+}
+
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   key, _ := k.Message.GetBytes(3)()
+   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
+   return unpad(key)
 }
