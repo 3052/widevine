@@ -28,10 +28,10 @@ func (c *Cdm) New(private_key, client_id, pssh []byte) error {
       }
       c.private_key = key.(*rsa.PrivateKey)
    }
-   c.license_request = protobuf.Message{
-      1: {protobuf.Bytes(client_id)},
-      2: {protobuf.Message{ // content_id
-         1: {protobuf.Message{ // widevine_pssh_data
+   c.license_request = protobuf.Message{ // LicenseRequest
+      1: {protobuf.Bytes(client_id)}, // ClientIdentification client_id
+      2: {protobuf.Message{ // ContentIdentification content_id
+         1: {protobuf.Message{ // WidevinePsshData widevine_pssh_data
             1: {protobuf.Bytes(pssh)},
          }},
       }},
@@ -56,7 +56,9 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    // kktv.me
    // type: LICENSE_REQUEST
    signed.AddVarint(1, 1)
+   // LicenseRequest msg
    signed.AddBytes(2, c.license_request)
+   // bytes signature
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
 }
