@@ -12,8 +12,43 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-type Wrapper interface {
-   Wrap([]byte) ([]byte, error)
+func unpad(b []byte) []byte {
+   if len(b) >= 1 {
+      pad := b[len(b)-1]
+      if len(b) >= int(pad) {
+         b = b[:len(b)-int(pad)]
+      }
+   }
+   return b
+}
+
+type Cdm struct {
+   license_request []byte
+   private_key *rsa.PrivateKey
+}
+
+func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, body.session_key(), nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   hash, err := cmac.New(aes.NewCipher, session_key)
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, c.license_request...)
+   data = append(data, 0, 0, 0, 128) // hash.Size()
+   _, err = hash.Write(data)
+   if err != nil {
+      return nil, err
+   }
+   return aes.NewCipher(hash.Sum(nil))
 }
 
 func (c *Cdm) New(private_key, client_id, pssh []byte) error {
@@ -63,90 +98,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    return signed.Marshal(), nil
 }
 
-type rand struct{}
-
-func (rand) Read(b []byte) (int, error) {
-   return len(b), nil
-}
-
-func (r *ResponseBody) Unmarshal(data []byte) error {
-   r.message = protobuf.Message{}
-   return r.message.Unmarshal(data)
-}
-
-type ResponseBody struct {
-   message protobuf.Message
-}
-
-func (r ResponseBody) session_key() []byte {
-   value, _ := r.message.GetBytes(4)()
-   return value
-}
-
-func unpad(b []byte) []byte {
-   if len(b) >= 1 {
-      pad := b[len(b)-1]
-      if len(b) >= int(pad) {
-         b = b[:len(b)-int(pad)]
-      }
-   }
-   return b
-}
-
-type Cdm struct {
-   license_request []byte
-   private_key *rsa.PrivateKey
-}
-
-func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, body.session_key(), nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   hash, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   var data []byte
-   data = append(data, 1)
-   data = append(data, "ENCRYPTION"...)
-   data = append(data, 0)
-   data = append(data, c.license_request...)
-   data = append(data, 0, 0, 0, 128) // hash.Size()
-   _, err = hash.Write(data)
-   if err != nil {
-      return nil, err
-   }
-   return aes.NewCipher(hash.Sum(nil))
-}
-
-type PsshData struct {
-   ContentId []byte
-   KeyIds [][]byte
-}
-
-func (p *PsshData) Marshal() []byte {
-   message := protobuf.Message{}
-   for _, key_id := range p.KeyIds {
-      message.AddBytes(2, key_id)
-   }
-   if len(p.ContentId) >= 1 {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
-}
-
-func (r ResponseBody) Container() func() (KeyContainer, bool) {
-   value, _ := r.message.Get(2)()
-   values := value.Get(3)
-   return func() (KeyContainer, bool) {
-      value, ok := values()
-      return KeyContainer{value}, ok
-   }
-}
-
 type KeyContainer struct {
    Message protobuf.Message
 }
@@ -180,4 +131,53 @@ func (k KeyContainer) SecurityLevel() uint64 {
 func (k KeyContainer) TrackLabel() string {
    value, _ := k.Message.GetBytes(12)()
    return string(value)
+}
+
+type PsshData struct {
+   ContentId []byte
+   KeyIds [][]byte
+}
+
+func (p *PsshData) Marshal() []byte {
+   message := protobuf.Message{}
+   for _, key_id := range p.KeyIds {
+      message.AddBytes(2, key_id)
+   }
+   if len(p.ContentId) >= 1 {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
+}
+
+func (r ResponseBody) Container() func() (KeyContainer, bool) {
+   value, _ := r.message.Get(2)()
+   values := value.Get(3)
+   return func() (KeyContainer, bool) {
+      value, ok := values()
+      return KeyContainer{value}, ok
+   }
+}
+
+func (r *ResponseBody) Unmarshal(data []byte) error {
+   r.message = protobuf.Message{}
+   return r.message.Unmarshal(data)
+}
+
+type ResponseBody struct {
+   message protobuf.Message
+}
+
+func (r ResponseBody) session_key() []byte {
+   value, _ := r.message.GetBytes(4)()
+   return value
+}
+
+type Wrapper interface {
+   Wrap([]byte) ([]byte, error)
+}
+
+type rand struct{}
+
+func (rand) Read(b []byte) (int, error) {
+   return len(b), nil
 }
