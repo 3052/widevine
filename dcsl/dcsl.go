@@ -11,6 +11,34 @@ import (
    "strconv"
 )
 
+func (g *get_license) String() string {
+   b := []byte("client max hdcp version = ")
+   b = append(b, g.ClientMaxHdcpVersion...)
+   b = append(b, "\ninternal status = "...)
+   b = strconv.AppendInt(b, g.InternalStatus, 10)
+   b = append(b, "\nmake = "...)
+   b = append(b, g.Make...)
+   b = append(b, "\nmodel = "...)
+   b = append(b, g.Model...)
+   b = append(b, "\noem crypto api version = "...)
+   b = strconv.AppendInt(b, g.OemCryptoApiVersion, 10)
+   b = append(b, "\nplatform = "...)
+   b = append(b, g.Platform...)
+   b = append(b, "\nsecurity level = "...)
+   b = strconv.AppendInt(b, g.SecurityLevel, 10)
+   b = append(b, "\nsoc = "...)
+   b = append(b, g.Soc...)
+   b = append(b, "\nstatus = "...)
+   b = append(b, g.Status...)
+   if g.StatusMessage != "" {
+      b = append(b, "\nstatus message = "...)
+      b = append(b, g.StatusMessage...)
+   }
+   b = append(b, "\nsystem id = "...)
+   b = strconv.AppendInt(b, g.SystemId, 10)
+   return string(b)
+}
+
 type get_license struct {
    ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
    InternalStatus int64 `json:"internal_status"`
@@ -62,34 +90,6 @@ type transport struct{}
 func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
    fmt.Println(req.URL)
    return http.DefaultTransport.RoundTrip(req)
-}
-
-func (g *get_license) String() string {
-   b := []byte("client max hdcp version = ")
-   b = append(b, g.ClientMaxHdcpVersion...)
-   b = append(b, "\ninternal status = "...)
-   b = strconv.AppendInt(b, g.InternalStatus, 10)
-   b = append(b, "\nmake = "...)
-   b = append(b, g.Make...)
-   b = append(b, "\nmodel = "...)
-   b = append(b, g.Model...)
-   b = append(b, "\noem crypto api version = "...)
-   b = strconv.AppendInt(b, g.OemCryptoApiVersion, 10)
-   b = append(b, "\nplatform = "...)
-   b = append(b, g.Platform...)
-   b = append(b, "\nsecurity level = "...)
-   b = strconv.AppendInt(b, g.SecurityLevel, 10)
-   b = append(b, "\nsoc = "...)
-   b = append(b, g.Soc...)
-   b = append(b, "\nstatus = "...)
-   b = append(b, g.Status...)
-   if g.StatusMessage != "" {
-      b = append(b, "\nstatus message = "...)
-      b = append(b, g.StatusMessage...)
-   }
-   b = append(b, "\nsystem id = "...)
-   b = strconv.AppendInt(b, g.SystemId, 10)
-   return string(b)
 }
 
 func (g *get_license) New(private_key, client_id []byte) error {
