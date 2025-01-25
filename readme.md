@@ -5,36 +5,13 @@
 >
 > The Dark Knight Rises (2012)
 
-Widevine implementation
+Widevine implementation. first Widevine commit was May 21 2022:
 
-- https://github.com/search?q=L3+CDM
-- https://integration.widevine.com/diagnostics
-
-## bounty
-
-I am offering bounty of 1000 USD for information about the Widevine L1 provision
-process. contact me privately if you know about this - I also offer a finders fee
-if you know someone with information
-
-## where did proto file come from?
-
-<https://github.com/rlaphoenix/pywidevine/blob/master/pywidevine/license_protocol.proto>
-
-## FoxRefire/wvg
-
-https://github.com/FoxRefire/wvg
-
-## hyugogirubato/KeyDive
-
-https://github.com/hyugogirubato/KeyDive
-
-## Jnzzi/4464\_L3-CDM
-
-<https://github.com/Jnzzi/4464_L3-CDM>
+https://github.com/gucio321/mech/commit/9d3dff51
 
 ## wvdumper/dumper
 
-install [Android Studio][1]. then create Android virtual device:
+install Android Studio [1]. then create Android virtual device:
 
 <dl>
    <dt>abi</dt>
@@ -45,13 +22,13 @@ install [Android Studio][1]. then create Android virtual device:
    <dd>Android 7.0 (Google APIs)</dd>
 </dl>
 
-then download [Widevine Dumper][2]. Then install:
+then download Widevine Dumper [2]. Then install:
 
 ~~~
 pip install -r requirements.txt
 ~~~
 
-then download [Frida server][3], example file:
+then download Frida server [3], example file:
 
 ~~~
 frida-server-15.1.17-android-x86.xz
@@ -66,7 +43,7 @@ adb shell chmod +x /data/frida-server
 adb shell /data/frida-server
 ~~~
 
-then start Android Chrome and visit [Shaka Player][4]. click the green play
+then start Android Chrome and visit Shaka Player [4]. click the green play
 button. if you receive this prompt:
 
 > bitmovin.com wants to play protected content. Your device’s identity will be
@@ -87,7 +64,19 @@ button again. result:
 key_dumps\Android Emulator 5554/private_keys/4464/2770936375
 ~~~
 
-[1]://developer.android.com/studio
-[2]://github.com/wvdumper/dumper
-[3]://github.com/frida/frida/releases
-[4]://integration.widevine.com/player
+1. https://developer.android.com/studio
+2. https://github.com/wvdumper/dumper
+3. https://github.com/frida/frida/releases
+4. https://integration.widevine.com/player
+
+## where did proto file come from?
+
+<https://github.com/rlaphoenix/pywidevine/blob/master/pywidevine/license_protocol.proto>
+
+## other tools
+
+- <https://github.com/Jnzzi/4464_L3-CDM>
+- https://github.com/FoxRefire/wvg
+- https://github.com/hyugogirubato/KeyDive
+- https://github.com/search?q=L3+CDM
+- https://integration.widevine.com/diagnostics
