@@ -53,6 +53,16 @@ type get_license struct {
    SystemId int64 `json:"system_id"`
 }
 
+// demo.unified-streaming.com/k8s/features
+const content_id = "fkj3ljaSdfalkr3j"
+
+type transport struct{}
+
+func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
+   fmt.Println(req.URL)
+   return http.DefaultTransport.RoundTrip(req)
+}
+
 func main() {
    http.DefaultClient.Transport = transport{}
    var f struct {
@@ -80,16 +90,6 @@ func main() {
    } else {
       flag.Usage()
    }
-}
-
-// demo.unified-streaming.com/k8s/features
-const content_id = "fkj3ljaSdfalkr3j"
-
-type transport struct{}
-
-func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
-   fmt.Println(req.URL)
-   return http.DefaultTransport.RoundTrip(req)
 }
 
 func (g *get_license) New(private_key, client_id []byte) error {
