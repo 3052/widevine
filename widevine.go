@@ -12,14 +12,14 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func unpad(b []byte) []byte {
-   if len(b) >= 1 {
-      pad := b[len(b)-1]
-      if len(b) >= int(pad) {
-         b = b[:len(b)-int(pad)]
+func unpad(data []byte) []byte {
+   if len(data) >= 1 {
+      pad := data[len(data)-1]
+      if len(data) >= int(pad) {
+         data = data[:len(data)-int(pad)]
       }
    }
-   return b
+   return data
 }
 
 type Cdm struct {
@@ -103,19 +103,13 @@ type KeyContainer struct {
 }
 
 func (k KeyContainer) Id() []byte {
-   value, _ := k.Message.GetBytes(1)()
-   return value
+   data, _ := k.Message.GetBytes(1)()
+   return data
 }
 
 func (k KeyContainer) iv() []byte {
-   value, _ := k.Message.GetBytes(2)()
-   return value
-}
-
-func (k KeyContainer) Key(block cipher.Block) []byte {
-   key, _ := k.Message.GetBytes(3)()
-   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
-   return unpad(key)
+   data, _ := k.Message.GetBytes(2)()
+   return data
 }
 
 func (k KeyContainer) Type() uint64 {
@@ -126,11 +120,6 @@ func (k KeyContainer) Type() uint64 {
 func (k KeyContainer) SecurityLevel() uint64 {
    value, _ := k.Message.GetVarint(5)()
    return uint64(value)
-}
-
-func (k KeyContainer) TrackLabel() string {
-   value, _ := k.Message.GetBytes(12)()
-   return string(value)
 }
 
 type PsshData struct {
@@ -149,27 +138,19 @@ func (p *PsshData) Marshal() []byte {
    return message.Marshal()
 }
 
-func (r ResponseBody) Container() func() (KeyContainer, bool) {
-   value, _ := r.message.Get(2)()
-   values := value.Get(3)
-   return func() (KeyContainer, bool) {
-      value, ok := values()
-      return KeyContainer{value}, ok
-   }
+func (k KeyContainer) TrackLabel() string {
+   data, _ := k.Message.GetBytes(12)()
+   return string(data)
 }
 
-func (r *ResponseBody) Unmarshal(data []byte) error {
-   r.message = protobuf.Message{}
-   return r.message.Unmarshal(data)
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   key, _ := k.Message.GetBytes(3)()
+   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
+   return unpad(key)
 }
 
 type ResponseBody struct {
-   message protobuf.Message
-}
-
-func (r ResponseBody) session_key() []byte {
-   value, _ := r.message.GetBytes(4)()
-   return value
+   Message protobuf.Message
 }
 
 type Wrapper interface {
@@ -178,6 +159,25 @@ type Wrapper interface {
 
 type rand struct{}
 
-func (rand) Read(b []byte) (int, error) {
-   return len(b), nil
+func (rand) Read(data []byte) (int, error) {
+   return len(data), nil
+}
+
+func (r *ResponseBody) Unmarshal(data []byte) error {
+   r.Message = protobuf.Message{}
+   return r.Message.Unmarshal(data)
+}
+
+func (r ResponseBody) session_key() []byte {
+   data, _ := r.Message.GetBytes(4)()
+   return data
+}
+
+func (r ResponseBody) Container() func() (KeyContainer, bool) {
+   message, _ := r.Message.Get(2)()
+   next := message.Get(3)
+   return func() (KeyContainer, bool) {
+      message, ok := next()
+      return KeyContainer{message}, ok
+   }
 }
