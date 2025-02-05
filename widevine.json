@@ -5,7 +5,7 @@
    "modules": {
       "widevine": {
          "archive_ref_prefix": "tags/",
-         "ref": "v1.6.0",
+         "ref": "v1.6.1",
          "type": "github",
          "url": "https://github.com/3052/widevine"
       }

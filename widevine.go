@@ -153,10 +153,6 @@ type ResponseBody struct {
    Message protobuf.Message
 }
 
-type Wrapper interface {
-   Wrap([]byte) ([]byte, error)
-}
-
 type rand struct{}
 
 func (rand) Read(data []byte) (int, error) {
