@@ -149,10 +149,6 @@ func (k KeyContainer) Key(block cipher.Block) []byte {
    return unpad(key)
 }
 
-type ResponseBody struct {
-   Message protobuf.Message
-}
-
 type rand struct{}
 
 func (rand) Read(data []byte) (int, error) {
@@ -176,4 +172,10 @@ func (r ResponseBody) Container() func() (KeyContainer, bool) {
       message, ok := next()
       return KeyContainer{message}, ok
    }
+}
+
+// SignedMessage
+// LICENSE = 2;
+type ResponseBody struct {
+   Message protobuf.Message
 }
