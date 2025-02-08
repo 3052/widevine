@@ -98,10 +98,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    return signed.Marshal(), nil
 }
 
-type KeyContainer struct {
-   Message protobuf.Message
-}
-
 func (k KeyContainer) Id() []byte {
    data, _ := k.Message.GetBytes(1)()
    return data
@@ -172,6 +168,12 @@ func (r ResponseBody) Container() func() (KeyContainer, bool) {
       message, ok := next()
       return KeyContainer{message}, ok
    }
+}
+
+///
+
+type KeyContainer struct {
+   Message protobuf.Message
 }
 
 // SignedMessage
