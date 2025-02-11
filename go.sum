@@ -1,6 +1,6 @@
-41.neocities.org/protobuf v1.4.1 h1:Y1/Prbg/lNRjWeGhpkDa1IxjbcYuCzX8oiuOGHhzKEs=
-41.neocities.org/protobuf v1.4.1/go.mod h1:IHtGh5d1ujJcJczvVJ70V3JRkUJc252uaNFkht2Il7Q=
+41.neocities.org/protobuf v1.4.5 h1:NEzzT+amb9G4APdZqLcQnx2otB7EVp1Pq//PLWQz0m8=
+41.neocities.org/protobuf v1.4.5/go.mod h1:ZNqHwauHOrFn2S5GKDe2tw7o9TMt1mFmLWgj1q4s29w=
 github.com/chmike/cmac-go v1.1.0 h1:aF73ZAEx9N2WdQc93DOJ2fMsBDAGqUtuenjMJMb3kEI=
 github.com/chmike/cmac-go v1.1.0/go.mod h1:wcIN7NRqWSKGuORzd4dReBkoBDE9ZBqfyTVxyDxGeUw=
-google.golang.org/protobuf v1.36.4 h1:6A3ZDJHn/eNqc1i+IdefRzy/9PokBTPvcqMySR7NNIM=
-google.golang.org/protobuf v1.36.4/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
+google.golang.org/protobuf v1.36.5 h1:tPhr+woSbjfYvY6/GPufUoYizxw1cF/yFoxJ2fmpwlM=
+google.golang.org/protobuf v1.36.5/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
