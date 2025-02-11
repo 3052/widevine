@@ -1,15 +1,15 @@
 package widevine
 
 import (
-   "41.neocities.org/widevine"
    "bytes"
    "encoding/base64"
-   "fmt"
+   "io"
+   "net/http"
    "os"
    "testing"
 )
 
-func Test(t *testing.T) {
+func TestCdmRequestBody(t *testing.T) {
    home, err := os.UserHomeDir()
    if err != nil {
       t.Fatal(err)
@@ -22,55 +22,46 @@ func Test(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   key_id, err := base64.StdEncoding.DecodeString(video_test.key_id)
+   key_id, err := base64.StdEncoding.DecodeString(pluto_tv.key_id)
    if err != nil {
       t.Fatal(err)
    }
-   var pssh widevine.PsshData
-   pssh.KeyIds = [][]byte{key_id}
-   var module widevine.Cdm
-   err = module.New(private_key, client_id, pssh.Marshal())
+   var pssh0 Pssh
+   pssh0.KeyIds = [][]byte{key_id}
+   var cdm0 Cdm
+   err = cdm0.New(private_key, client_id, pssh0.Marshal())
    if err != nil {
       t.Fatal(err)
    }
-   data, err := module.RequestBody()
+   data, err := cdm0.RequestBody()
    if err != nil {
       t.Fatal(err)
    }
-   data, err = Wrapper{}.Wrap(data)
+   resp, err := pluto_service(data)
    if err != nil {
       t.Fatal(err)
    }
-   var body widevine.ResponseBody
-   err = body.Unmarshal(data)
+   defer resp.Body.Close()
+   _, err = io.Copy(io.Discard, resp.Body)
    if err != nil {
       t.Fatal(err)
    }
-   block, err := module.Block(body)
-   if err != nil {
-      t.Fatal(err)
-   }
-   containers := body.Container()
-   for {
-      container, ok := containers()
-      if !ok {
-         break
-      }
-      if bytes.Equal(container.Id(), key_id) {
-         fmt.Printf("%x\n", container.Key(block))
-      }
+   if resp.StatusCode != http.StatusOK {
+      t.Fatal(resp.Status)
    }
 }
 
+func pluto_service(data []byte) (*http.Response, error) {
+   return http.Post(
+      "https://service-concierge.clusters.pluto.tv/v1/wv/alt",
+      "application/x-protobuf", bytes.NewReader(data),
+   )
+}
 
-// the slug is useful as it sometimes contains the year, but its not worth
-// parsing since its sometimes missing
-var video_test = struct{
-   id     string
+var pluto_tv = struct{
    key_id string
    url    string
 }{
-   id:     "5c4bb2b308d10f9a25bbc6af",
    key_id: "AAAAAGbZBRrrxvnmpuNLhg==",
    url:    "pluto.tv/us/on-demand/movies/5c4bb2b308d10f9a25bbc6af",
 }
