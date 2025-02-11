@@ -27,30 +27,6 @@ type Cdm struct {
    private_key *rsa.PrivateKey
 }
 
-func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, body.session_key(), nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   hash, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   var data []byte
-   data = append(data, 1)
-   data = append(data, "ENCRYPTION"...)
-   data = append(data, 0)
-   data = append(data, c.license_request...)
-   data = append(data, 0, 0, 0, 128) // hash.Size()
-   _, err = hash.Write(data)
-   if err != nil {
-      return nil, err
-   }
-   return aes.NewCipher(hash.Sum(nil))
-}
-
 func (c *Cdm) New(private_key, client_id, pssh []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
@@ -64,10 +40,10 @@ func (c *Cdm) New(private_key, client_id, pssh []byte) error {
       c.private_key = key.(*rsa.PrivateKey)
    }
    c.license_request = protobuf.Message{ // LicenseRequest
-      1: {protobuf.Bytes(client_id)}, // ClientIdentification client_id
-      2: {protobuf.Message{ // ContentIdentification content_id
-         1: {protobuf.Message{ // WidevinePsshData widevine_pssh_data
-            1: {protobuf.Bytes(pssh)},
+      {1, protobuf.Bytes(client_id)}, // ClientIdentification client_id
+      {2, protobuf.Message{ // ContentIdentification content_id
+         {1, protobuf.Message{ // WidevinePsshData widevine_pssh_data
+            {1, protobuf.Bytes(pssh)},
          }},
       }},
    }.Marshal()
@@ -98,26 +74,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    return signed.Marshal(), nil
 }
 
-func (k KeyContainer) Id() []byte {
-   data, _ := k.Message.GetBytes(1)()
-   return data
-}
-
-func (k KeyContainer) iv() []byte {
-   data, _ := k.Message.GetBytes(2)()
-   return data
-}
-
-func (k KeyContainer) Type() uint64 {
-   value, _ := k.Message.GetVarint(4)()
-   return uint64(value)
-}
-
-func (k KeyContainer) SecurityLevel() uint64 {
-   value, _ := k.Message.GetVarint(5)()
-   return uint64(value)
-}
-
 type PsshData struct {
    ContentId []byte
    KeyIds [][]byte
@@ -134,47 +90,87 @@ func (p *PsshData) Marshal() []byte {
    return message.Marshal()
 }
 
-func (k KeyContainer) TrackLabel() string {
-   data, _ := k.Message.GetBytes(12)()
-   return string(data)
-}
-
-func (k KeyContainer) Key(block cipher.Block) []byte {
-   key, _ := k.Message.GetBytes(3)()
-   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
-   return unpad(key)
-}
-
 type rand struct{}
 
 func (rand) Read(data []byte) (int, error) {
    return len(data), nil
 }
 
-func (r *ResponseBody) Unmarshal(data []byte) error {
-   return r.Message.Unmarshal(data)
-}
-
-func (r ResponseBody) session_key() []byte {
-   data, _ := r.Message.GetBytes(4)()
+func (k KeyContainer) Id() []byte {
+   data, _ := k[0].GetBytes(1)()
    return data
 }
 
+func (k KeyContainer) iv() []byte {
+   data, _ := k[0].GetBytes(2)()
+   return data
+}
+
+func (k KeyContainer) Type() uint64 {
+   value, _ := k[0].GetVarint(4)()
+   return uint64(value)
+}
+
+func (k KeyContainer) SecurityLevel() uint64 {
+   value, _ := k[0].GetVarint(5)()
+   return uint64(value)
+}
+
+func (k KeyContainer) TrackLabel() string {
+   data, _ := k[0].GetBytes(12)()
+   return string(data)
+}
+
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   key, _ := k[0].GetBytes(3)()
+   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
+   return unpad(key)
+}
+
+type KeyContainer [1]protobuf.Message
+
+func (r *ResponseBody) Unmarshal(data []byte) error {
+   return (*r)[0].Unmarshal(data)
+}
+
+func (r ResponseBody) session_key() []byte {
+   data, _ := r[0].GetBytes(4)()
+   return data
+}
+
+func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, body.session_key(), nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   hash, err := cmac.New(aes.NewCipher, session_key)
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, c.license_request...)
+   data = append(data, 0, 0, 0, 128) // hash.Size()
+   _, err = hash.Write(data)
+   if err != nil {
+      return nil, err
+   }
+   return aes.NewCipher(hash.Sum(nil))
+}
+
+// SignedMessage
+// LICENSE = 2;
+type ResponseBody [1]protobuf.Message
+
 func (r ResponseBody) Container() func() (KeyContainer, bool) {
-   message, _ := r.Message.Get(2)()
+   message, _ := r[0].Get(2)()
    next := message.Get(3)
    return func() (KeyContainer, bool) {
       message, ok := next()
       return KeyContainer{message}, ok
    }
-}
-
-type KeyContainer struct {
-   Message protobuf.Message
-}
-
-// SignedMessage
-// LICENSE = 2;
-type ResponseBody struct {
-   Message protobuf.Message
 }
