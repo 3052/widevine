@@ -87,7 +87,7 @@ func (c *Cdm) RequestBody() ([]byte, error) {
       return nil, err
    }
    // SignedMessage
-   signed := protobuf.Message{}
+   var signed protobuf.Message
    // kktv.me
    // type: LICENSE_REQUEST
    signed.AddVarint(1, 1)
@@ -124,7 +124,7 @@ type PsshData struct {
 }
 
 func (p *PsshData) Marshal() []byte {
-   message := protobuf.Message{}
+   var message protobuf.Message
    for _, key_id := range p.KeyIds {
       message.AddBytes(2, key_id)
    }
@@ -152,7 +152,6 @@ func (rand) Read(data []byte) (int, error) {
 }
 
 func (r *ResponseBody) Unmarshal(data []byte) error {
-   r.Message = protobuf.Message{}
    return r.Message.Unmarshal(data)
 }
 
@@ -169,8 +168,6 @@ func (r ResponseBody) Container() func() (KeyContainer, bool) {
       return KeyContainer{message}, ok
    }
 }
-
-///
 
 type KeyContainer struct {
    Message protobuf.Message
