@@ -9,7 +9,43 @@ import (
    "testing"
 )
 
-func TestCdmRequestBody(t *testing.T) {
+func TestCdm1(t *testing.T) {
+   home, err := os.UserHomeDir()
+   if err != nil {
+      t.Fatal(err)
+   }
+   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   if err != nil {
+      t.Fatal(err)
+   }
+   var cdm0 Cdm
+   err = cdm0.New(private_key, nil, nil)
+   if err != nil {
+      t.Fatal(err)
+   }
+   _, err = cdm0.Block(ResponseBody{})
+   if err == nil {
+      t.Fatal("Cdm.Block")
+   }
+}
+
+var ctv_ca = struct{
+   content_id string
+   key string
+   key_id string
+   url string
+}{
+   content_id: "ZmYtOGYyNjEzYWUtNTIxNTAx",
+   key: "xQ87t+z5cLOVgxDdSgHyoA==",
+   key_id: "A98dtspZsb9/z++3IHp0Dw==",
+   url: "ctv.ca/movies/fools-rush-in-57470",
+}
+
+func TestCdm0(t *testing.T) {
+   key, err := base64.StdEncoding.DecodeString(ctv_ca.key)
+   if err != nil {
+      t.Fatal(err)
+   }
    home, err := os.UserHomeDir()
    if err != nil {
       t.Fatal(err)
@@ -22,12 +58,16 @@ func TestCdmRequestBody(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   key_id, err := base64.StdEncoding.DecodeString(pluto_tv.key_id)
+   key_id, err := base64.StdEncoding.DecodeString(ctv_ca.key_id)
    if err != nil {
       t.Fatal(err)
    }
    var pssh0 Pssh
    pssh0.KeyIds = [][]byte{key_id}
+   pssh0.ContentId, err = base64.StdEncoding.DecodeString(ctv_ca.content_id)
+   if err != nil {
+      t.Fatal(err)
+   }
    var cdm0 Cdm
    err = cdm0.New(private_key, client_id, pssh0.Marshal())
    if err != nil {
@@ -37,31 +77,45 @@ func TestCdmRequestBody(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   resp, err := pluto_service(data)
+   resp, err := ctv_service(data)
    if err != nil {
       t.Fatal(err)
    }
    defer resp.Body.Close()
-   _, err = io.Copy(io.Discard, resp.Body)
+   data, err = io.ReadAll(resp.Body)
    if err != nil {
       t.Fatal(err)
    }
    if resp.StatusCode != http.StatusOK {
       t.Fatal(resp.Status)
    }
+   var body ResponseBody
+   err = body.Unmarshal(data)
+   if err != nil {
+      t.Fatal(err)
+   }
+   block, err := cdm0.Block(body)
+   if err != nil {
+      t.Fatal(err)
+   }
+   next := body.Container()
+   for {
+      container, ok := next()
+      if !ok {
+         break
+      }
+      if bytes.Equal(container.Id(), key_id) {
+         if bytes.Equal(container.Key(block), key) {
+            return
+         }
+      }
+   }
+   t.Fatal("key not found")
 }
 
-func pluto_service(data []byte) (*http.Response, error) {
+func ctv_service(data []byte) (*http.Response, error) {
    return http.Post(
-      "https://service-concierge.clusters.pluto.tv/v1/wv/alt",
-      "application/x-protobuf", bytes.NewReader(data),
+      "https://license.9c9media.ca/widevine", "application/x-protobuf",
+      bytes.NewReader(data),
    )
-}
-
-var pluto_tv = struct{
-   key_id string
-   url    string
-}{
-   key_id: "AAAAAGbZBRrrxvnmpuNLhg==",
-   url:    "pluto.tv/us/on-demand/movies/5c4bb2b308d10f9a25bbc6af",
 }

@@ -93,7 +93,7 @@ func main() {
 }
 
 func (g *get_license) New(private_key, client_id []byte) error {
-   var pssh widevine.PsshData
+   var pssh widevine.Pssh
    pssh.ContentId = []byte(content_id)
    var module widevine.Cdm
    err := module.New(private_key, client_id, pssh.Marshal())
