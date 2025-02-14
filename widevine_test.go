@@ -30,13 +30,13 @@ func TestCdm0(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   var pssh0 Pssh
+   var pssh1 Pssh
    pssh0.KeyIds = [][]byte{key_id}
    pssh0.ContentId, err = base64.StdEncoding.DecodeString(ctv_ca.content_id)
    if err != nil {
       t.Fatal(err)
    }
-   var cdm0 Cdm
+   var cdm1 Cdm
    err = cdm0.New(private_key, client_id, pssh0.Marshal())
    if err != nil {
       t.Fatal(err)
@@ -97,7 +97,7 @@ func TestCdm1(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   var cdm0 Cdm
+   var cdm1 Cdm
    err = cdm0.New(private_key, nil, nil)
    if err != nil {
       t.Fatal(err)
