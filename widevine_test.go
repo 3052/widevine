@@ -31,17 +31,17 @@ func TestCdm0(t *testing.T) {
       t.Fatal(err)
    }
    var pssh1 Pssh
-   pssh0.KeyIds = [][]byte{key_id}
-   pssh0.ContentId, err = base64.StdEncoding.DecodeString(ctv_ca.content_id)
+   pssh1.KeyIds = [][]byte{key_id}
+   pssh1.ContentId, err = base64.StdEncoding.DecodeString(ctv_ca.content_id)
    if err != nil {
       t.Fatal(err)
    }
    var cdm1 Cdm
-   err = cdm0.New(private_key, client_id, pssh0.Marshal())
+   err = cdm1.New(private_key, client_id, pssh1.Marshal())
    if err != nil {
       t.Fatal(err)
    }
-   data, err := cdm0.RequestBody()
+   data, err := cdm1.RequestBody()
    if err != nil {
       t.Fatal(err)
    }
@@ -62,7 +62,7 @@ func TestCdm0(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   block, err := cdm0.Block(body)
+   block, err := cdm1.Block(body)
    if err != nil {
       t.Fatal(err)
    }
@@ -98,11 +98,11 @@ func TestCdm1(t *testing.T) {
       t.Fatal(err)
    }
    var cdm1 Cdm
-   err = cdm0.New(private_key, nil, nil)
+   err = cdm1.New(private_key, nil, nil)
    if err != nil {
       t.Fatal(err)
    }
-   _, err = cdm0.Block(ResponseBody{})
+   _, err = cdm1.Block(ResponseBody{})
    if err == nil {
       t.Fatal("Cdm.Block")
    }
