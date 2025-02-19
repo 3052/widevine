@@ -12,62 +12,6 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, body.session_key(), nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   hash, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   var data []byte
-   data = append(data, 1)
-   data = append(data, "ENCRYPTION"...)
-   data = append(data, 0)
-   data = append(data, c.license_request...)
-   // hash.Size()
-   data = append(data, 0, 0, 0, 128)
-   // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
-   hash.Write(data)
-   return aes.NewCipher(hash.Sum(nil))
-}
-
-func unpad(data []byte) []byte {
-   if len(data) >= 1 {
-      pad := data[len(data)-1]
-      if len(data) >= int(pad) {
-         data = data[:len(data)-int(pad)]
-      }
-   }
-   return data
-}
-
-func (c *Cdm) New(private_key, client_id, pssh []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      // L1
-      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-      if err != nil {
-         return err
-      }
-      c.private_key = key.(*rsa.PrivateKey)
-   }
-   c.license_request = protobuf.Message{ // LicenseRequest
-      {1, protobuf.Bytes(client_id)}, // ClientIdentification client_id
-      {2, protobuf.Message{ // ContentIdentification content_id
-         {1, protobuf.Message{ // WidevinePsshData widevine_pssh_data
-            {1, protobuf.Bytes(pssh)},
-         }},
-      }},
-   }.Marshal()
-   return nil
-}
-
 func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
@@ -158,3 +102,58 @@ func (rand) Read(data []byte) (int, error) {
 }
 
 type rand struct{}
+func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, body.session_key(), nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   hash, err := cmac.New(aes.NewCipher, session_key)
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, c.license_request...)
+   // hash.Size()
+   data = append(data, 0, 0, 0, 128)
+   // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
+   hash.Write(data)
+   return aes.NewCipher(hash.Sum(nil))
+}
+
+func unpad(data []byte) []byte {
+   if len(data) >= 1 {
+      pad := data[len(data)-1]
+      if len(data) >= int(pad) {
+         data = data[:len(data)-int(pad)]
+      }
+   }
+   return data
+}
+
+func (c *Cdm) New(private_key, client_id, pssh []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      // L1
+      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+      if err != nil {
+         return err
+      }
+      c.private_key = key.(*rsa.PrivateKey)
+   }
+   c.license_request = protobuf.Message{ // LicenseRequest
+      {1, protobuf.Bytes(client_id)}, // ClientIdentification client_id
+      {2, protobuf.Message{ // ContentIdentification content_id
+         {1, protobuf.Message{ // WidevinePsshData widevine_pssh_data
+            {1, protobuf.Bytes(pssh)},
+         }},
+      }},
+   }.Marshal()
+   return nil
+}
