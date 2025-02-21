@@ -108,14 +108,14 @@ func TestCdm1(t *testing.T) {
    }
 }
 
-var ctv_ca = struct{
+var ctv_ca = struct {
    content_id string
-   key string
-   key_id string
-   url string
+   key        string
+   key_id     string
+   url        string
 }{
    content_id: "ZmYtOGYyNjEzYWUtNTIxNTAx",
-   key: "xQ87t+z5cLOVgxDdSgHyoA==",
-   key_id: "A98dtspZsb9/z++3IHp0Dw==",
-   url: "ctv.ca/movies/fools-rush-in-57470",
+   key:        "xQ87t+z5cLOVgxDdSgHyoA==",
+   key_id:     "A98dtspZsb9/z++3IHp0Dw==",
+   url:        "ctv.ca/movies/fools-rush-in-57470",
 }

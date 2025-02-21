@@ -12,6 +12,22 @@ import (
    "github.com/chmike/cmac-go"
 )
 
+func (p *Pssh) Marshal() []byte {
+   var message protobuf.Message
+   for _, key_id := range p.KeyIds {
+      message.AddBytes(2, key_id)
+   }
+   if len(p.ContentId) >= 1 {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
+}
+
+type Pssh struct {
+   ContentId []byte
+   KeyIds    [][]byte
+}
+
 func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
@@ -38,7 +54,7 @@ func (c *Cdm) RequestBody() ([]byte, error) {
 
 type Cdm struct {
    license_request []byte
-   private_key *rsa.PrivateKey
+   private_key     *rsa.PrivateKey
 }
 
 func (k KeyContainer) Id() []byte {
@@ -58,22 +74,6 @@ func (k KeyContainer) Key(block cipher.Block) []byte {
 }
 
 type KeyContainer [1]protobuf.Message
-
-func (p *Pssh) Marshal() []byte {
-   var message protobuf.Message
-   for _, key_id := range p.KeyIds {
-      message.AddBytes(2, key_id)
-   }
-   if len(p.ContentId) >= 1 {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
-}
-
-type Pssh struct {
-   ContentId []byte
-   KeyIds [][]byte
-}
 
 func (r *ResponseBody) Unmarshal(data []byte) error {
    return (*r)[0].Unmarshal(data)
@@ -136,7 +136,7 @@ func unpad(data []byte) []byte {
    return data
 }
 
-func (c *Cdm) New(private_key, client_id, pssh []byte) error {
+func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
    c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -152,7 +152,7 @@ func (c *Cdm) New(private_key, client_id, pssh []byte) error {
       {1, protobuf.Bytes(client_id)}, // ClientIdentification client_id
       {2, protobuf.Message{ // ContentIdentification content_id
          {1, protobuf.Message{ // WidevinePsshData widevine_pssh_data
-            {1, protobuf.Bytes(pssh)},
+            {1, protobuf.Bytes(pssh1)},
          }},
       }},
    }.Marshal()
