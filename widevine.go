@@ -102,6 +102,7 @@ func (rand) Read(data []byte) (int, error) {
 }
 
 type rand struct{}
+
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    session_key, err := rsa.DecryptOAEP(
       sha1.New(), nil, c.private_key, body.session_key(), nil,
