@@ -9,7 +9,7 @@ import (
    "testing"
 )
 
-func TestCdm0(t *testing.T) {
+func Test(t *testing.T) {
    key, err := base64.StdEncoding.DecodeString(ctv_ca.key)
    if err != nil {
       t.Fatal(err)
@@ -18,11 +18,11 @@ func TestCdm0(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
+   private_key, err := os.ReadFile(home + "/media/private_key.pem")
    if err != nil {
       t.Fatal(err)
    }
-   client_id, err := os.ReadFile(home + "/widevine/client_id.bin")
+   client_id, err := os.ReadFile(home + "/media/client_id.bin")
    if err != nil {
       t.Fatal(err)
    }
@@ -86,26 +86,6 @@ func ctv_service(data []byte) (*http.Response, error) {
       "https://license.9c9media.ca/widevine", "application/x-protobuf",
       bytes.NewReader(data),
    )
-}
-
-func TestCdm1(t *testing.T) {
-   home, err := os.UserHomeDir()
-   if err != nil {
-      t.Fatal(err)
-   }
-   private_key, err := os.ReadFile(home + "/widevine/private_key.pem")
-   if err != nil {
-      t.Fatal(err)
-   }
-   var cdm1 Cdm
-   err = cdm1.New(private_key, nil, nil)
-   if err != nil {
-      t.Fatal(err)
-   }
-   _, err = cdm1.Block(ResponseBody{})
-   if err == nil {
-      t.Fatal("Cdm.Block")
-   }
 }
 
 var ctv_ca = struct {

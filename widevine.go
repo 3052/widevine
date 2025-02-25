@@ -12,11 +12,28 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (rand) Read(data []byte) (int, error) {
-   return len(data), nil
+func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      // L1
+      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+      if err != nil {
+         return err
+      }
+      c.private_key = key.(*rsa.PrivateKey)
+   }
+   c.license_request = protobuf.Message{ // LicenseRequest
+      {1, protobuf.Bytes(client_id)}, // ClientIdentification client_id
+      {2, protobuf.Message{ // ContentIdentification content_id
+         {1, protobuf.Message{ // WidevinePsshData widevine_pssh_data
+            {1, protobuf.Bytes(pssh1)},
+         }},
+      }},
+   }.Marshal()
+   return nil
 }
-
-type rand struct{}
 
 func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
@@ -41,6 +58,12 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
 }
+
+func (rand) Read(data []byte) (int, error) {
+   return len(data), nil
+}
+
+type rand struct{}
 
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
@@ -134,27 +157,4 @@ func unpad(data []byte) []byte {
       }
    }
    return data
-}
-
-func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      // L1
-      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-      if err != nil {
-         return err
-      }
-      c.private_key = key.(*rsa.PrivateKey)
-   }
-   c.license_request = protobuf.Message{ // LicenseRequest
-      {1, protobuf.Bytes(client_id)}, // ClientIdentification client_id
-      {2, protobuf.Message{ // ContentIdentification content_id
-         {1, protobuf.Message{ // WidevinePsshData widevine_pssh_data
-            {1, protobuf.Bytes(pssh1)},
-         }},
-      }},
-   }.Marshal()
-   return nil
 }
