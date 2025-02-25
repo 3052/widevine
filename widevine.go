@@ -12,21 +12,11 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (p *Pssh) Marshal() []byte {
-   var message protobuf.Message
-   for _, key_id := range p.KeyIds {
-      message.AddBytes(2, key_id)
-   }
-   if len(p.ContentId) >= 1 {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
+func (rand) Read(data []byte) (int, error) {
+   return len(data), nil
 }
 
-type Pssh struct {
-   ContentId []byte
-   KeyIds    [][]byte
-}
+type rand struct{}
 
 func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
@@ -50,6 +40,22 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    // bytes signature
    signed.AddBytes(3, signature)
    return signed.Marshal(), nil
+}
+
+func (p *Pssh) Marshal() []byte {
+   var message protobuf.Message
+   for _, key_id := range p.KeyIds {
+      message.AddBytes(2, key_id)
+   }
+   if len(p.ContentId) >= 1 {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
+}
+
+type Pssh struct {
+   ContentId []byte
+   KeyIds    [][]byte
 }
 
 type Cdm struct {
@@ -96,12 +102,6 @@ func (r ResponseBody) session_key() []byte {
 // SignedMessage
 // LICENSE = 2;
 type ResponseBody [1]protobuf.Message
-
-func (rand) Read(data []byte) (int, error) {
-   return len(data), nil
-}
-
-type rand struct{}
 
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    session_key, err := rsa.DecryptOAEP(
