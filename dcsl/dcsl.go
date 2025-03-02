@@ -6,10 +6,18 @@ import (
    "encoding/json"
    "flag"
    "fmt"
+   "log"
    "net/http"
    "os"
    "strconv"
 )
+
+type transport struct{}
+
+func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
+   log.Print(req.URL)
+   return http.DefaultTransport.RoundTrip(req)
+}
 
 func (g *get_license) String() string {
    b := []byte("client max hdcp version = ")
@@ -55,13 +63,6 @@ type get_license struct {
 
 // demo.unified-streaming.com/k8s/features
 const content_id = "fkj3ljaSdfalkr3j"
-
-type transport struct{}
-
-func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
-   fmt.Println(req.URL)
-   return http.DefaultTransport.RoundTrip(req)
-}
 
 func main() {
    http.DefaultClient.Transport = transport{}
