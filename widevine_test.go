@@ -66,12 +66,7 @@ func Test(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   next := body.Container()
-   for {
-      container, ok := next()
-      if !ok {
-         break
-      }
+   for container := range body.Container() {
       if bytes.Equal(container.Id(), key_id) {
          if bytes.Equal(container.Key(block), key) {
             return

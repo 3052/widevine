@@ -9,6 +9,7 @@ import (
    "crypto/sha1"
    "crypto/x509"
    "encoding/pem"
+   "iter"
    "github.com/chmike/cmac-go"
 )
 
@@ -86,40 +87,10 @@ type Cdm struct {
    private_key     *rsa.PrivateKey
 }
 
-func (k KeyContainer) Id() []byte {
-   data, _ := k[0].GetBytes(1)()
-   return data
-}
-
-func (k KeyContainer) iv() []byte {
-   data, _ := k[0].GetBytes(2)()
-   return data
-}
-
-func (k KeyContainer) Key(block cipher.Block) []byte {
-   key, _ := k[0].GetBytes(3)()
-   cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(key, key)
-   return unpad(key)
-}
-
 type KeyContainer [1]protobuf.Message
 
 func (r *ResponseBody) Unmarshal(data []byte) error {
    return (*r)[0].Unmarshal(data)
-}
-
-func (r ResponseBody) Container() func() (KeyContainer, bool) {
-   message, _ := r[0].Get(2)()
-   next := message.Get(3)
-   return func() (KeyContainer, bool) {
-      message, ok := next()
-      return KeyContainer{message}, ok
-   }
-}
-
-func (r ResponseBody) session_key() []byte {
-   data, _ := r[0].GetBytes(4)()
-   return data
 }
 
 // SignedMessage
@@ -157,4 +128,45 @@ func unpad(data []byte) []byte {
       }
    }
    return data
+}
+
+func (k KeyContainer) Id() []byte {
+   for data := range k[0].GetBytes(1) {
+      return data
+   }
+   return nil
+}
+
+func (k KeyContainer) iv() []byte {
+   for data := range k[0].GetBytes(2) {
+      return data
+   }
+   return nil
+}
+
+func (r ResponseBody) session_key() []byte {
+   for data := range r[0].GetBytes(4) {
+      return data
+   }
+   return nil
+}
+
+func (r ResponseBody) Container() iter.Seq[KeyContainer] {
+   return func(yield func(KeyContainer) bool) {
+      for data := range r[0].Get(2) {
+         for data := range data.Get(3) {
+            if !yield(KeyContainer{data}) {
+               return
+            }
+         }
+      }
+   }
+}
+
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   for data := range k[0].GetBytes(3) {
+      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(data, data)
+      return unpad(data)
+   }
+   return nil
 }

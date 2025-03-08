@@ -1,9 +1,9 @@
 module 41.neocities.org/widevine
 
-go 1.22.0
+go 1.24.0
 
 require (
-	41.neocities.org/protobuf v1.4.5
+	41.neocities.org/protobuf v1.4.6
 	github.com/chmike/cmac-go v1.1.0
 )
 
