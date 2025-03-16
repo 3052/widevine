@@ -12,6 +12,40 @@ import (
    "strconv"
 )
 
+func main() {
+   http.DefaultClient.Transport = transport{}
+   var client_id struct {
+      data []byte
+      name string
+   }
+   var private_key struct {
+      data []byte
+      name string
+   }
+   flag.StringVar(&client_id.name, "c", "", "client ID")
+   flag.StringVar(&private_key.name, "p", "", "private key")
+   flag.Parse()
+   if client_id.name != "" {
+      var err error
+      client_id.data, err = os.ReadFile(client_id.name)
+      if err != nil {
+         panic(err)
+      }
+      private_key.data, err = os.ReadFile(private_key.name)
+      if err != nil {
+         panic(err)
+      }
+      var license get_license
+      err = license.New(private_key.data, client_id.data)
+      if err != nil {
+         panic(err)
+      }
+      fmt.Println(&license)
+   } else {
+      flag.Usage()
+   }
+}
+
 type transport struct{}
 
 func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -63,35 +97,6 @@ type get_license struct {
 
 // demo.unified-streaming.com/k8s/features
 const content_id = "fkj3ljaSdfalkr3j"
-
-func main() {
-   http.DefaultClient.Transport = transport{}
-   var f struct {
-      client_id   string
-      private_key string
-   }
-   flag.StringVar(&f.client_id, "c", "", "client ID")
-   flag.StringVar(&f.private_key, "p", "", "private key")
-   flag.Parse()
-   if f.client_id != "" {
-      client_id, err := os.ReadFile(f.client_id)
-      if err != nil {
-         panic(err)
-      }
-      private_key, err := os.ReadFile(f.private_key)
-      if err != nil {
-         panic(err)
-      }
-      var license get_license
-      err = license.New(private_key, client_id)
-      if err != nil {
-         panic(err)
-      }
-      fmt.Println(&license)
-   } else {
-      flag.Usage()
-   }
-}
 
 func (g *get_license) New(private_key, client_id []byte) error {
    var pssh widevine.Pssh
