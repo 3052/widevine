@@ -9,8 +9,40 @@ import (
    "log"
    "net/http"
    "os"
-   "strconv"
 )
+
+type get_license struct {
+   ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
+   InternalStatus       int    `json:"internal_status"`
+   Make                 string
+   Model                string
+   OemCryptoApiVersion  int `json:"oem_crypto_api_version"`
+   Platform             string
+   SecurityLevel        int `json:"security_level"`
+   Soc                  string
+   Status               string
+   StatusMessage        string `json:"status_message"`
+   SystemId             int    `json:"system_id"`
+}
+
+var line = fmt.Appendln
+
+func (g *get_license) String() string {
+   b := line(nil, "client max hdcp version =", g.ClientMaxHdcpVersion)
+   b = line(b, "internal status =", g.InternalStatus)
+   b = line(b, "make =", g.Make)
+   b = line(b, "model =", g.Model)
+   b = line(b, "oem crypto api version =", g.OemCryptoApiVersion)
+   b = line(b, "platform =", g.Platform)
+   b = line(b, "security level =", g.SecurityLevel)
+   b = line(b, "soc =", g.Soc)
+   b = line(b, "status =", g.Status)
+   if g.StatusMessage != "" {
+      b = line(b, "status message =", g.StatusMessage)
+   }
+   b = fmt.Append(b, "system id = ", g.SystemId)
+   return string(b)
+}
 
 func main() {
    http.DefaultClient.Transport = transport{}
@@ -51,48 +83,6 @@ type transport struct{}
 func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
    log.Print(req.URL)
    return http.DefaultTransport.RoundTrip(req)
-}
-
-func (g *get_license) String() string {
-   b := []byte("client max hdcp version = ")
-   b = append(b, g.ClientMaxHdcpVersion...)
-   b = append(b, "\ninternal status = "...)
-   b = strconv.AppendInt(b, g.InternalStatus, 10)
-   b = append(b, "\nmake = "...)
-   b = append(b, g.Make...)
-   b = append(b, "\nmodel = "...)
-   b = append(b, g.Model...)
-   b = append(b, "\noem crypto api version = "...)
-   b = strconv.AppendInt(b, g.OemCryptoApiVersion, 10)
-   b = append(b, "\nplatform = "...)
-   b = append(b, g.Platform...)
-   b = append(b, "\nsecurity level = "...)
-   b = strconv.AppendInt(b, g.SecurityLevel, 10)
-   b = append(b, "\nsoc = "...)
-   b = append(b, g.Soc...)
-   b = append(b, "\nstatus = "...)
-   b = append(b, g.Status...)
-   if g.StatusMessage != "" {
-      b = append(b, "\nstatus message = "...)
-      b = append(b, g.StatusMessage...)
-   }
-   b = append(b, "\nsystem id = "...)
-   b = strconv.AppendInt(b, g.SystemId, 10)
-   return string(b)
-}
-
-type get_license struct {
-   ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
-   InternalStatus       int64  `json:"internal_status"`
-   Make                 string
-   Model                string
-   OemCryptoApiVersion  int64 `json:"oem_crypto_api_version"`
-   Platform             string
-   SecurityLevel        int64 `json:"security_level"`
-   Soc                  string
-   Status               string
-   StatusMessage        string `json:"status_message"`
-   SystemId             int64  `json:"system_id"`
 }
 
 // demo.unified-streaming.com/k8s/features
