@@ -13,6 +13,17 @@ import (
    "github.com/chmike/cmac-go"
 )
 
+func (p *Pssh) Marshal() []byte {
+   var message protobuf.Message
+   for _, key_id := range p.KeyIds {
+      message.AddBytes(2, key_id)
+   }
+   if len(p.ContentId) >= 1 {
+      message.AddBytes(4, p.ContentId)
+   }
+   return message.Marshal()
+}
+
 func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
@@ -65,17 +76,6 @@ func (rand) Read(data []byte) (int, error) {
 }
 
 type rand struct{}
-
-func (p *Pssh) Marshal() []byte {
-   var message protobuf.Message
-   for _, key_id := range p.KeyIds {
-      message.AddBytes(2, key_id)
-   }
-   if len(p.ContentId) >= 1 {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
-}
 
 type Pssh struct {
    ContentId []byte
