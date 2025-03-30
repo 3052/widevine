@@ -13,6 +13,10 @@ import (
    "github.com/chmike/cmac-go"
 )
 
+func (r *ResponseBody) Unmarshal(data []byte) error {
+   return (*r)[0].Unmarshal(data)
+}
+
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
    for _, key_id := range p.KeyIds {
@@ -88,10 +92,6 @@ type Cdm struct {
 }
 
 type KeyContainer [1]protobuf.Message
-
-func (r *ResponseBody) Unmarshal(data []byte) error {
-   return (*r)[0].Unmarshal(data)
-}
 
 // SignedMessage
 // LICENSE = 2;
