@@ -14,8 +14,12 @@ import (
 )
 
 func (r *ResponseBody) Unmarshal(data []byte) error {
-   return (*r)[0].Unmarshal(data)
+   return r[0].Unmarshal(data)
 }
+
+// SignedMessage
+// LICENSE = 2;
+type ResponseBody [1]protobuf.Message
 
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
@@ -92,10 +96,6 @@ type Cdm struct {
 }
 
 type KeyContainer [1]protobuf.Message
-
-// SignedMessage
-// LICENSE = 2;
-type ResponseBody [1]protobuf.Message
 
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    session_key, err := rsa.DecryptOAEP(
