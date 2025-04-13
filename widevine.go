@@ -13,14 +13,6 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (r *ResponseBody) Unmarshal(data []byte) error {
-   return r[0].Unmarshal(data)
-}
-
-// SignedMessage
-// LICENSE = 2;
-type ResponseBody [1]protobuf.Message
-
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
    for _, key_id := range p.KeyIds {
@@ -31,6 +23,16 @@ func (p *Pssh) Marshal() []byte {
    }
    return message.Marshal()
 }
+
+func (r *ResponseBody) Unmarshal(data []byte) error {
+   return r[0].Unmarshal(data)
+}
+
+// SignedMessage
+// LICENSE = 2;
+type ResponseBody [1]protobuf.Message
+
+///
 
 func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
    block, _ := pem.Decode(private_key)
