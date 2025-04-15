@@ -13,6 +13,37 @@ import (
    "github.com/chmike/cmac-go"
 )
 
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   for data := range k[0].GetBytes(3) {
+      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(data, data)
+      return unpad(data)
+   }
+   return nil
+}
+
+func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, body.session_key(), nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   hash, err := cmac.New(aes.NewCipher, session_key)
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, c.license_request...)
+   // hash.Size()
+   data = append(data, 0, 0, 0, 128)
+   // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
+   hash.Write(data)
+   return aes.NewCipher(hash.Sum(nil))
+}
+
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
    for _, key_id := range p.KeyIds {
@@ -99,29 +130,6 @@ type Cdm struct {
 
 type KeyContainer [1]protobuf.Message
 
-func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, body.session_key(), nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   hash, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   var data []byte
-   data = append(data, 1)
-   data = append(data, "ENCRYPTION"...)
-   data = append(data, 0)
-   data = append(data, c.license_request...)
-   // hash.Size()
-   data = append(data, 0, 0, 0, 128)
-   // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
-   hash.Write(data)
-   return aes.NewCipher(hash.Sum(nil))
-}
-
 func unpad(data []byte) []byte {
    if len(data) >= 1 {
       pad := data[len(data)-1]
@@ -163,12 +171,4 @@ func (r ResponseBody) Container() iter.Seq[KeyContainer] {
          }
       }
    }
-}
-
-func (k KeyContainer) Key(block cipher.Block) []byte {
-   for data := range k[0].GetBytes(3) {
-      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(data, data)
-      return unpad(data)
-   }
-   return nil
 }
