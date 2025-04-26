@@ -11,41 +11,9 @@ import (
    "os"
 )
 
-type get_license struct {
-   ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
-   InternalStatus       int    `json:"internal_status"`
-   Make                 string
-   Model                string
-   OemCryptoApiVersion  int `json:"oem_crypto_api_version"`
-   Platform             string
-   SecurityLevel        int `json:"security_level"`
-   Soc                  string
-   Status               string
-   StatusMessage        string `json:"status_message"`
-   SystemId             int    `json:"system_id"`
-}
-
-var line = fmt.Appendln
-
-func (g *get_license) String() string {
-   b := line(nil, "client max hdcp version =", g.ClientMaxHdcpVersion)
-   b = line(b, "internal status =", g.InternalStatus)
-   b = line(b, "make =", g.Make)
-   b = line(b, "model =", g.Model)
-   b = line(b, "oem crypto api version =", g.OemCryptoApiVersion)
-   b = line(b, "platform =", g.Platform)
-   b = line(b, "security level =", g.SecurityLevel)
-   b = line(b, "soc =", g.Soc)
-   b = line(b, "status =", g.Status)
-   if g.StatusMessage != "" {
-      b = line(b, "status message =", g.StatusMessage)
-   }
-   b = fmt.Append(b, "system id = ", g.SystemId)
-   return string(b)
-}
-
 func main() {
    http.DefaultClient.Transport = transport{}
+   log.SetFlags(log.Ltime)
    var client_id struct {
       data []byte
       name string
@@ -81,7 +49,7 @@ func main() {
 type transport struct{}
 
 func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
-   log.Print(req.URL)
+   log.Println(req.Method, req.URL)
    return http.DefaultTransport.RoundTrip(req)
 }
 
@@ -122,4 +90,37 @@ func (g *get_license) New(private_key, client_id []byte) error {
    }
    defer resp.Body.Close()
    return json.NewDecoder(resp.Body).Decode(g)
+}
+
+type get_license struct {
+   ClientMaxHdcpVersion string `json:"client_max_hdcp_version"`
+   InternalStatus       int    `json:"internal_status"`
+   Make                 string
+   Model                string
+   OemCryptoApiVersion  int `json:"oem_crypto_api_version"`
+   Platform             string
+   SecurityLevel        int `json:"security_level"`
+   Soc                  string
+   Status               string
+   StatusMessage        string `json:"status_message"`
+   SystemId             int    `json:"system_id"`
+}
+
+var line = fmt.Appendln
+
+func (g *get_license) String() string {
+   b := line(nil, "client max hdcp version =", g.ClientMaxHdcpVersion)
+   b = line(b, "internal status =", g.InternalStatus)
+   b = line(b, "make =", g.Make)
+   b = line(b, "model =", g.Model)
+   b = line(b, "oem crypto api version =", g.OemCryptoApiVersion)
+   b = line(b, "platform =", g.Platform)
+   b = line(b, "security level =", g.SecurityLevel)
+   b = line(b, "soc =", g.Soc)
+   b = line(b, "status =", g.Status)
+   if g.StatusMessage != "" {
+      b = line(b, "status message =", g.StatusMessage)
+   }
+   b = fmt.Append(b, "system id = ", g.SystemId)
+   return string(b)
 }
