@@ -13,14 +13,6 @@ import (
    "github.com/chmike/cmac-go"
 )
 
-func (k KeyContainer) Key(block cipher.Block) []byte {
-   for data := range k[0].GetBytes(3) {
-      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(data, data)
-      return unpad(data)
-   }
-   return nil
-}
-
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    session_key, err := rsa.DecryptOAEP(
       sha1.New(), nil, c.private_key, body.session_key(), nil,
@@ -43,6 +35,16 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    hash.Write(data)
    return aes.NewCipher(hash.Sum(nil))
 }
+
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   for data := range k[0].GetBytes(3) {
+      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(data, data)
+      return unpad(data)
+   }
+   return nil
+}
+
+///
 
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
