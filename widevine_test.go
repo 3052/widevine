@@ -9,7 +9,7 @@ import (
    "testing"
 )
 
-func Test(t *testing.T) {
+func TestCtv(t *testing.T) {
    key, err := base64.StdEncoding.DecodeString(ctv_ca.key)
    if err != nil {
       t.Fatal(err)

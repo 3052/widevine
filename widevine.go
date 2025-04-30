@@ -9,8 +9,8 @@ import (
    "crypto/sha1"
    "crypto/x509"
    "encoding/pem"
-   "iter"
    "github.com/chmike/cmac-go"
+   "iter"
 )
 
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
@@ -44,8 +44,6 @@ func (k KeyContainer) Key(block cipher.Block) []byte {
    return nil
 }
 
-///
-
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
    for _, key_id := range p.KeyIds {
@@ -64,8 +62,6 @@ func (r *ResponseBody) Unmarshal(data []byte) error {
 // SignedMessage
 // LICENSE = 2;
 type ResponseBody [1]protobuf.Message
-
-///
 
 func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
    block, _ := pem.Decode(private_key)
