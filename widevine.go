@@ -102,6 +102,11 @@ func (p *Pssh) Marshal() []byte {
    return message.Marshal()
 }
 
+type Pssh struct {
+   ContentId []byte
+   KeyIds    [][]byte
+}
+
 func (r *ResponseBody) Unmarshal(data []byte) error {
    return r[0].Unmarshal(data)
 }
@@ -110,18 +115,13 @@ func (r *ResponseBody) Unmarshal(data []byte) error {
 // LICENSE = 2;
 type ResponseBody [1]protobuf.Message
 
-///
-
 func (rand) Read(data []byte) (int, error) {
    return len(data), nil
 }
 
 type rand struct{}
 
-type Pssh struct {
-   ContentId []byte
-   KeyIds    [][]byte
-}
+///
 
 type Cdm struct {
    license_request []byte
