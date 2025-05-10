@@ -13,6 +13,11 @@ import (
    "iter"
 )
 
+type Cdm struct {
+   license_request []byte
+   private_key     *rsa.PrivateKey
+}
+
 func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
@@ -122,11 +127,6 @@ func (rand) Read(data []byte) (int, error) {
 type rand struct{}
 
 ///
-
-type Cdm struct {
-   license_request []byte
-   private_key     *rsa.PrivateKey
-}
 
 type KeyContainer [1]protobuf.Message
 
