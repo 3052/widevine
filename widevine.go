@@ -88,6 +88,8 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    return aes.NewCipher(hash.Sum(nil))
 }
 
+type KeyContainer [1]protobuf.Message
+
 func (k KeyContainer) Key(block cipher.Block) []byte {
    for data := range k[0].GetBytes(3) {
       cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(data, data)
@@ -127,8 +129,6 @@ func (rand) Read(data []byte) (int, error) {
 type rand struct{}
 
 ///
-
-type KeyContainer [1]protobuf.Message
 
 func unpad(data []byte) []byte {
    if len(data) >= 1 {
