@@ -13,6 +13,11 @@ import (
    "iter"
 )
 
+type Pssh struct {
+   ContentId []byte
+   KeyIds    [][]byte
+}
+
 type Cdm struct {
    license_request []byte
    private_key     *rsa.PrivateKey
@@ -107,11 +112,6 @@ func (p *Pssh) Marshal() []byte {
       message.AddBytes(4, p.ContentId)
    }
    return message.Marshal()
-}
-
-type Pssh struct {
-   ContentId []byte
-   KeyIds    [][]byte
 }
 
 func (r *ResponseBody) Unmarshal(data []byte) error {
