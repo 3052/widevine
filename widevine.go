@@ -13,35 +13,6 @@ import (
    "iter"
 )
 
-func (c *Cdm) RequestBody() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      rand{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   // SignedMessage
-   var signed protobuf.Message
-   // kktv.me
-   // type: LICENSE_REQUEST
-   signed.AddVarint(1, 1)
-   // LicenseRequest msg
-   signed.AddBytes(2, c.license_request)
-   // bytes signature
-   signed.AddBytes(3, signature)
-   return signed.Marshal(), nil
-}
-
-type Pssh struct {
-   ContentId []byte
-   KeyIds    [][]byte
-}
-
 type Cdm struct {
    license_request []byte
    private_key     *rsa.PrivateKey
@@ -92,6 +63,37 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    hash.Write(data)
    return aes.NewCipher(hash.Sum(nil))
 }
+
+func (c *Cdm) RequestBody() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      rand{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   // SignedMessage
+   var signed protobuf.Message
+   // kktv.me
+   // type: LICENSE_REQUEST
+   signed.AddVarint(1, 1)
+   // LicenseRequest msg
+   signed.AddBytes(2, c.license_request)
+   // bytes signature
+   signed.AddBytes(3, signature)
+   return signed.Marshal(), nil
+}
+
+type Pssh struct {
+   ContentId []byte
+   KeyIds    [][]byte
+}
+
+///
 
 type KeyContainer [1]protobuf.Message
 
