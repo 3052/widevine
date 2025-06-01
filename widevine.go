@@ -88,13 +88,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
    return signed.Marshal(), nil
 }
 
-type Pssh struct {
-   ContentId []byte
-   KeyIds    [][]byte
-}
-
-///
-
 type KeyContainer [1]protobuf.Message
 
 func (k KeyContainer) Key(block cipher.Block) []byte {
@@ -104,6 +97,13 @@ func (k KeyContainer) Key(block cipher.Block) []byte {
    }
    return nil
 }
+
+type Pssh struct {
+   ContentId []byte
+   KeyIds    [][]byte
+}
+
+///
 
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
