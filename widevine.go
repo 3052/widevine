@@ -13,6 +13,16 @@ import (
    "iter"
 )
 
+func unpad(data []byte) []byte {
+   if len(data) >= 1 {
+      pad := data[len(data)-1]
+      if len(data) >= int(pad) {
+         data = data[:len(data)-int(pad)]
+      }
+   }
+   return data
+}
+
 type Cdm struct {
    license_request []byte
    private_key     *rsa.PrivateKey
@@ -103,8 +113,6 @@ type Pssh struct {
    KeyIds    [][]byte
 }
 
-///
-
 func (p *Pssh) Marshal() []byte {
    var message protobuf.Message
    for _, key_id := range p.KeyIds {
@@ -130,15 +138,7 @@ func (rand) Read(data []byte) (int, error) {
 
 type rand struct{}
 
-func unpad(data []byte) []byte {
-   if len(data) >= 1 {
-      pad := data[len(data)-1]
-      if len(data) >= int(pad) {
-         data = data[:len(data)-int(pad)]
-      }
-   }
-   return data
-}
+///
 
 func (k KeyContainer) Id() []byte {
    for data := range k[0].GetBytes(1) {
