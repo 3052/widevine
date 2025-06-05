@@ -13,6 +13,12 @@ import (
    "iter"
 )
 
+func (rand) Read(data []byte) (int, error) {
+   return len(data), nil
+}
+
+type rand struct{}
+
 func unpad(data []byte) []byte {
    if len(data) >= 1 {
       pad := data[len(data)-1]
@@ -131,14 +137,6 @@ func (r *ResponseBody) Unmarshal(data []byte) error {
 // SignedMessage
 // LICENSE = 2;
 type ResponseBody [1]protobuf.Message
-
-func (rand) Read(data []byte) (int, error) {
-   return len(data), nil
-}
-
-type rand struct{}
-
-///
 
 func (k KeyContainer) Id() []byte {
    for data := range k[0].GetBytes(1) {
