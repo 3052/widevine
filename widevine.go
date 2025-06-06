@@ -13,12 +13,6 @@ import (
    "iter"
 )
 
-func (rand) Read(data []byte) (int, error) {
-   return len(data), nil
-}
-
-type rand struct{}
-
 func unpad(data []byte) []byte {
    if len(data) >= 1 {
       pad := data[len(data)-1]
@@ -78,30 +72,6 @@ func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
    hash.Write(data)
    return aes.NewCipher(hash.Sum(nil))
-}
-
-func (c *Cdm) RequestBody() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      rand{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   // SignedMessage
-   var signed protobuf.Message
-   // kktv.me
-   // type: LICENSE_REQUEST
-   signed.AddVarint(1, 1)
-   // LicenseRequest msg
-   signed.AddBytes(2, c.license_request)
-   // bytes signature
-   signed.AddBytes(3, signature)
-   return signed.Marshal(), nil
 }
 
 type KeyContainer [1]protobuf.Message
@@ -169,4 +139,36 @@ func (r ResponseBody) Container() iter.Seq[KeyContainer] {
          }
       }
    }
+}
+
+///
+
+func (rand) Read(data []byte) (int, error) {
+   return len(data), nil
+}
+
+type rand struct{}
+
+func (c *Cdm) RequestBody() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      rand{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   // SignedMessage
+   var signed protobuf.Message
+   // kktv.me
+   // type: LICENSE_REQUEST
+   signed.AddVarint(1, 1)
+   // LicenseRequest msg
+   signed.AddBytes(2, c.license_request)
+   // bytes signature
+   signed.AddBytes(3, signature)
+   return signed.Marshal(), nil
 }
