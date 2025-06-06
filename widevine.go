@@ -13,6 +13,29 @@ import (
    "iter"
 )
 
+func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, body.session_key(), nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   hash, err := cmac.New(aes.NewCipher, session_key)
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, c.license_request...)
+   // hash.Size()
+   data = append(data, 0, 0, 0, 128)
+   // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
+   hash.Write(data)
+   return aes.NewCipher(hash.Sum(nil))
+}
+
 func unpad(data []byte) []byte {
    if len(data) >= 1 {
       pad := data[len(data)-1]
@@ -49,29 +72,6 @@ func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
       }},
    }.Marshal()
    return nil
-}
-
-func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, body.session_key(), nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   hash, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   var data []byte
-   data = append(data, 1)
-   data = append(data, "ENCRYPTION"...)
-   data = append(data, 0)
-   data = append(data, c.license_request...)
-   // hash.Size()
-   data = append(data, 0, 0, 0, 128)
-   // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
-   hash.Write(data)
-   return aes.NewCipher(hash.Sum(nil))
 }
 
 type KeyContainer [1]protobuf.Message
@@ -141,18 +141,16 @@ func (r ResponseBody) Container() iter.Seq[KeyContainer] {
    }
 }
 
-///
-
-func (rand) Read(data []byte) (int, error) {
+func (fill) Read(data []byte) (int, error) {
    return len(data), nil
 }
 
-type rand struct{}
+type fill struct{}
 
 func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
-      rand{},
+      fill{},
       c.private_key,
       crypto.SHA1,
       hash[:],
