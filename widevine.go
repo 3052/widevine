@@ -13,6 +13,31 @@ import (
    "iter"
 )
 
+func (c *Cdm) RequestBody() ([]byte, error) {
+   hash := sha1.Sum(c.license_request)
+   signature, err := rsa.SignPSS(
+      fill{},
+      c.private_key,
+      crypto.SHA1,
+      hash[:],
+      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
+   )
+   if err != nil {
+      return nil, err
+   }
+   // SignedMessage
+   signed := protobuf.Message{
+      // kktv.me
+      // type: LICENSE_REQUEST
+      protobuf.Varint(1, 1),
+      // LicenseRequest msg
+      protobuf.Bytes(2, c.license_request),
+      // bytes signature
+      protobuf.Bytes(3, signature),
+   }
+   return signed.Marshal(), nil
+}
+
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    session_key, err := rsa.DecryptOAEP(
       sha1.New(), nil, c.private_key, body.session_key(), nil,
@@ -64,22 +89,65 @@ func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
       c.private_key = key.(*rsa.PrivateKey)
    }
    c.license_request = protobuf.Message{ // LicenseRequest
-      {1, protobuf.Bytes(client_id)}, // ClientIdentification client_id
-      {2, protobuf.Message{ // ContentIdentification content_id
-         {1, protobuf.Message{ // WidevinePsshData widevine_pssh_data
-            {1, protobuf.Bytes(pssh1)},
-         }},
-      }},
+      protobuf.Bytes(1, client_id), // ClientIdentification client_id
+      protobuf.LenPrefix(2, // ContentIdentification content_id
+         protobuf.LenPrefix(1, // WidevinePsshData widevine_pssh_data
+            protobuf.Bytes(1, pssh1),
+         ),
+      ),
    }.Marshal()
    return nil
 }
 
 type KeyContainer [1]protobuf.Message
+func (r ResponseBody) Container() iter.Seq[KeyContainer] {
+   return func(yield func(KeyContainer) bool) {
+      for field := range r[0].Get(2) {
+         for field := range field.Message.Get(3) {
+            if !yield(KeyContainer{field.Message}) {
+               return
+            }
+         }
+      }
+   }
+}
+
+func (r ResponseBody) session_key() []byte {
+   for field := range r[0].Get(4) {
+      return field.Bytes
+   }
+   return nil
+}
+
+func (k KeyContainer) iv() []byte {
+   for field := range k[0].Get(2) {
+      return field.Bytes
+   }
+   return nil
+}
+
+func (k KeyContainer) Id() []byte {
+   for field := range k[0].Get(1) {
+      return field.Bytes
+   }
+   return nil
+}
+
+func (p *Pssh) Marshal() []byte {
+   var data protobuf.Message
+   for _, key_id := range p.KeyIds {
+      data = append(data, protobuf.Bytes(2, key_id))
+   }
+   if len(p.ContentId) >= 1 {
+      data = append(data, protobuf.Bytes(4, p.ContentId))
+   }
+   return data.Marshal()
+}
 
 func (k KeyContainer) Key(block cipher.Block) []byte {
-   for data := range k[0].GetBytes(3) {
-      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(data, data)
-      return unpad(data)
+   for f := range k[0].Get(3) {
+      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(f.Bytes, f.Bytes)
+      return unpad(f.Bytes)
    }
    return nil
 }
@@ -87,17 +155,6 @@ func (k KeyContainer) Key(block cipher.Block) []byte {
 type Pssh struct {
    ContentId []byte
    KeyIds    [][]byte
-}
-
-func (p *Pssh) Marshal() []byte {
-   var message protobuf.Message
-   for _, key_id := range p.KeyIds {
-      message.AddBytes(2, key_id)
-   }
-   if len(p.ContentId) >= 1 {
-      message.AddBytes(4, p.ContentId)
-   }
-   return message.Marshal()
 }
 
 func (r *ResponseBody) Unmarshal(data []byte) error {
@@ -108,65 +165,8 @@ func (r *ResponseBody) Unmarshal(data []byte) error {
 // LICENSE = 2;
 type ResponseBody [1]protobuf.Message
 
-func (k KeyContainer) Id() []byte {
-   for data := range k[0].GetBytes(1) {
-      return data
-   }
-   return nil
-}
-
-func (k KeyContainer) iv() []byte {
-   for data := range k[0].GetBytes(2) {
-      return data
-   }
-   return nil
-}
-
-func (r ResponseBody) session_key() []byte {
-   for data := range r[0].GetBytes(4) {
-      return data
-   }
-   return nil
-}
-
-func (r ResponseBody) Container() iter.Seq[KeyContainer] {
-   return func(yield func(KeyContainer) bool) {
-      for data := range r[0].Get(2) {
-         for data := range data.Get(3) {
-            if !yield(KeyContainer{data}) {
-               return
-            }
-         }
-      }
-   }
-}
-
 func (fill) Read(data []byte) (int, error) {
    return len(data), nil
 }
 
 type fill struct{}
-
-func (c *Cdm) RequestBody() ([]byte, error) {
-   hash := sha1.Sum(c.license_request)
-   signature, err := rsa.SignPSS(
-      fill{},
-      c.private_key,
-      crypto.SHA1,
-      hash[:],
-      &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash},
-   )
-   if err != nil {
-      return nil, err
-   }
-   // SignedMessage
-   var signed protobuf.Message
-   // kktv.me
-   // type: LICENSE_REQUEST
-   signed.AddVarint(1, 1)
-   // LicenseRequest msg
-   signed.AddBytes(2, c.license_request)
-   // bytes signature
-   signed.AddBytes(3, signature)
-   return signed.Marshal(), nil
-}
