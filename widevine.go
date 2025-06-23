@@ -100,6 +100,7 @@ func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
 }
 
 type KeyContainer [1]protobuf.Message
+
 func (r ResponseBody) Container() iter.Seq[KeyContainer] {
    return func(yield func(KeyContainer) bool) {
       for field := range r[0].Get(2) {
