@@ -13,15 +13,15 @@ import (
    "iter"
 )
 
-func (k KeyContainer) iv() []byte {
-   for field := range k[0].Get(2) {
+func (k KeyContainer) Id() []byte {
+   for field := range k[0].Get(1) {
       return field.Bytes
    }
    return nil
 }
 
-func (k KeyContainer) Id() []byte {
-   for field := range k[0].Get(1) {
+func (k KeyContainer) iv() []byte {
+   for field := range k[0].Get(2) {
       return field.Bytes
    }
    return nil
