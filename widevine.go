@@ -13,6 +13,28 @@ import (
    "iter"
 )
 
+func (k KeyContainer) iv() []byte {
+   for field := range k[0].Get(2) {
+      return field.Bytes
+   }
+   return nil
+}
+
+func (k KeyContainer) Id() []byte {
+   for field := range k[0].Get(1) {
+      return field.Bytes
+   }
+   return nil
+}
+
+func (k KeyContainer) Key(block cipher.Block) []byte {
+   for f := range k[0].Get(3) {
+      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(f.Bytes, f.Bytes)
+      return unpad(f.Bytes)
+   }
+   return nil
+}
+
 func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
    signature, err := rsa.SignPSS(
@@ -120,20 +142,6 @@ func (r ResponseBody) session_key() []byte {
    return nil
 }
 
-func (k KeyContainer) iv() []byte {
-   for field := range k[0].Get(2) {
-      return field.Bytes
-   }
-   return nil
-}
-
-func (k KeyContainer) Id() []byte {
-   for field := range k[0].Get(1) {
-      return field.Bytes
-   }
-   return nil
-}
-
 func (p *Pssh) Marshal() []byte {
    var data protobuf.Message
    for _, key_id := range p.KeyIds {
@@ -143,14 +151,6 @@ func (p *Pssh) Marshal() []byte {
       data = append(data, protobuf.Bytes(4, p.ContentId))
    }
    return data.Marshal()
-}
-
-func (k KeyContainer) Key(block cipher.Block) []byte {
-   for f := range k[0].Get(3) {
-      cipher.NewCBCDecrypter(block, k.iv()).CryptBlocks(f.Bytes, f.Bytes)
-      return unpad(f.Bytes)
-   }
-   return nil
 }
 
 type Pssh struct {
