@@ -13,6 +13,29 @@ import (
    "iter"
 )
 
+func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      // L1
+      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+      if err != nil {
+         return err
+      }
+      c.private_key = key.(*rsa.PrivateKey)
+   }
+   c.license_request = protobuf.Message{ // LicenseRequest
+      protobuf.Bytes(1, client_id), // ClientIdentification client_id
+      protobuf.LenPrefix(2, // ContentIdentification content_id
+         protobuf.LenPrefix(1, // WidevinePsshData widevine_pssh_data
+            protobuf.Bytes(1, pssh1),
+         ),
+      ),
+   }.Marshal()
+   return nil
+}
+
 func (k KeyContainer) Id() []byte {
    for field := range k[0].Get(1) {
       return field.Bytes
@@ -96,29 +119,6 @@ func unpad(data []byte) []byte {
 type Cdm struct {
    license_request []byte
    private_key     *rsa.PrivateKey
-}
-
-func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      // L1
-      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-      if err != nil {
-         return err
-      }
-      c.private_key = key.(*rsa.PrivateKey)
-   }
-   c.license_request = protobuf.Message{ // LicenseRequest
-      protobuf.Bytes(1, client_id), // ClientIdentification client_id
-      protobuf.LenPrefix(2, // ContentIdentification content_id
-         protobuf.LenPrefix(1, // WidevinePsshData widevine_pssh_data
-            protobuf.Bytes(1, pssh1),
-         ),
-      ),
-   }.Marshal()
-   return nil
 }
 
 type KeyContainer [1]protobuf.Message
