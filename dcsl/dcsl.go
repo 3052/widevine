@@ -11,6 +11,9 @@ import (
    "os"
 )
 
+// demo.unified-streaming.com/k8s/features
+const content_id = "fkj3ljaSdfalkr3j"
+
 func (g *get_license) New(private_key, client_id []byte) error {
    var pssh widevine.Pssh
    pssh.ContentId = []byte(content_id)
@@ -79,6 +82,7 @@ func (g *get_license) String() string {
    b = fmt.Append(b, "system id = ", g.SystemId)
    return string(b)
 }
+
 func main() {
    http.DefaultClient.Transport = transport{}
    log.SetFlags(log.Ltime)
@@ -120,6 +124,3 @@ func (transport) RoundTrip(req *http.Request) (*http.Response, error) {
    log.Println(req.Method, req.URL)
    return http.DefaultTransport.RoundTrip(req)
 }
-
-// demo.unified-streaming.com/k8s/features
-const content_id = "fkj3ljaSdfalkr3j"
