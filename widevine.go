@@ -13,7 +13,7 @@ import (
    "iter"
 )
 
-func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
+func (c *Cdm) New(private_key, client_id, psshVar []byte) error {
    block, _ := pem.Decode(private_key)
    var err error
    c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -29,7 +29,7 @@ func (c *Cdm) New(private_key, client_id, pssh1 []byte) error {
       protobuf.Bytes(1, client_id), // ClientIdentification client_id
       protobuf.LenPrefix(2, // ContentIdentification content_id
          protobuf.LenPrefix(1, // WidevinePsshData widevine_pssh_data
-            protobuf.Bytes(1, pssh1),
+            protobuf.Bytes(1, psshVar),
          ),
       ),
    }.Marshal()

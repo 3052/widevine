@@ -30,18 +30,18 @@ func TestCtv(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   var pssh1 Pssh
-   pssh1.KeyIds = [][]byte{key_id}
-   pssh1.ContentId, err = base64.StdEncoding.DecodeString(ctv_ca.content_id)
+   var psshVar Pssh
+   psshVar.KeyIds = [][]byte{key_id}
+   psshVar.ContentId, err = base64.StdEncoding.DecodeString(ctv_ca.content_id)
    if err != nil {
       t.Fatal(err)
    }
-   var cdm1 Cdm
-   err = cdm1.New(private_key, client_id, pssh1.Marshal())
+   var module Cdm
+   err = module.New(private_key, client_id, psshVar.Marshal())
    if err != nil {
       t.Fatal(err)
    }
-   data, err := cdm1.RequestBody()
+   data, err := module.RequestBody()
    if err != nil {
       t.Fatal(err)
    }
@@ -62,7 +62,7 @@ func TestCtv(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   block, err := cdm1.Block(body)
+   block, err := module.Block(body)
    if err != nil {
       t.Fatal(err)
    }
