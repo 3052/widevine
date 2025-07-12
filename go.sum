@@ -1,5 +1,5 @@
-41.neocities.org/protobuf v1.5.0 h1:+Svs5X6MHsXXDxmV99cyvoHoJx2LfnJAmykVpu2iJwA=
-41.neocities.org/protobuf v1.5.0/go.mod h1:CDluie4mCn9GZ4PR7Lm101QJpPOkdOI0N/VYGSBdLzQ=
+41.neocities.org/protobuf v1.5.1 h1:D3DPhHTDeEiTd1FGa6SQsbEaAOclRlVDtlwV5JM7/3c=
+41.neocities.org/protobuf v1.5.1/go.mod h1:CDluie4mCn9GZ4PR7Lm101QJpPOkdOI0N/VYGSBdLzQ=
 github.com/chmike/cmac-go v1.1.0 h1:aF73ZAEx9N2WdQc93DOJ2fMsBDAGqUtuenjMJMb3kEI=
 github.com/chmike/cmac-go v1.1.0/go.mod h1:wcIN7NRqWSKGuORzd4dReBkoBDE9ZBqfyTVxyDxGeUw=
 google.golang.org/protobuf v1.36.6 h1:z1NpPI8ku2WgiWnf+t9wTPsn6eP1L7ksHUlkfLvd9xY=
