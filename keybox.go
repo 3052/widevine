@@ -6,11 +6,13 @@ import (
    "crypto/cipher"
    "encoding/hex"
    "errors"
-   "iter"
+   "log"
 )
 
 const (
    stage0 = "MSTAR_SECURE_STORE_FILE_MAGIC_ID"
+   // some files do not have this even with correct key, instead:
+   // strip first 64 bytes, and then the next 32 bytes is your zgpriv
    stage1 = "INNER_MSTAR_FILE"
 )
 
@@ -56,22 +58,6 @@ var keys = []struct {
    },
 }
 
-func ecb(data []byte) error {
-   for source := range get_source(data) {
-      for _, raw_key := range keys {
-         key, err := hex.DecodeString(raw_key.value)
-         if err != nil {
-            return err
-         }
-         dest := DecryptAes128Ecb(source, key)
-         if bytes.Contains(dest, []byte(stage1)) {
-            return nil
-         }
-      }
-   }
-   return errors.New("ECB")
-}
-
 func DecryptAes128Ecb(data, key []byte) []byte {
    cipher, _ := aes.NewCipher(key)
    decrypted := make([]byte, len(data))
@@ -82,59 +68,74 @@ func DecryptAes128Ecb(data, key []byte) []byte {
    return decrypted
 }
 
-func get_source(data []byte) iter.Seq[[]byte] {
-   return func(yield func([]byte) bool) {
-      for i := range data {
-         if len(data[i:])%16 == 0 {
-            //log.Println("source", i)
-            if !yield(data[i:]) {
-               return
+func ecb(data []byte) error {
+   for i := range data {
+      value := data[i:]
+      if len(value)%16 == 0 {
+         for _, raw_key := range keys {
+            key, err := hex.DecodeString(raw_key.value)
+            if err != nil {
+               return err
+            }
+            dest := DecryptAes128Ecb(value, key)
+            if bytes.Contains(dest, []byte(stage1)) {
+               log.Println("ECB", i, raw_key.value)
+               return nil
             }
          }
       }
    }
-}
-
-func ctr(data []byte) error {
-   data1 := make([]byte, len(data))
-   var iv [16]byte
-   for source := range get_source(data) {
-      for _, raw_key := range keys {
-         key, err := hex.DecodeString(raw_key.value)
-         if err != nil {
-            return err
-         }
-         block, err := aes.NewCipher(key)
-         if err != nil {
-            return err
-         }
-         cipher.NewCTR(block, iv[:]).XORKeyStream(data1, source)
-         if bytes.Contains(data1, []byte(stage1)) {
-            return nil
-         }
-      }
-   }
-   return errors.New("CTR")
+   return errors.New("ECB")
 }
 
 func cbc(data []byte) error {
    data1 := make([]byte, len(data))
    var iv [16]byte
-   for source := range get_source(data) {
-      for _, raw_key := range keys {
-         key, err := hex.DecodeString(raw_key.value)
-         if err != nil {
-            return err
-         }
-         block, err := aes.NewCipher(key)
-         if err != nil {
-            return err
-         }
-         cipher.NewCBCDecrypter(block, iv[:]).CryptBlocks(data1, source)
-         if bytes.Contains(data1, []byte(stage1)) {
-            return nil
+   for i := range data {
+      value := data[i:]
+      if len(value)%16 == 0 {
+         for _, raw_key := range keys {
+            key, err := hex.DecodeString(raw_key.value)
+            if err != nil {
+               return err
+            }
+            block, err := aes.NewCipher(key)
+            if err != nil {
+               return err
+            }
+            cipher.NewCBCDecrypter(block, iv[:]).CryptBlocks(data1, value)
+            if bytes.Contains(data1, []byte(stage1)) {
+               log.Println("CBC", i, raw_key.value)
+               return nil
+            }
          }
       }
    }
    return errors.New("CBC")
+}
+
+func ctr(data []byte) error {
+   data1 := make([]byte, len(data))
+   var iv [16]byte
+   for i := range data {
+      value := data[i:]
+      if len(value)%16 == 0 {
+         for _, raw_key := range keys {
+            key, err := hex.DecodeString(raw_key.value)
+            if err != nil {
+               return err
+            }
+            block, err := aes.NewCipher(key)
+            if err != nil {
+               return err
+            }
+            cipher.NewCTR(block, iv[:]).XORKeyStream(data1, value)
+            if bytes.Contains(data1, []byte(stage1)) {
+               log.Println("CTR", i, raw_key.value)
+               return nil
+            }
+         }
+      }
+   }
+   return errors.New("CTR")
 }

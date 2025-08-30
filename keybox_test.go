@@ -5,8 +5,10 @@ import (
    "testing"
 )
 
+const test_name = "zgpriv_protected.dat"
+
 func TestDecryptEcb(t *testing.T) {
-   data, err := os.ReadFile("keyBox.bin")
+   data, err := os.ReadFile(test_name)
    if err != nil {
       t.Fatal(err)
    }
@@ -17,7 +19,7 @@ func TestDecryptEcb(t *testing.T) {
 }
 
 func TestDecryptCbc(t *testing.T) {
-   data, err := os.ReadFile("keyBox.bin")
+   data, err := os.ReadFile(test_name)
    if err != nil {
       t.Fatal(err)
    }
@@ -28,7 +30,7 @@ func TestDecryptCbc(t *testing.T) {
 }
 
 func TestDecryptCtr(t *testing.T) {
-   data, err := os.ReadFile("keyBox.bin")
+   data, err := os.ReadFile(test_name)
    if err != nil {
       t.Fatal(err)
    }
