@@ -10,7 +10,7 @@ import (
 )
 
 const (
-   stage0 = "MSTAR_SECURE_STORE_FILE_MAGIC_ID"
+   // stage0 = "MSTAR_SECURE_STORE_FILE_MAGIC_ID"
    // some files do not have this even with correct key, instead:
    // strip first 64 bytes, and then the next 32 bytes is your zgpriv
    stage1 = "INNER_MSTAR_FILE"
