@@ -1,20 +1,17 @@
 package widevine
 
 import (
-   "bytes"
    "encoding/binary"
+   "errors"
    "fmt"
 )
 
-// --- User-provided CRC32/MPEG-2 Implementation (Correct) ---
-const (
-   polynomial    uint32 = 0x04C11DB7 // Confirmed Poly: 0x04C11DB7
-   initialValue  uint32 = 0xFFFFFFFF // Confirmed Init: 0xFFFFFFFF
-   finalXorValue uint32 = 0x00000000 // Confirmed XorOut: 0x00000000
-)
-
-// calculateCRC32MPEG2 calculates the CRC using the non-reflected MPEG-2 standard.
-func calculateCRC32MPEG2(data []byte) uint32 {
+func calculate_crc32_mpeg2(data []byte) uint32 {
+   const (
+      polynomial    uint32 = 0x04C11DB7
+      initialValue  uint32 = 0xFFFFFFFF
+      finalXorValue uint32 = 0x00000000
+   )
    crc := initialValue // Initialize the CRC register
    for _, b := range data {
       // XOR the current byte with the most significant byte of the CRC register.
@@ -34,42 +31,47 @@ func calculateCRC32MPEG2(data []byte) uint32 {
    return crc ^ finalXorValue
 }
 
-func (k *Keybox) unmarshal(data []byte) error {
-   length := len(data)
-   if length != 128 && length != 132 {
-      return fmt.Errorf("invalid keybox length: %d. Should be 128 or 132 bytes", length)
+func (k *keybox) unmarshal(data []byte) error {
+   if len(data) != 128 {
+      return errors.New("invalid keybox length. should be 128 bytes")
    }
-   if length == 132 {
-      if !bytes.Equal(data[0x80:0x84], []byte("LVL1")) {
-         return fmt.Errorf("QSEE style keybox does not end in bytes 'LVL1'")
-      }
-      data = data[0:0x80]
+   k.device_id = string(data[:32])                  // 0:32
+   k.device_key = [16]byte(data[32:])               // 32:48
+   k.flags = binary.BigEndian.Uint32(data[48:])     // 48:52
+   k.system_id = binary.BigEndian.Uint32(data[52:]) // 52:56
+   k.provisioning_token = [64]byte(data[56:])       // 56:120
+   // magic number
+   k.magic_number = string(data[120:124])
+   if k.magic_number != "kbox" {
+      return errors.New("invalid keybox magic")
    }
-   if !bytes.Equal(data[0x78:0x7C], []byte("kbox")) {
-      return fmt.Errorf("invalid keybox magic")
+   // crc32
+   k.crc32 = binary.BigEndian.Uint32(data[124:])
+   if k.crc32 != calculate_crc32_mpeg2(data[:124]) {
+      return errors.New("keybox CRC is bad")
    }
-   payload := data[:0x7C]
-   expectedCrc := binary.BigEndian.Uint32(
-      data[0x7C:][:4],
-      //data[0x7C : 0x7C+4],
-   )
-   calculatedCrc := calculateCRC32MPEG2(payload) // <-- Using your working function
-   if expectedCrc != calculatedCrc {
-      return fmt.Errorf("keybox CRC is bad. Expected: 0x%08X. Computed: 0x%08X", expectedCrc, calculatedCrc)
-   }
-   k.StableID = data[0x00:0x20]
-   k.DeviceAESKey = data[0x20:0x30]
-   k.DeviceID = data[0x30:0x78]
-   k.Flags = binary.BigEndian.Uint32(k.DeviceID[:4])
-   k.SystemID = binary.BigEndian.Uint32(k.DeviceID[4:8])
    return nil
 }
 
-// Keybox holds the parsed data from a Widevine keybox file.
-type Keybox struct {
-   StableID     []byte
-   DeviceAESKey []byte
-   DeviceID     []byte
-   Flags        uint32
-   SystemID     uint32
+// wikipedia.org/wiki/Widevine#Input_→_output_overview
+type keybox struct {
+   device_id          string
+   device_key         [16]byte
+   flags              uint32
+   system_id          uint32
+   provisioning_token [64]byte
+   magic_number       string
+   crc32              uint32
+}
+
+func (k *keybox) String() string {
+   var b []byte
+   b = fmt.Appendln(b, "device id =", k.device_id)
+   b = fmt.Appendf(b, "device key = %x\n", k.device_key)
+   b = fmt.Appendln(b, "flags =", k.flags)
+   b = fmt.Appendln(b, "system id =", k.system_id)
+   b = fmt.Appendf(b, "provisioning token = %x\n", k.provisioning_token)
+   b = fmt.Appendln(b, "magic number =", k.magic_number)
+   b = fmt.Append(b, "crc32 = ", k.crc32)
+   return string(b)
 }
