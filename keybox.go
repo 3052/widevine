@@ -39,29 +39,35 @@ func (k *keybox) unmarshal(data []byte) error {
    k.device_key = [16]byte(data[32:])               // 32:48
    k.flags = binary.BigEndian.Uint32(data[48:])     // 48:52
    k.system_id = binary.BigEndian.Uint32(data[52:]) // 52:56
-   k.provisioning_token = [64]byte(data[56:])       // 56:120
+   k.data = [64]byte(data[56:])                     // 56:120
    // magic number
-   k.magic_number = string(data[120:124])
-   if k.magic_number != "kbox" {
+   k.magic = string(data[120:124])
+   if k.magic != "kbox" {
       return errors.New("invalid keybox magic")
    }
-   // crc32
-   k.crc32 = binary.BigEndian.Uint32(data[124:])
-   if k.crc32 != calculate_crc32_mpeg2(data[:124]) {
+   // crc
+   k.crc = binary.BigEndian.Uint32(data[124:])
+   if k.crc != calculate_crc32_mpeg2(data[:124]) {
       return errors.New("keybox CRC is bad")
    }
    return nil
 }
 
-// wikipedia.org/wiki/Widevine#Input_→_output_overview
+//   typedef struct WidevineKeybox {
+//     uint8_t device_id_[32];
+//     uint8_t device_key_[16];
+//     uint8_t data_[72];
+//     uint8_t magic_[4];
+//     uint8_t crc_[4];
+//   } WidevineKeybox;
 type keybox struct {
-   device_id          string
-   device_key         [16]byte
-   flags              uint32
-   system_id          uint32
-   provisioning_token [64]byte
-   magic_number       string
-   crc32              uint32
+   device_id  string
+   device_key [16]byte
+   flags      uint32
+   system_id  uint32
+   data       [64]byte
+   magic      string
+   crc        uint32
 }
 
 func (k *keybox) String() string {
@@ -70,8 +76,8 @@ func (k *keybox) String() string {
    b = fmt.Appendf(b, "device key = %x\n", k.device_key)
    b = fmt.Appendln(b, "flags =", k.flags)
    b = fmt.Appendln(b, "system id =", k.system_id)
-   b = fmt.Appendf(b, "provisioning token = %x\n", k.provisioning_token)
-   b = fmt.Appendln(b, "magic number =", k.magic_number)
-   b = fmt.Append(b, "crc32 = ", k.crc32)
+   b = fmt.Appendf(b, "data = %x\n", k.data)
+   b = fmt.Appendln(b, "magic =", k.magic)
+   b = fmt.Append(b, "crc = ", k.crc)
    return string(b)
 }
