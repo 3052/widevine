@@ -9,9 +9,29 @@ import (
    "crypto/sha1"
    "crypto/x509"
    "encoding/pem"
-   "github.com/chmike/cmac-go"
+   "github.com/emmansun/gmsm/cbcmac"
    "iter"
 )
+
+func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
+   session_key, err := rsa.DecryptOAEP(
+      sha1.New(), nil, c.private_key, body.session_key(), nil,
+   )
+   if err != nil {
+      return nil, err
+   }
+   var data []byte
+   data = append(data, 1)
+   data = append(data, "ENCRYPTION"...)
+   data = append(data, 0)
+   data = append(data, c.license_request...)
+   data = append(data, 0, 0, 0, 128) // size
+   block, err := aes.NewCipher(session_key)
+   if err != nil {
+      return nil, err
+   }
+   return aes.NewCipher(cbcmac.NewCMAC(block, aes.BlockSize).MAC(data))
+}
 
 func (c *Cdm) RequestBody() ([]byte, error) {
    hash := sha1.Sum(c.license_request)
@@ -81,29 +101,6 @@ func (k KeyContainer) Key(block cipher.Block) []byte {
       return unpad(f.Bytes)
    }
    return nil
-}
-
-func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
-   session_key, err := rsa.DecryptOAEP(
-      sha1.New(), nil, c.private_key, body.session_key(), nil,
-   )
-   if err != nil {
-      return nil, err
-   }
-   hash, err := cmac.New(aes.NewCipher, session_key)
-   if err != nil {
-      return nil, err
-   }
-   var data []byte
-   data = append(data, 1)
-   data = append(data, "ENCRYPTION"...)
-   data = append(data, 0)
-   data = append(data, c.license_request...)
-   // hash.Size()
-   data = append(data, 0, 0, 0, 128)
-   // github.com/chmike/cmac-go/blob/v1.1.0/cmac.go#L114-L133
-   hash.Write(data)
-   return aes.NewCipher(hash.Sum(nil))
 }
 
 func unpad(data []byte) []byte {

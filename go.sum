@@ -4,8 +4,6 @@ github.com/arnaucube/cryptofun v0.0.0-20181124004321-9b11ae8280bd/go.mod h1:PZE8
 github.com/arnaucube/cryptofun v0.0.0-20190603183703-df33a4bbd574 h1:CF7VgoeJTUsphBKztUXdS7OTfM+ifx32yzRWSlILGw8=
 github.com/arnaucube/cryptofun v0.0.0-20190603183703-df33a4bbd574/go.mod h1:/B6FaxAphhUEFigq7FAwZn2wWWDebPqc8IUUe3QPfW8=
 github.com/arnaucube/go-snark v0.0.0-20181207210027-19f7216d0e3d/go.mod h1:gLycS/B43DufBaH0jH8kqiE4A7w5FdOM8I9S416xh2Y=
-github.com/chmike/cmac-go v1.1.0 h1:aF73ZAEx9N2WdQc93DOJ2fMsBDAGqUtuenjMJMb3kEI=
-github.com/chmike/cmac-go v1.1.0/go.mod h1:wcIN7NRqWSKGuORzd4dReBkoBDE9ZBqfyTVxyDxGeUw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/emmansun/gmsm v0.34.0 h1:ZeNVCt5earZruNk6P4TLQqjhnCv3nyvKoG4WQT/jmKw=
@@ -14,5 +12,5 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-google.golang.org/protobuf v1.36.6 h1:z1NpPI8ku2WgiWnf+t9wTPsn6eP1L7ksHUlkfLvd9xY=
-google.golang.org/protobuf v1.36.6/go.mod h1:jduwjTPXsFjZGTmRluh+L6NjiWu7pchiJ2/5YcXBHnY=
+google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
+google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=

@@ -17,6 +17,20 @@ import (
    "slices"
 )
 
+func (l *License) verify(data []byte, coord *CoordX) error {
+   signature := new(Ftlv).size() + l.Signature.size()
+   data = data[:len(data)-signature]
+   block, err := aes.NewCipher(coord.integrity())
+   if err != nil {
+      return err
+   }
+   data = cbcmac.NewCMAC(block, aes.BlockSize).MAC(data)
+   if !bytes.Equal(data, l.Signature.Data) {
+      return errors.New("failed to decrypt the keys")
+   }
+   return nil
+}
+
 func wmrmPublicKey() *ecc.Point {
    var p ecc.Point
    p.X, _ = new(big.Int).SetString("c8b6af16ee941aadaa5389b4af2c10e356be42af175ef3face93254e7b0b3d9b", 16)
@@ -362,20 +376,6 @@ func (l *License) Decrypt(data []byte, privK *big.Int) (*CoordX, error) {
       return nil, err
    }
    return coord, nil
-}
-
-func (l *License) verify(data []byte, coord *CoordX) error {
-   signature := new(Ftlv).size() + l.Signature.size()
-   data = data[:len(data)-signature]
-   block, err := aes.NewCipher(coord.integrity())
-   if err != nil {
-      return err
-   }
-   data = cbcmac.NewCMAC(block, aes.BlockSize).MAC(data)
-   if !bytes.Equal(data, l.Signature.Data) {
-      return errors.New("failed to decrypt the keys")
-   }
-   return nil
 }
 
 func (c *curve) dsa() *ecdsa.DSA {
