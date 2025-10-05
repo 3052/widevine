@@ -1,10 +1,3 @@
-module 41.neocities.org/widevine
+module 41.neocities.org/drm
 
 go 1.24.0
-
-require (
-	41.neocities.org/protobuf v1.5.1
-	github.com/chmike/cmac-go v1.1.0
-)
-
-require google.golang.org/protobuf v1.36.9 // indirect
