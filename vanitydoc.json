@@ -3,11 +3,11 @@
       "output": "../41.neocities.org"
    },
    "modules": {
-      "widevine": {
+      "drm": {
          "archive_ref_prefix": "tags/",
-         "ref": "v1.6.4",
+         "ref": "v1.6.5",
          "type": "github",
-         "url": "https://github.com/3052/widevine"
+         "url": "https://github.com/3052/drm"
       }
    }
 }
