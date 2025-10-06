@@ -11,6 +11,101 @@ import (
    "path/filepath"
 )
 
+const outputDir = "emmc"
+
+func main() {
+   inputFile := flag.String("i", "", "input file")
+   flag.Parse()
+   if *inputFile == "" {
+      flag.Usage()
+      return
+   }
+   if err := createDirectory(outputDir); err != nil {
+      log.Fatalf("Could not prepare output directory: %v", err)
+   }
+   fmt.Println("\nPartitions:\n")
+   // 1. Read the header from the input file
+   headerFile, err := os.Open(*inputFile)
+   if err != nil {
+      log.Fatalf("Failed to open input file: %v", err)
+   }
+   defer headerFile.Close()
+
+   header := make([]byte, HeaderSize)
+   n, err := io.ReadFull(headerFile, header)
+   if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+      log.Fatalf("Failed to read header from file: %v", err)
+   }
+   if n < HeaderSize {
+      fmt.Printf("Warning: File size is less than header size. Read %d bytes.\n", n)
+      header = header[:n] // Truncate header to actual bytes read
+   }
+   
+   // Save the header to a file
+   headerPath := filepath.Join(outputDir, "~header")
+   if err := os.WriteFile(headerPath, header, 0644); err != nil {
+      log.Fatalf("Failed to save header file: %v", err)
+   }
+
+   // 2. Find and parse partitions within the header
+   var partitions []Partition
+   for i := 0; i+DefaultBlockSize <= len(header); i += DefaultBlockSize {
+      block := header[i : i+2]
+      partitionType := binary.LittleEndian.Uint16(block)
+
+      if partitionType == TypePartition {
+         // Extract name, base, and size from the block
+         nameBytes := header[i+OffsetName : i+OffsetName+20]
+         // Find the null terminator and trim the string
+         nullIndex := bytes.IndexByte(nameBytes, 0)
+         if nullIndex == -1 {
+            nullIndex = len(nameBytes)
+         }
+         name := string(nameBytes[:nullIndex])
+
+         base := binary.LittleEndian.Uint32(header[i+OffsetBase : i+OffsetBase+4])
+         size := binary.LittleEndian.Uint32(header[i+OffsetSize : i+OffsetSize+4])
+
+         // Calculate human-readable size
+         fullSizeKB := (int64(size) * DefaultBlockSize) / KB
+         var fullSizeStr string
+         if fullSizeKB > 1024 {
+            fullSizeStr = fmt.Sprintf("%d MB", fullSizeKB/1024)
+         } else {
+            fullSizeStr = fmt.Sprintf("%d KB", fullSizeKB)
+         }
+         
+         // Print partition info
+         partNum := len(partitions) + 1
+         baseAndSize := fmt.Sprintf("%d:%d", base, size)
+         fmt.Printf("%02d: %-30s %-25s %s\n", partNum, name, baseAndSize, fullSizeStr)
+         partitions = append(partitions, Partition{Name: name, Base: base, Size: size})
+      }
+   }
+   
+   if len(partitions) < 1 {
+      log.Fatal("\nPartitions are not found\n")
+   }
+   
+   fmt.Println("\nExtracting...\n")
+
+   // 3. Extract each partition
+   for i, p := range partitions {
+      outFile := filepath.Join(outputDir, p.Name+".bin")
+      
+      infoStr := fmt.Sprintf("%s [%d:%d]", p.Name, p.Base, p.Size)
+      fmt.Printf("Saving (%02d/%d) %-40s => %s\n", i+1, len(partitions), infoStr, outFile)
+      
+      // Calculate offset and size in bytes using int64 to avoid overflow
+      offsetBytes := int64(p.Base) * DefaultBlockSize
+      sizeBytes := int64(p.Size) * DefaultBlockSize
+      err = copyPart(*inputFile, outFile, offsetBytes, sizeBytes)
+      if err != nil {
+         log.Printf("ERROR: Failed to extract partition %s: %v", p.Name, err)
+      }
+   }
+}
+
 // Constants defined in the Python script
 const (
    B  = 1 << (10 * 0) // 2^0
@@ -28,15 +123,12 @@ const (
    OffsetSize = 0x0C
 )
 
-// Partition holds the extracted information for a single partition.
 type Partition struct {
    Name string
    Base uint32 // Base address in blocks
    Size uint32 // Size in blocks
 }
 
-// createDirectory ensures the output directory exists and is empty.
-// This matches the behavior of the Python script's `createDirectory` function.
 func createDirectory(dir string) error {
    // Check if directory exists
    if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -71,17 +163,14 @@ func copyPart(srcPath, destPath string, offset int64, size int64) error {
       return fmt.Errorf("could not open source file %s: %w", srcPath, err)
    }
    defer srcFile.Close()
-
    if _, err := srcFile.Seek(offset, io.SeekStart); err != nil {
       return fmt.Errorf("could not seek in source file %s to offset %d: %w", srcPath, offset, err)
    }
-
    destFile, err := os.Create(destPath)
    if err != nil {
       return fmt.Errorf("could not create destination file %s: %w", destPath, err)
    }
    defer destFile.Close()
-
    written, err := io.CopyN(destFile, srcFile, size)
    if err != nil {
       return fmt.Errorf("error copying data from %s to %s: %w", srcPath, destPath, err)
@@ -89,125 +178,5 @@ func copyPart(srcPath, destPath string, offset int64, size int64) error {
    if written != size {
       return fmt.Errorf("expected to write %d bytes, but only wrote %d", size, written)
    }
-
    return nil
-}
-
-func main() {
-   // Use Go's standard 'flag' package for robust argument parsing
-   var blockSize = flag.Int("blocksize", DefaultBlockSize, "The block size in bytes")
-   var outputDir = flag.String("output", "emmc", "The output directory")
-   flag.Usage = func() {
-      fmt.Fprintf(os.Stderr, "Usage: %s [options] <emmc.bin>\n", os.Args[0])
-      fmt.Fprintln(os.Stderr, "Options:")
-      flag.PrintDefaults()
-   }
-   flag.Parse()
-
-   // The input file should be the only non-flag argument
-   if flag.NArg() != 1 {
-      flag.Usage()
-      log.Fatal("Error: An input file path is required.")
-   }
-   inputFile := flag.Arg(0)
-
-   // The Python script's interactive disk mode is platform-specific (Windows).
-   // In Go, the user can directly provide the device path (e.g., /dev/sdX on Linux
-   // or \\.\PhysicalDriveN on Windows).
-
-   fileInfo, err := os.Stat(inputFile)
-   if err != nil {
-      log.Fatalf("Error: No such file: %s", inputFile)
-   }
-
-   // Create output directory
-   if err := createDirectory(*outputDir); err != nil {
-      log.Fatalf("Could not prepare output directory: %v", err)
-   }
-
-   fmt.Printf("\nFile size:  %d Bytes\n", fileInfo.Size())
-   fmt.Printf("Block size: %d Bytes\n", *blockSize)
-   fmt.Println("\nPartitions:\n")
-
-   // 1. Read the header from the input file
-   headerFile, err := os.Open(inputFile)
-   if err != nil {
-      log.Fatalf("Failed to open input file: %v", err)
-   }
-   defer headerFile.Close()
-
-   header := make([]byte, HeaderSize)
-   n, err := io.ReadFull(headerFile, header)
-   if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
-      log.Fatalf("Failed to read header from file: %v", err)
-   }
-   if n < HeaderSize {
-      fmt.Printf("Warning: File size is less than header size. Read %d bytes.\n", n)
-      header = header[:n] // Truncate header to actual bytes read
-   }
-   
-   // Save the header to a file
-   headerPath := filepath.Join(*outputDir, "~header")
-   if err := os.WriteFile(headerPath, header, 0644); err != nil {
-      log.Fatalf("Failed to save header file: %v", err)
-   }
-
-   // 2. Find and parse partitions within the header
-   var partitions []Partition
-   for i := 0; i+*blockSize <= len(header); i += *blockSize {
-      block := header[i : i+2]
-      partitionType := binary.LittleEndian.Uint16(block)
-
-      if partitionType == TypePartition {
-         // Extract name, base, and size from the block
-         nameBytes := header[i+OffsetName : i+OffsetName+20]
-         // Find the null terminator and trim the string
-         nullIndex := bytes.IndexByte(nameBytes, 0)
-         if nullIndex == -1 {
-            nullIndex = len(nameBytes)
-         }
-         name := string(nameBytes[:nullIndex])
-
-         base := binary.LittleEndian.Uint32(header[i+OffsetBase : i+OffsetBase+4])
-         size := binary.LittleEndian.Uint32(header[i+OffsetSize : i+OffsetSize+4])
-
-         // Calculate human-readable size
-         fullSizeKB := (int64(size) * int64(*blockSize)) / KB
-         var fullSizeStr string
-         if fullSizeKB > 1024 {
-            fullSizeStr = fmt.Sprintf("%d MB", fullSizeKB/1024)
-         } else {
-            fullSizeStr = fmt.Sprintf("%d KB", fullSizeKB)
-         }
-         
-         // Print partition info
-         partNum := len(partitions) + 1
-         baseAndSize := fmt.Sprintf("%d:%d", base, size)
-         fmt.Printf("%02d: %-30s %-25s %s\n", partNum, name, baseAndSize, fullSizeStr)
-
-         partitions = append(partitions, Partition{Name: name, Base: base, Size: size})
-      }
-   }
-   
-   if len(partitions) < 1 {
-      log.Fatal("\nPartitions are not found\n")
-   }
-   
-   fmt.Println("\nExtracting...\n")
-
-   // 3. Extract each partition
-   for i, p := range partitions {
-      outFile := filepath.Join(*outputDir, p.Name+".bin")
-      
-      infoStr := fmt.Sprintf("%s [%d:%d]", p.Name, p.Base, p.Size)
-      fmt.Printf("Saving (%02d/%d) %-40s => %s\n", i+1, len(partitions), infoStr, outFile)
-      
-      // Calculate offset and size in bytes using int64 to avoid overflow
-      offsetBytes := int64(p.Base) * int64(*blockSize)
-      sizeBytes := int64(p.Size) * int64(*blockSize)
-      
-      if err := copyPart(inputFile, outFile, offsetBytes, sizeBytes); err != nil {
-         log.Printf("ERROR: Failed to extract partition %s: %v", p.Name, err)
-      }
-   }
 }
