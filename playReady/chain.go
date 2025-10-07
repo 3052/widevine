@@ -17,6 +17,13 @@ import (
    "slices"
 )
 
+func wmrmPublicKey() *ecc.Point {
+   var p ecc.Point
+   p.X, _ = new(big.Int).SetString("c8b6af16ee941aadaa5389b4af2c10e356be42af175ef3face93254e7b0b3d9b", 16)
+   p.Y, _ = new(big.Int).SetString("982b27b5cb2341326e56aa857dbfd5c634ce2cf9ea74fca8f2af5957efeea562", 16)
+   return &p
+}
+
 func (l *License) verify(data []byte, coord *CoordX) error {
    signature := new(Ftlv).size() + l.Signature.size()
    data = data[:len(data)-signature]
@@ -31,12 +38,7 @@ func (l *License) verify(data []byte, coord *CoordX) error {
    return nil
 }
 
-func wmrmPublicKey() *ecc.Point {
-   var p ecc.Point
-   p.X, _ = new(big.Int).SetString("c8b6af16ee941aadaa5389b4af2c10e356be42af175ef3face93254e7b0b3d9b", 16)
-   p.Y, _ = new(big.Int).SetString("982b27b5cb2341326e56aa857dbfd5c634ce2cf9ea74fca8f2af5957efeea562", 16)
-   return &p
-}
+///
 
 // nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
 func p256() *curve {
