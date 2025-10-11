@@ -38,8 +38,6 @@ func (l *License) verify(data []byte, coord *CoordX) error {
    return nil
 }
 
-///
-
 // nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
 func p256() *curve {
    var c curve
@@ -260,7 +258,7 @@ func (c *Chain) RequestBody(kid []byte, privK *big.Int) ([]byte, error) {
 }
 
 // they downgrade certs from the cert digest (hash of the signing key)
-func (c *Chain) Leaf(modelPriv, signEncryptPriv *big.Int) error {
+func (c *Chain) Leaf(modelPriv, encryptSignPriv *big.Int) error {
    dsa := p256().dsa()
    modelPub, err := dsa.PubK(modelPriv)
    if err != nil {
@@ -288,20 +286,20 @@ func (c *Chain) Leaf(modelPriv, signEncryptPriv *big.Int) error {
       features.New(0xD)
       cert.Features = features.ftlv(0, 5)
    }
-   signEncryptPub, err := dsa.PubK(signEncryptPriv)
+   encryptSignPub, err := dsa.PubK(encryptSignPriv)
    if err != nil {
       return err
    }
    {
       sum := sha256.Sum256(
-         append(signEncryptPub.X.Bytes(), signEncryptPub.Y.Bytes()...),
+         append(encryptSignPub.X.Bytes(), encryptSignPub.Y.Bytes()...),
       )
       cert.Info = &CertificateInfo{}
       cert.Info.New(c.Certificates[0].Info.SecurityLevel, sum[:])
    }
    cert.KeyInfo = &KeyInfo{}
    cert.KeyInfo.New(
-      append(signEncryptPub.X.Bytes(), signEncryptPub.Y.Bytes()...),
+      append(encryptSignPub.X.Bytes(), encryptSignPub.Y.Bytes()...),
    )
    {
       cert.LengthToSignature, cert.Length = cert.size()

@@ -154,16 +154,16 @@ func TestLeaf(t *testing.T) {
       t.Fatal(err)
    }
    z1 := new(big.Int).SetBytes(data)
-   signEncryptKey := big.NewInt('!')
-   err = certificate.Leaf(z1, signEncryptKey)
+   encryptSignKey := big.NewInt('!')
+   err = certificate.Leaf(z1, encryptSignKey)
    if err != nil {
       t.Fatal(err)
    }
-   err = write_file(device.folder+"certificate", certificate.Encode())
+   err = write_file(device.folder+"EncryptSignKey", encryptSignKey.Bytes())
    if err != nil {
       t.Fatal(err)
    }
-   err = write_file(device.folder+"signEncryptKey", signEncryptKey.Bytes())
+   err = write_file(device.folder+"CertificateChain", certificate.Encode())
    if err != nil {
       t.Fatal(err)
    }
@@ -189,7 +189,7 @@ var SL3000 = device_config{
 
 func TestKey(t *testing.T) {
    log.SetFlags(log.Ltime)
-   data, err := os.ReadFile(device.folder + "certificate")
+   data, err := os.ReadFile(device.folder + "CertificateChain")
    if err != nil {
       t.Fatal(err)
    }
@@ -202,18 +202,18 @@ func TestKey(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   data, err = os.ReadFile(device.folder + "signEncryptKey")
+   data, err = os.ReadFile(device.folder + "EncryptSignKey")
    if err != nil {
       t.Fatal(err)
    }
-   signEncryptKey := new(big.Int).SetBytes(data)
+   encryptSignKey := new(big.Int).SetBytes(data)
    for _, test := range key_tests[:1] {
       kid, err := hex.DecodeString(test.kid_uuid)
       if err != nil {
          t.Fatal(err)
       }
       UuidOrGuid(kid)
-      data, err = certificate.RequestBody(kid, signEncryptKey)
+      data, err = certificate.RequestBody(kid, encryptSignKey)
       if err != nil {
          t.Fatal(err)
       }
@@ -231,7 +231,7 @@ func TestKey(t *testing.T) {
          t.Fatal(err)
       }
       var licenseVar License
-      coord, err := licenseVar.Decrypt(data, signEncryptKey)
+      coord, err := licenseVar.Decrypt(data, encryptSignKey)
       if err != nil {
          t.Fatal(err)
       }

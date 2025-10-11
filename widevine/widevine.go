@@ -13,6 +13,29 @@ import (
    "iter"
 )
 
+func (c *Cdm) New(private_key, client_id, psshVar []byte) error {
+   block, _ := pem.Decode(private_key)
+   var err error
+   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+   if err != nil {
+      // L1
+      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+      if err != nil {
+         return err
+      }
+      c.private_key = key.(*rsa.PrivateKey)
+   }
+   c.license_request = protobuf.Message{ // LicenseRequest
+      protobuf.Bytes(1, client_id), // ClientIdentification client_id
+      protobuf.LenPrefix(2, // ContentIdentification content_id
+         protobuf.LenPrefix(1, // WidevinePsshData widevine_pssh_data
+            protobuf.Bytes(1, psshVar),
+         ),
+      ),
+   }.Marshal()
+   return nil
+}
+
 func (c *Cdm) Block(body ResponseBody) (cipher.Block, error) {
    session_key, err := rsa.DecryptOAEP(
       sha1.New(), nil, c.private_key, body.session_key(), nil,
@@ -56,29 +79,6 @@ func (c *Cdm) RequestBody() ([]byte, error) {
       protobuf.Bytes(3, signature),
    }
    return signed.Marshal(), nil
-}
-
-func (c *Cdm) New(private_key, client_id, psshVar []byte) error {
-   block, _ := pem.Decode(private_key)
-   var err error
-   c.private_key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
-   if err != nil {
-      // L1
-      key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-      if err != nil {
-         return err
-      }
-      c.private_key = key.(*rsa.PrivateKey)
-   }
-   c.license_request = protobuf.Message{ // LicenseRequest
-      protobuf.Bytes(1, client_id), // ClientIdentification client_id
-      protobuf.LenPrefix(2, // ContentIdentification content_id
-         protobuf.LenPrefix(1, // WidevinePsshData widevine_pssh_data
-            protobuf.Bytes(1, psshVar),
-         ),
-      ),
-   }.Marshal()
-   return nil
 }
 
 func (k KeyContainer) Id() []byte {

@@ -328,11 +328,11 @@ type KeyInfo struct {
    Keys    []KeyData
 }
 
-func (k *KeyInfo) New(signEncryptKey []byte) {
+func (k *KeyInfo) New(encryptSignKey []byte) {
    k.Entries = 2 // required
    k.Keys = make([]KeyData, 2)
-   k.Keys[0].New(signEncryptKey, 1)
-   k.Keys[1].New(signEncryptKey, 2)
+   k.Keys[0].New(encryptSignKey, 1)
+   k.Keys[1].New(encryptSignKey, 2)
 }
 
 func (k *KeyInfo) encode() []byte {
