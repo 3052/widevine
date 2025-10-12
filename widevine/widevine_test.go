@@ -28,15 +28,15 @@ func TestCtv(t *testing.T) {
    if err != nil {
       t.Fatal(err)
    }
-   home, err := os.UserHomeDir()
+   cache, err := os.UserCacheDir()
    if err != nil {
       t.Fatal(err)
    }
-   private_key, err := os.ReadFile(home + "/media/private_key.pem")
+   private_key, err := os.ReadFile(cache + "/L3/private_key.pem")
    if err != nil {
       t.Fatal(err)
    }
-   client_id, err := os.ReadFile(home + "/media/client_id.bin")
+   client_id, err := os.ReadFile(cache + "/L3/client_id.bin")
    if err != nil {
       t.Fatal(err)
    }
