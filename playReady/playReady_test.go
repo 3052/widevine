@@ -13,6 +13,12 @@ import (
    "testing"
 )
 
+var SL3000 = device_config{
+   folder: "ignore/55u69gevs",
+   g1:     "bgroupcert.dat",
+   z1:     "zgpriv.dat",
+}
+
 var key_tests = []struct {
    key      string
    kid_uuid string
@@ -180,12 +186,6 @@ var SL2000 = device_config{
    folder: "ignore/",
    g1:     "g1",
    z1:     "z1",
-}
-
-var SL3000 = device_config{
-   folder: "ignore/",
-   g1:     "bgroupcert.dat",
-   z1:     "zgpriv.dat",
 }
 
 func TestKey(t *testing.T) {
