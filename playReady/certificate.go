@@ -11,6 +11,138 @@ import (
    "math/big"
 )
 
+func (c *ContentKey) scalable(privK *big.Int, aux *AuxKeys) (*CoordX, error) {
+   rootKeyInfo, leafKeys := c.Value[:144], c.Value[144:]
+   rootKey := rootKeyInfo[128:]
+   decrypted, err := elGamalDecrypt(rootKeyInfo[:128], privK)
+   if err != nil {
+      return nil, err
+   }
+   var (
+      ci [16]byte
+      ck [16]byte
+   )
+   for i := range 16 {
+      ci[i] = decrypted[i*2]
+      ck[i] = decrypted[i*2+1]
+   }
+   magicConstantZero, err := hex.DecodeString("7ee9ed4af773224f00b8ea7efb027cbb")
+   if err != nil {
+      return nil, err
+   }
+   rgbUplinkXkey := xorKey(magicConstantZero, ck[:])
+   contentKeyPrime, err := aesEcbEncrypt(rgbUplinkXkey, ck[:])
+   if err != nil {
+      return nil, err
+   }
+   auxKeyCalc, err := aesEcbEncrypt(aux.Keys[0].Key[:], contentKeyPrime)
+   if err != nil {
+      return nil, err
+   }
+   oSecondaryKey, err := aesEcbEncrypt(rootKey, ck[:])
+   if err != nil {
+      return nil, err
+   }
+   rgbKey, err := aesEcbEncrypt(leafKeys, auxKeyCalc)
+   if err != nil {
+      return nil, err
+   }
+   rgbKey, err = aesEcbEncrypt(rgbKey, oSecondaryKey)
+   if err != nil {
+      return nil, err
+   }
+   return (*CoordX)(rgbKey), nil
+}
+
+type ContentKey struct {
+   KeyId      [16]byte
+   KeyType    uint16
+   CipherType uint16
+   Length     uint16
+   Value      []byte
+}
+
+// decode decodes a byte slice into a ContentKey structure.
+func (c *ContentKey) decode(data []byte) {
+   c.KeyId = [16]byte(data)
+   data = data[16:]
+   c.KeyType = binary.BigEndian.Uint16(data)
+   data = data[2:]
+   c.CipherType = binary.BigEndian.Uint16(data)
+   data = data[2:]
+   c.Length = binary.BigEndian.Uint16(data)
+   data = data[2:]
+   c.Value = data
+}
+
+type License struct {
+   Magic      [4]byte           // 0
+   Offset     uint16            // 1
+   Version    uint16            // 2
+   RightsId   [16]byte          // 3
+   ContentKey *ContentKey       // 4.9.10
+   EccKey     *EccKey           // 4.9.42
+   AuxKeys    *AuxKeys          // 4.9.81
+   Signature  *LicenseSignature // 4.11
+}
+
+func (l *License) decode(data []byte) error {
+   l.Magic = [4]byte(data)
+   data = data[4:]
+   l.Offset = binary.BigEndian.Uint16(data)
+   data = data[2:]
+   l.Version = binary.BigEndian.Uint16(data)
+   data = data[2:]
+   l.RightsId = [16]byte(data)
+   data = data[16:]
+   var value1 Ftlv
+   _, err := value1.decode(data) // Type 1
+   if err != nil {
+      return err
+   }
+   for len(value1.Value) >= 1 {
+      var value2 Ftlv
+      n, err := value2.decode(value1.Value)
+      if err != nil {
+         return err
+      }
+      value1.Value = value1.Value[n:]
+      switch xmrType(value2.Type) {
+      case globalPolicyContainerEntryType: // 2
+         // Rakuten
+      case playbackPolicyContainerEntryType: // 4
+         // Rakuten
+      case keyMaterialContainerEntryType: // 9
+         for len(value2.Value) >= 1 {
+            var value3 Ftlv
+            n, err = value3.decode(value2.Value)
+            if err != nil {
+               return err
+            }
+            value2.Value = value2.Value[n:]
+            switch xmrType(value3.Type) {
+            case contentKeyEntryType: // 10
+               l.ContentKey = &ContentKey{}
+               l.ContentKey.decode(value3.Value)
+            case deviceKeyEntryType: // 42
+               l.EccKey = &EccKey{}
+               l.EccKey.decode(value3.Value)
+            case auxKeyEntryType: // 81
+               l.AuxKeys = &AuxKeys{}
+               l.AuxKeys.decode(value3.Value)
+            default:
+               return fmt.Errorf("unknown key material entry type: %d", value3.Type)
+            }
+         }
+      case signatureEntryType: // 11
+         l.Signature = &LicenseSignature{}
+         l.Signature.decode(value2.Value)
+      default:
+         return fmt.Errorf("unknown license container entry type: %d", value2.Type)
+      }
+   }
+   return nil
+}
 // Constants for object types within the certificate structure.
 const (
    objTypeBasic            = 0x0001
@@ -190,137 +322,4 @@ func (c *ContentKey) decrypt(privK *big.Int, aux *AuxKeys) (*CoordX, error) {
       return c.scalable(privK, aux)
    }
    return nil, errors.New("cannot decrypt key")
-}
-
-func (c *ContentKey) scalable(privK *big.Int, aux *AuxKeys) (*CoordX, error) {
-   rootKeyInfo, leafKeys := c.Value[:144], c.Value[144:]
-   rootKey := rootKeyInfo[128:]
-   decrypted, err := elGamalDecrypt(rootKeyInfo[:128], privK)
-   if err != nil {
-      return nil, err
-   }
-   var (
-      ci [16]byte
-      ck [16]byte
-   )
-   for i := range 16 {
-      ci[i] = decrypted[i*2]
-      ck[i] = decrypted[i*2+1]
-   }
-   magicConstantZero, err := hex.DecodeString("7ee9ed4af773224f00b8ea7efb027cbb")
-   if err != nil {
-      return nil, err
-   }
-   rgbUplinkXkey := xorKey(magicConstantZero, ck[:])
-   contentKeyPrime, err := aesEcbEncrypt(rgbUplinkXkey, ck[:])
-   if err != nil {
-      return nil, err
-   }
-   auxKeyCalc, err := aesEcbEncrypt(aux.Keys[0].Key[:], contentKeyPrime)
-   if err != nil {
-      return nil, err
-   }
-   oSecondaryKey, err := aesEcbEncrypt(rootKey, ck[:])
-   if err != nil {
-      return nil, err
-   }
-   rgbKey, err := aesEcbEncrypt(leafKeys, auxKeyCalc)
-   if err != nil {
-      return nil, err
-   }
-   rgbKey, err = aesEcbEncrypt(rgbKey, oSecondaryKey)
-   if err != nil {
-      return nil, err
-   }
-   return (*CoordX)(rgbKey), nil
-}
-
-type ContentKey struct {
-   KeyId      [16]byte
-   KeyType    uint16
-   CipherType uint16
-   Length     uint16
-   Value      []byte
-}
-
-// decode decodes a byte slice into a ContentKey structure.
-func (c *ContentKey) decode(data []byte) {
-   c.KeyId = [16]byte(data)
-   data = data[16:]
-   c.KeyType = binary.BigEndian.Uint16(data)
-   data = data[2:]
-   c.CipherType = binary.BigEndian.Uint16(data)
-   data = data[2:]
-   c.Length = binary.BigEndian.Uint16(data)
-   data = data[2:]
-   c.Value = data
-}
-
-type License struct {
-   Magic      [4]byte           // 0
-   Offset     uint16            // 1
-   Version    uint16            // 2
-   RightsId   [16]byte          // 3
-   ContentKey *ContentKey       // 4.9.10
-   EccKey     *EccKey           // 4.9.42
-   AuxKeys    *AuxKeys          // 4.9.81
-   Signature  *LicenseSignature // 4.11
-}
-
-func (l *License) decode(data []byte) error {
-   l.Magic = [4]byte(data)
-   data = data[4:]
-   l.Offset = binary.BigEndian.Uint16(data)
-   data = data[2:]
-   l.Version = binary.BigEndian.Uint16(data)
-   data = data[2:]
-   l.RightsId = [16]byte(data)
-   data = data[16:]
-   var value1 Ftlv
-   _, err := value1.decode(data) // Type 1
-   if err != nil {
-      return err
-   }
-   for len(value1.Value) >= 1 {
-      var value2 Ftlv
-      n, err := value2.decode(value1.Value)
-      if err != nil {
-         return err
-      }
-      value1.Value = value1.Value[n:]
-      switch xmrType(value2.Type) {
-      case globalPolicyContainerEntryType: // 2
-         // Rakuten
-      case playbackPolicyContainerEntryType: // 4
-         // Rakuten
-      case keyMaterialContainerEntryType: // 9
-         for len(value2.Value) >= 1 {
-            var value3 Ftlv
-            n, err = value3.decode(value2.Value)
-            if err != nil {
-               return err
-            }
-            value2.Value = value2.Value[n:]
-            switch xmrType(value3.Type) {
-            case contentKeyEntryType: // 10
-               l.ContentKey = &ContentKey{}
-               l.ContentKey.decode(value3.Value)
-            case deviceKeyEntryType: // 42
-               l.EccKey = &EccKey{}
-               l.EccKey.decode(value3.Value)
-            case auxKeyEntryType: // 81
-               l.AuxKeys = &AuxKeys{}
-               l.AuxKeys.decode(value3.Value)
-            default:
-               return fmt.Errorf("unknown key material entry type: %d", value3.Type)
-            }
-         }
-      case signatureEntryType: // 11
-         l.Signature = &LicenseSignature{}
-         l.Signature.decode(value2.Value)
-      default:
-         return fmt.Errorf("unknown license container entry type: %d", value2.Type)
-      }
-   }
-   return nil
 }
