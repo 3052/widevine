@@ -2,14 +2,26 @@ package playReady
 
 import (
    "bytes"
+   "crypto/aes"
    "crypto/sha256"
    "encoding/binary"
    "encoding/hex"
    "errors"
    "fmt"
    "github.com/arnaucube/cryptofun/ecc"
+   "github.com/emmansun/gmsm/cipher"
    "math/big"
 )
+
+func aesEcbEncrypt(data, key []byte) ([]byte, error) {
+   block, err := aes.NewCipher(key)
+   if err != nil {
+      return nil, err
+   }
+   data1 := make([]byte, len(data))
+   cipher.NewECBEncrypter(block).CryptBlocks(data1, data)
+   return data1, nil
+}
 
 func (c *ContentKey) scalable(privK *big.Int, aux *AuxKeys) (*CoordX, error) {
    rootKeyInfo, leafKeys := c.Value[:144], c.Value[144:]

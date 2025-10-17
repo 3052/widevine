@@ -1,10 +1,8 @@
 package playReady
 
 import (
-   "crypto/aes"
    "encoding/binary"
    "errors"
-   "github.com/emmansun/gmsm/cipher"
 )
 
 func UuidOrGuid(data []byte) {
@@ -16,16 +14,6 @@ func UuidOrGuid(data []byte) {
    // Data3 (next 2 bytes) - swap endianness in place
    data[6], data[7] = data[7], data[6]
    // Data4 (last 8 bytes) - no change needed, so no operation here
-}
-
-func aesEcbEncrypt(data, key []byte) ([]byte, error) {
-   block, err := aes.NewCipher(key)
-   if err != nil {
-      return nil, err
-   }
-   data1 := make([]byte, len(data))
-   cipher.NewECBEncrypter(block).CryptBlocks(data1, data)
-   return data1, nil
 }
 
 func (a *AuxKey) decode(data []byte) int {
