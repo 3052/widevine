@@ -14,3 +14,11 @@ Digital rights management
 - https://wikipedia.org/wiki/PlayReady
 - https://wikipedia.org/wiki/Widevine
 
+## contact
+
+<dl>
+   <dt>email</dt>
+      <dd>27@riseup.net</dd>
+   <dt>Discord username</dt>
+      <dd>10308</dd>
+</dl>
